@@ -1,6 +1,5 @@
-import Link from "next/link";
 import type { ShopTheme } from "@/lib/shop/theme";
-import { DealCard } from "./deal-card";
+import { ShopDealList } from "./shop-deal-list";
 import type { ShopTexts } from "./shop-texts";
 import type { DealView, ShopInfo } from "./types";
 
@@ -27,11 +26,6 @@ export function ShopHome({
   inert?: boolean;
   now?: Date;
 }) {
-  const visible = activeCategory ? deals.filter((d) => d.category?.slug === activeCategory) : deals;
-  const featured = theme.listLayout === "featured" ? (visible.find((d) => d.featured) ?? visible[0]) : undefined;
-  const rest = featured ? visible.filter((d) => d !== featured) : visible;
-  const href = (slug: string) => (inert ? undefined : `/d/${slug}`);
-  const usedCategories = categories.filter((c) => deals.some((d) => d.category?.slug === c.slug));
   const heroTitle = theme.hero.title || shop.name;
 
   return (
@@ -54,58 +48,8 @@ export function ShopHome({
         </section>
       ) : null}
 
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-        {usedCategories.length > 1 ? (
-          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 py-6 [scrollbar-width:none] sm:mx-0 sm:px-0" aria-label="Categories">
-            {/* Client-side navigation: the shop frame stays, only the list changes (no flash). */}
-            <Chip href={inert ? undefined : "/"} active={!activeCategory}>
-              {t.all}
-            </Chip>
-            {usedCategories.map((c) => (
-              <Chip key={c.slug} href={inert ? undefined : `/k/${c.slug}`} active={activeCategory === c.slug}>
-                {c.name}
-              </Chip>
-            ))}
-          </nav>
-        ) : (
-          <div className="h-8" />
-        )}
-
-        {!visible.length ? <p className="py-16 text-center text-[var(--shop-muted)]">{t.noDeals}</p> : null}
-
-        {featured ? (
-          <div className="mb-8">
-            <DealCard deal={featured} shop={shop} t={t} variant="hero" href={href(featured.slug)} now={now} priority />
-          </div>
-        ) : null}
-
-        {rest.length ? (
-          theme.listLayout === "list" ? (
-            <div className="flex flex-col gap-4">
-              {rest.map((d, i) => (
-                <DealCard key={d.id} deal={d} shop={shop} t={t} variant="list" href={href(d.slug)} now={now} priority={!featured && i < 2} />
-              ))}
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((d, i) => (
-                <DealCard key={d.id} deal={d} shop={shop} t={t} variant="grid" href={href(d.slug)} now={now} priority={!featured && i < 2} />
-              ))}
-            </div>
-          )
-        ) : null}
-      </div>
+      <ShopDealList shop={shop} layout={theme.listLayout} t={t} deals={deals} categories={categories} activeCategory={activeCategory ?? null} inert={inert} now={now} />
     </>
   );
 }
 
-function Chip({ href, active, children }: { href?: string; active: boolean; children: React.ReactNode }) {
-  const props = { className: "shop-chip", "aria-current": active ? ("page" as const) : undefined };
-  return href ? (
-    <Link href={href} scroll={false} {...props}>
-      {children}
-    </Link>
-  ) : (
-    <span {...props}>{children}</span>
-  );
-}

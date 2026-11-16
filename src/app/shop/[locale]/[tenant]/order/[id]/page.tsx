@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageFallback } from "@/components/shop/page-fallback";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { fmt } from "@/lib/i18n";
 import { completeSession } from "@/lib/payments/orders";
@@ -19,7 +21,7 @@ export function generateStaticParams() {
  */
 export default function OrderPage({ params, searchParams }: PageProps<"/shop/[locale]/[tenant]/order/[id]">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageFallback />}>
       <Order params={params} searchParams={searchParams} />
     </Suspense>
   );
@@ -75,9 +77,9 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
           <span>{t.total}</span>
           <span>{money(order.amount_cents)}</span>
         </div>
-        <a href="/" className="shop-btn mt-2 w-full">
+        <Link href="/" className="shop-btn mt-2 w-full">
           {t.continueShopping}
-        </a>
+        </Link>
       </div>
     </div>
   );

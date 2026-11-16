@@ -1,9 +1,10 @@
 import { Suspense } from "react";
+import { PageFallback } from "@/components/shop/page-fallback";
 import { LegalPage } from "../legal";
 
 export default function Page({ params }: PageProps<"/shop/[locale]/[tenant]/impressum">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageFallback />}>
       <Legal tenant={params.then((p) => p.tenant)} />
     </Suspense>
   );

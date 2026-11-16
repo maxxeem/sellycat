@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarClock, Clock, ExternalLink, MapPin } from "lucide-react";
 import { describeWindows, dealStatus, formatMoney, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
@@ -68,9 +69,9 @@ export function DealDetail({
           {stockBar ? <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} /> : null}
 
           {status === "live" && buyHref !== null ? (
-            <a href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">
+            <Link href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">
               {t.buy}
-            </a>
+            </Link>
           ) : (
             <span className="shop-btn w-full" aria-disabled="true">
               {status === "sold_out" ? t.soldOut : status === "scheduled" || status === "live" ? t.comingSoon : t.ended}

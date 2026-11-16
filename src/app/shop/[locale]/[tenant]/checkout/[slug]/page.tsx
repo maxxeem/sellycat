@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageFallback } from "@/components/shop/page-fallback";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { maxQuantity } from "@/lib/payments/map";
 import { dealStatus, formatMoney } from "@/lib/shop/deal-status";
@@ -13,7 +15,7 @@ export function generateStaticParams() {
 
 export default function CheckoutPage({ params }: PageProps<"/shop/[locale]/[tenant]/checkout/[slug]">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageFallback />}>
       <Checkout params={params} />
     </Suspense>
   );
@@ -41,9 +43,9 @@ async function CachedCheckout({ tenantId, slug }: { tenantId: string; slug: stri
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
       <title>{`${t.checkoutTitle} · ${shop.name}`}</title>
       <meta name="robots" content="noindex" />
-      <a href={`/d/${deal.slug}`} className="mb-4 inline-block text-sm text-[var(--shop-muted)] hover:text-[var(--shop-text)]">
+      <Link href={`/d/${deal.slug}`} className="mb-4 inline-block text-sm text-[var(--shop-muted)] hover:text-[var(--shop-text)]">
         ← {deal.title}
-      </a>
+      </Link>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <aside className="shop-card flex flex-col gap-3 self-start overflow-hidden">
           {cover ? (
@@ -60,9 +62,9 @@ async function CachedCheckout({ tenantId, slug }: { tenantId: string; slug: stri
         {blocked ? (
           <div className="shop-card p-6">
             <p className="font-semibold">{blocked}</p>
-            <a href="/" className="mt-4 inline-block underline">
+            <Link href="/" className="mt-4 inline-block underline">
               {t.backToShop}
-            </a>
+            </Link>
           </div>
         ) : (
           <CheckoutForm tenantId={tenantId} slug={deal.slug} unitCents={deal.price_cents} currency={shop.currency} locale={shop.locale} maxQty={max} shopName={shop.name} t={t} />

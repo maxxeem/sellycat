@@ -22,6 +22,7 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
       deals={listedDeals(deals)}
       categories={categories}
       activeCategory={category}
+      now={new Date()}
     />
   );
 }

@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageFallback } from "@/components/shop/page-fallback";
 import { DealDetail } from "@/components/shop/deal-detail";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { routeUrl, staticMapUrl } from "@/lib/geo/geocode";
@@ -13,7 +15,7 @@ export function generateStaticParams() {
 
 export default function DealPage({ params }: PageProps<"/shop/[locale]/[tenant]/d/[slug]">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageFallback />}>
       <Deal params={params} />
     </Suspense>
   );
@@ -69,9 +71,9 @@ async function CachedDeal({ tenantId, slug }: { tenantId: string; slug: string }
       <meta property="og:image" content={`${base}/og/${deal.slug}`} />
       <meta name="twitter:card" content="summary_large_image" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-      <a href="/" className="mb-4 inline-block text-sm text-[var(--shop-muted)] hover:text-[var(--shop-text)]">
+      <Link href="/" className="mb-4 inline-block text-sm text-[var(--shop-muted)] hover:text-[var(--shop-text)]">
         ← {t.backToShop}
-      </a>
+      </Link>
       <DealDetail
         deal={deal}
         shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }}

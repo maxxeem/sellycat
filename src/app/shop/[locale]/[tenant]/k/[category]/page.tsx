@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageFallback } from "@/components/shop/page-fallback";
 import { CachedHome } from "../../home";
 
 export function generateStaticParams() {
@@ -8,7 +9,7 @@ export function generateStaticParams() {
 /** One category of the shop (/k/<slug>): a separate, cacheable URL instead of a query string. */
 export default function CategoryPage({ params }: PageProps<"/shop/[locale]/[tenant]/k/[category]">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageFallback />}>
       <Category params={params} />
     </Suspense>
   );
