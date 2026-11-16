@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountState, authorizeUrl, checkoutError, checkoutInput, cleanSecret, connectStatus, maxQuantity, refundable, signState, stripeDashboardUrl, verifyState } from "./map";
+import { accountState, authorizeUrl, checkoutError, checkoutInput, cleanSecret, connectStatus, maxQuantity, refundable, signState, stripeBranding, stripeDashboardUrl, verifyState } from "./map";
 
 describe("payments map", () => {
   it("cleans pasted secrets", () => {
@@ -61,5 +61,17 @@ describe("payments map", () => {
   it("links into the right Stripe dashboard", () => {
     expect(stripeDashboardUrl(false, "/payments/pi_1")).toBe("https://dashboard.stripe.com/test/payments/pi_1");
     expect(stripeDashboardUrl(true)).toBe("https://dashboard.stripe.com");
+  });
+});
+
+describe("stripeBranding", () => {
+  const theme = { colors: { primary: "#5b4cf5", surface: "#151c2c" }, fonts: { body: { source: "google", family: "Open Sans" } }, radius: 12, buttonStyle: "solid" as const };
+  it("uses the shop's card colour and primary colour", () => {
+    expect(stripeBranding(theme)).toEqual({ background_color: "#151c2c", button_color: "#5b4cf5", border_style: "rounded", font_family: "open_sans" });
+  });
+  it("maps corners and unknown fonts", () => {
+    expect(stripeBranding({ ...theme, buttonStyle: "pill" }).border_style).toBe("pill");
+    expect(stripeBranding({ ...theme, radius: 0 }).border_style).toBe("rectangular");
+    expect(stripeBranding({ ...theme, fonts: { body: { source: "upload", family: "Brand Sans" } } }).font_family).toBe("default");
   });
 });

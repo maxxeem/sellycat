@@ -2,9 +2,10 @@
 
 import { headers } from "next/headers";
 import { requestOrigin } from "@/lib/auth/session";
-import { RESERVATION_MINUTES, SESSION_MINUTES, checkoutError, checkoutInput, type CheckoutError } from "@/lib/payments/map";
+import { RESERVATION_MINUTES, SESSION_MINUTES, checkoutError, checkoutInput, stripeBranding, type CheckoutError } from "@/lib/payments/map";
 import { getStripe, publishableKey, stripeConfigured } from "@/lib/payments/stripe";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { getShopProfile } from "@/lib/shop/queries";
 import { classifyHost } from "@/lib/site/hosts";
 import { resolveShop } from "@/lib/site/resolve-shop";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -35,9 +36,10 @@ export async function startCheckout(tenantId: string, slug: string, raw: unknown
   if (!shop || shop.id !== tenantId) return { ok: false, error: "unavailable" };
 
   const admin = createAdminClient();
-  const [{ data: account }, { data: deal }] = await Promise.all([
+  const [{ data: account }, { data: deal }, profile] = await Promise.all([
     admin.from("stripe_accounts").select("account_id, charges_enabled").eq("tenant_id", tenantId).maybeSingle(),
     admin.from("deals").select("id").eq("tenant_id", tenantId).eq("slug", slug).maybeSingle(),
+    getShopProfile(tenantId),
   ]);
   if (!account?.charges_enabled) return { ok: false, error: "payments" };
   if (!deal) return { ok: false, error: "unavailable" };
@@ -71,6 +73,7 @@ export async function startCheckout(tenantId: string, slug: string, raw: unknown
           metadata: { order_id: order.order_id, tenant_id: tenantId, order_number: order.order_number },
         },
         locale: shop.locale === "en" ? "en" : "de",
+        ...(profile ? { branding_settings: stripeBranding(profile.theme) } : {}),
         expires_at: Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60,
         return_url: `${origin}/order/${order.order_id}?session_id={CHECKOUT_SESSION_ID}`,
       },

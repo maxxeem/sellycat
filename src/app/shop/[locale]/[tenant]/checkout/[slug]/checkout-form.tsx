@@ -58,7 +58,7 @@ export function CheckoutForm({ tenantId, slug, unitCents, currency, locale, maxQ
             {t.changeOrder}
           </button>
         </div>
-        <div className="overflow-hidden rounded-[var(--shop-radius)] bg-white" data-testid="stripe-checkout">
+        <div className="overflow-hidden rounded-[var(--shop-radius)] bg-[var(--shop-surface)]" data-testid="stripe-checkout">
           <EmbeddedCheckoutProvider stripe={stripeFor(session.publishableKey, session.account)} options={options}>
             <EmbeddedCheckout />
           </EmbeddedCheckoutProvider>

@@ -151,3 +151,22 @@ export function maxQuantity(deal: { max_per_order: number | null; total_qty: num
 export function refundable(order: { amount_cents: number; refunded_cents: number }): number {
   return Math.max(0, order.amount_cents - order.refunded_cents);
 }
+
+/** Fonts Stripe Checkout can show (branding_settings.font_family), by family name. */
+const STRIPE_FONTS = ["be_vietnam_pro", "bitter", "chakra_petch", "hahmlet", "inconsolata", "inter", "lato", "lora", "m_plus_1_code", "montserrat", "noto_sans", "noto_sans_jp", "noto_serif", "nunito", "open_sans", "pridi", "pt_sans", "pt_serif", "raleway", "roboto", "roboto_slab", "source_sans_pro", "titillium_web", "ubuntu_mono", "zen_maru_gothic"] as const;
+
+type BrandingTheme = { colors: { primary: string; surface: string }; fonts: { body: { source: string; family: string } }; radius: number; buttonStyle: "solid" | "outline" | "pill" };
+
+/**
+ * Stripe Checkout look from the shop theme, so the payment form sits on the shop's card colour
+ * instead of a white box. Stripe picks readable text colours itself.
+ */
+export function stripeBranding(theme: BrandingTheme) {
+  const font = theme.fonts.body.family.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return {
+    background_color: theme.colors.surface,
+    button_color: theme.colors.primary,
+    border_style: theme.buttonStyle === "pill" ? ("pill" as const) : theme.radius === 0 ? ("rectangular" as const) : ("rounded" as const),
+    font_family: (STRIPE_FONTS as readonly string[]).includes(font) ? font : "default",
+  };
+}
