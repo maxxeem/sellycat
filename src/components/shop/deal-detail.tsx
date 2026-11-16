@@ -2,6 +2,7 @@ import { CalendarClock, Clock, ExternalLink, MapPin } from "lucide-react";
 import { describeWindows, dealStatus, formatMoney, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { Countdown } from "./countdown";
+import { DealGallery } from "./deal-gallery";
 import { StockBar } from "./stock-bar";
 import type { ShopTexts } from "./shop-texts";
 import type { DealView, ShopInfo } from "./types";
@@ -33,7 +34,6 @@ export function DealDetail({
   const status = dealStatus(deal, now);
   const left = remaining(deal);
   const savings = savingsPercent(deal.price_cents, deal.compare_at_cents);
-  const [cover, ...gallery] = deal.images;
   const validity =
     deal.redeem_validity === "until_date" && deal.redeem_until
       ? fmt(t.validUntil, { date: dateText(deal.redeem_until, shop.locale) })
@@ -49,22 +49,7 @@ export function DealDetail({
     // second column next to pictures and details.
     <article className="grid content-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-x-12">
       <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-        <div className="overflow-hidden rounded-[var(--shop-radius)] bg-[var(--shop-surface)]">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover.url} alt={cover.alt ?? deal.title} className="aspect-[16/10] w-full object-cover" fetchPriority="high" />
-          ) : (
-            <div className="aspect-[16/10] w-full" />
-          )}
-        </div>
-        {gallery.length ? (
-          <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {gallery.map((img) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={img.url} src={img.url} alt={img.alt ?? ""} loading="lazy" className="aspect-square w-full rounded-[var(--shop-radius)] object-cover" />
-            ))}
-          </div>
-        ) : null}
+        <DealGallery images={deal.images} title={deal.title} t={t} />
       </div>
 
       <aside className="lg:sticky lg:top-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
