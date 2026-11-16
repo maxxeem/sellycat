@@ -4,7 +4,7 @@ name: Supabase migrations
 # applies supabase/migrations to sellycat-staging; a push to `release` (the Vercel production
 # branch) applies them to production. Repository secrets: SUPABASE_ACCESS_TOKEN,
 # SUPABASE_DB_PASSWORD_STAGING, SUPABASE_DB_PASSWORD_PRODUCTION. Repository variables:
-# SUPABASE_REF_STAGING, SUPABASE_REF_PRODUCTION.
+# SUPABASE_REF_STAGING (set 16.11.2026), SUPABASE_REF_PRODUCTION (with the production project).
 on:
   push:
     branches: ["**"]
