@@ -6,17 +6,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Database } from "@/lib/supabase/types";
+import { anonKey, rlsEnabled, url } from "./helpers";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const secret = process.env.SUPABASE_SECRET_KEY;
-const enabled = Boolean(url && anonKey && secret) && !url?.includes("<project-ref>");
-const isProduction = Boolean(process.env.SUPABASE_PRODUCTION_REF && url?.includes(process.env.SUPABASE_PRODUCTION_REF));
-
 type DB = SupabaseClient<Database>;
 const run = Date.now().toString(36);
 
-describe.skipIf(!enabled || isProduction)("RLS tenant isolation", () => {
+describe.skipIf(!rlsEnabled)("RLS tenant isolation", () => {
   let admin: DB;
   const users: Array<{ id: string; email: string; client: DB; tenantId: string }> = [];
 

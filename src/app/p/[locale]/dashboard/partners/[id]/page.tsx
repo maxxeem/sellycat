@@ -1,0 +1,52 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { Card, PageHeader, Skeleton } from "@/components/ui";
+import type { Dictionary } from "@/lib/i18n";
+import { fromParams } from "@/lib/i18n/params";
+import { LOCALES } from "@/lib/i18n/locales";
+import { requireTenant } from "@/lib/dashboard/context";
+import { PartnerForm } from "../partner-form";
+import { DeletePartner, LocationList } from "./locations";
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale, id: "00000000-0000-0000-0000-000000000000" }));
+}
+
+export default async function PartnerPage({ params }: PageProps<"/p/[locale]/dashboard/partners/[id]">) {
+  const { t } = await fromParams(params);
+  return (
+    <Suspense fallback={<Skeleton className="h-96" />}>
+      <Partner t={t} id={params.then((p) => p.id)} />
+    </Suspense>
+  );
+}
+
+async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string> }) {
+  const id = await idPromise;
+  const { tenant, supabase } = await requireTenant("editor");
+  if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
+  const { data: partner } = await supabase
+    .from("partners")
+    .select("id, name, description, website_url, email, phone, logo_url, partner_locations(id, name, street, zip, city, country, opening_hours, lat)")
+    .eq("id", id)
+    .eq("tenant_id", tenant.id)
+    .maybeSingle();
+  if (!partner) notFound();
+  return (
+    <>
+      <Link href="/dashboard/partners" className="mb-3 inline-block text-sm text-muted hover:text-ink">
+        ← {t.partners.title}
+      </Link>
+      <PageHeader title={partner.name} actions={<DeletePartner id={partner.id} />} />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card title={t.partners.edit}>
+          <PartnerForm tenantId={tenant.id} partner={partner} />
+        </Card>
+        <Card title={t.partners.locations}>
+          <LocationList partnerId={partner.id} locations={partner.partner_locations ?? []} />
+        </Card>
+      </div>
+    </>
+  );
+}

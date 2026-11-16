@@ -1,0 +1,27 @@
+import { cacheLife, cacheTag } from "next/cache";
+import { notFound } from "next/navigation";
+import { shopTexts } from "@/components/shop/shop-texts";
+import { getLegalPage, getShopProfile } from "@/lib/shop/queries";
+
+/** Imprint, terms or privacy policy of a shop: plain text, blank line = new paragraph. */
+export async function LegalPage({ tenantId, kind }: { tenantId: string; kind: "imprint" | "terms" | "privacy" }) {
+  "use cache";
+  cacheTag(`shop:${tenantId}`);
+  cacheLife("hours");
+  const [shop, content] = await Promise.all([getShopProfile(tenantId), getLegalPage(tenantId, kind)]);
+  if (!shop || !content?.trim()) notFound();
+  const t = shopTexts(shop.locale);
+  const title = kind === "imprint" ? t.imprint : kind === "terms" ? t.terms : t.privacy;
+  return (
+    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
+      <h1 className="shop-heading mb-6 text-3xl font-bold">{title}</h1>
+      <div className="shop-prose">
+        {content.split(/\n{2,}/).map((p, i) => (
+          <p key={i} className="whitespace-pre-line">
+            {p.trim()}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}

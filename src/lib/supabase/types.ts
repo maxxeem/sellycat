@@ -14,6 +14,413 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_images: {
+        Row: {
+          alt: string | null
+          created_at: string
+          deal_id: string
+          height: number | null
+          id: string
+          sort_order: number
+          tenant_id: string
+          url: string
+          width: number | null
+        }
+        Insert: {
+          alt?: string | null
+          created_at?: string
+          deal_id: string
+          height?: number | null
+          id?: string
+          sort_order?: number
+          tenant_id: string
+          url: string
+          width?: number | null
+        }
+        Update: {
+          alt?: string | null
+          created_at?: string
+          deal_id?: string
+          height?: number | null
+          id?: string
+          sort_order?: number
+          tenant_id?: string
+          url?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_images_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_images_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_locations: {
+        Row: {
+          deal_id: string
+          location_id: string
+          tenant_id: string
+        }
+        Insert: {
+          deal_id: string
+          location_id: string
+          tenant_id: string
+        }
+        Update: {
+          deal_id?: string
+          location_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_locations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "partner_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_locations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          barcode_type: Database["public"]["Enums"]["barcode_type"] | null
+          category_id: string | null
+          code_format: Database["public"]["Enums"]["code_format"]
+          code_source: Database["public"]["Enums"]["code_source"]
+          compare_at_cents: number | null
+          created_at: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          description: Json
+          faq: Json
+          featured: boolean
+          id: string
+          max_per_buyer: number | null
+          max_per_order: number | null
+          partial_redemption: boolean
+          partner_id: string | null
+          price_cents: number
+          published_at: string | null
+          redeem_days: number | null
+          redeem_until: string | null
+          redeem_validity: Database["public"]["Enums"]["redeem_validity"]
+          redeem_windows: Json
+          reserved_qty: number
+          sales_end: string | null
+          sales_start: string | null
+          show_countdown: boolean
+          show_remaining: boolean
+          slug: string
+          sold_qty: number
+          sort_order: number
+          state: Database["public"]["Enums"]["deal_state"]
+          subtitle: string | null
+          tenant_id: string
+          terms: string | null
+          title: string
+          total_qty: number | null
+          updated_at: string
+          value_cents: number | null
+        }
+        Insert: {
+          barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
+          category_id?: string | null
+          code_format?: Database["public"]["Enums"]["code_format"]
+          code_source?: Database["public"]["Enums"]["code_source"]
+          compare_at_cents?: number | null
+          created_at?: string
+          deal_type?: Database["public"]["Enums"]["deal_type"]
+          description?: Json
+          faq?: Json
+          featured?: boolean
+          id?: string
+          max_per_buyer?: number | null
+          max_per_order?: number | null
+          partial_redemption?: boolean
+          partner_id?: string | null
+          price_cents: number
+          published_at?: string | null
+          redeem_days?: number | null
+          redeem_until?: string | null
+          redeem_validity?: Database["public"]["Enums"]["redeem_validity"]
+          redeem_windows?: Json
+          reserved_qty?: number
+          sales_end?: string | null
+          sales_start?: string | null
+          show_countdown?: boolean
+          show_remaining?: boolean
+          slug: string
+          sold_qty?: number
+          sort_order?: number
+          state?: Database["public"]["Enums"]["deal_state"]
+          subtitle?: string | null
+          tenant_id: string
+          terms?: string | null
+          title: string
+          total_qty?: number | null
+          updated_at?: string
+          value_cents?: number | null
+        }
+        Update: {
+          barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
+          category_id?: string | null
+          code_format?: Database["public"]["Enums"]["code_format"]
+          code_source?: Database["public"]["Enums"]["code_source"]
+          compare_at_cents?: number | null
+          created_at?: string
+          deal_type?: Database["public"]["Enums"]["deal_type"]
+          description?: Json
+          faq?: Json
+          featured?: boolean
+          id?: string
+          max_per_buyer?: number | null
+          max_per_order?: number | null
+          partial_redemption?: boolean
+          partner_id?: string | null
+          price_cents?: number
+          published_at?: string | null
+          redeem_days?: number | null
+          redeem_until?: string | null
+          redeem_validity?: Database["public"]["Enums"]["redeem_validity"]
+          redeem_windows?: Json
+          reserved_qty?: number
+          sales_end?: string | null
+          sales_start?: string | null
+          show_countdown?: boolean
+          show_remaining?: boolean
+          slug?: string
+          sold_qty?: number
+          sort_order?: number
+          state?: Database["public"]["Enums"]["deal_state"]
+          subtitle?: string | null
+          tenant_id?: string
+          terms?: string | null
+          title?: string
+          total_qty?: number | null
+          updated_at?: string
+          value_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_pages: {
+        Row: {
+          content: string
+          kind: Database["public"]["Enums"]["legal_kind"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          kind: Database["public"]["Enums"]["legal_kind"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          kind?: Database["public"]["Enums"]["legal_kind"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_pages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_locations: {
+        Row: {
+          city: string | null
+          country: string
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          opening_hours: string | null
+          partner_id: string
+          street: string | null
+          tenant_id: string
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          opening_hours?: string | null
+          partner_id: string
+          street?: string | null
+          tenant_id: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          opening_hours?: string | null
+          partner_id?: string
+          street?: string | null
+          tenant_id?: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_locations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_locations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          phone: string | null
+          tenant_id: string
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          tenant_id: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          tenant_id?: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           application_fee_bps: number
@@ -163,6 +570,38 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_themes: {
+        Row: {
+          draft: Json
+          published: Json
+          published_at: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          draft?: Json
+          published?: Json
+          published_at?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          draft?: Json
+          published?: Json
+          published_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_themes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_domains: {
         Row: {
           created_at: string
@@ -278,6 +717,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tenant_members_partner_fk"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tenant_members_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -300,6 +746,7 @@ export type Database = {
           name: string
           plan_id: string
           reply_to: string | null
+          shop_settings: Json
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
           timezone: string
@@ -318,6 +765,7 @@ export type Database = {
           name: string
           plan_id?: string
           reply_to?: string | null
+          shop_settings?: Json
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
           timezone?: string
@@ -336,6 +784,7 @@ export type Database = {
           name?: string
           plan_id?: string
           reply_to?: string | null
+          shop_settings?: Json
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
           timezone?: string
@@ -356,6 +805,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit: { Args: { p_tenant: string }; Returns: boolean }
       create_tenant: {
         Args: {
           p_locale?: string
@@ -395,27 +845,48 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      shop_legal_complete: { Args: { p_tenant: string }; Returns: boolean }
       shop_profile: {
         Args: { p_tenant: string }
         Returns: {
           currency: string
+          legal_complete: boolean
           locale: string
           name: string
+          primary_host: string
+          settings: Json
           slug: string
           tenant_id: string
+          theme: Json
         }[]
       }
       slug_available: { Args: { p_slug: string }; Returns: boolean }
+      tenant_is_public: { Args: { p_tenant: string }; Returns: boolean }
       tenant_role: {
         Args: { p_tenant: string }
         Returns: Database["public"]["Enums"]["member_role"]
       }
     }
     Enums: {
+      barcode_type:
+        | "ean13"
+        | "ean8"
+        | "upca"
+        | "code128"
+        | "code39"
+        | "itf14"
+        | "datamatrix"
+        | "pdf417"
+      code_format: "qr" | "numeric" | "barcode"
+      code_source: "generated" | "pool"
+      deal_state: "draft" | "published" | "ended"
+      deal_type: "fixed" | "value"
       domain_kind: "subdomain" | "custom"
       domain_status: "pending" | "dns_ok" | "active" | "error"
+      legal_kind: "imprint" | "terms" | "privacy"
       member_role: "owner" | "admin" | "editor" | "redeemer" | "partner"
       platform_role: "superadmin" | "support"
+      redeem_validity: "none" | "until_date" | "days_after_purchase"
       signup_mode: "open" | "paused"
       tenant_status: "trial" | "active" | "suspended" | "closed"
     }
@@ -545,10 +1016,26 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      barcode_type: [
+        "ean13",
+        "ean8",
+        "upca",
+        "code128",
+        "code39",
+        "itf14",
+        "datamatrix",
+        "pdf417",
+      ],
+      code_format: ["qr", "numeric", "barcode"],
+      code_source: ["generated", "pool"],
+      deal_state: ["draft", "published", "ended"],
+      deal_type: ["fixed", "value"],
       domain_kind: ["subdomain", "custom"],
       domain_status: ["pending", "dns_ok", "active", "error"],
+      legal_kind: ["imprint", "terms", "privacy"],
       member_role: ["owner", "admin", "editor", "redeemer", "partner"],
       platform_role: ["superadmin", "support"],
+      redeem_validity: ["none", "until_date", "days_after_purchase"],
       signup_mode: ["open", "paused"],
       tenant_status: ["trial", "active", "suspended", "closed"],
     },

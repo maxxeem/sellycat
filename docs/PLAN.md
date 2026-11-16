@@ -237,3 +237,9 @@ Erledigt (lokal, Build grün): eigenes Repo, Next.js 16 mit Cache Components, Br
 Infrastruktur (16.11.2026): Supabase `sellycat-staging` (Frankfurt) mit Migration, Auth-Einstellungen und Seed; GitHub `maxxeem/sellycat` mit CI und Migrations-Workflow (grün); Vercel-Projekt `sellycat` (Production-Branch `release`, `main` = Staging, Region fra1); DNS bei GoDaddy für `staging` und `*.staging`; staging.sellycat.com mit Passwortschutz online.
 
 Offen für später: Production (Supabase-Projekt, Vercel-Production-Variablen, DNS für `sellycat.com` und `*`) vor dem ersten echten Kunden; Impersonation mit Phase 7.
+
+## 9. Stand Phase 2 (17.11.2026)
+
+Erledigt: Migration `deals_shop` (Partner, Einlöseorte, Kategorien, Deals mit allen Limitierungen, Bilder, Orte, Theme, Rechtstexte, Storage-Bucket `shop-media`, RLS + Tenant-Grenzen per Trigger); Dashboard: Partner/Orte (mit Geocoding, sobald Mapbox-Token gesetzt), Deal-Editor mit Live-Vorschau (Karte/Detail, Handy/Desktop), Einstellungen (Shop, Rechnungsangaben, Rechtstexte, Kategorien, Analytics-IDs), Theme-Editor (Farben mit WCAG-Prüfung, Google Fonts über eigenen Proxy, eigene woff2, Formen, Layouts, Hell/Dunkel, Hero, Logos, Favicon, Social-Bild, Footer, «Branding von Website übernehmen» mit SSRF-Schutz); öffentlicher Shop (Übersicht mit Top-Deal und Kategorien, Detailseite mit Galerie, Ersparnis, Verfügbarkeit, Countdown, Einlöseorten, Karte, FAQ, Bedingungen; Rechtstexte; schema.org-Offer; Share-Bild pro Deal; Cookie-Hinweis mit Einwilligung für GA4/Meta); Seed mit zwei unterschiedlich gestalteten Demo-Shops; Cross-Tenant-Tests für alle neuen Tabellen und den Bucket.
+
+Offen/bewusst später: Kauf-Button führt auf einen Platzhalter (Phase 3); Code-Pool-Import (Phase 4); Shop-Besuchsstatistik (Phase 7); Karten erst mit Mapbox-Token.
