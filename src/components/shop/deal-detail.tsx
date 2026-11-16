@@ -23,7 +23,8 @@ export function DealDetail({
   deal: DealView;
   shop: ShopInfo;
   t: ShopTexts;
-  buyHref?: string;
+  /** Checkout link; null while the shop cannot take payments (button disabled). */
+  buyHref?: string | null;
   mapUrl?: string | null;
   routeUrls?: Record<string, string>;
   now?: Date;
@@ -128,13 +129,13 @@ export function DealDetail({
           </div>
           {deal.deal_type === "value" && deal.value_cents ? <p className="text-sm font-semibold">{fmt(t.worth, { value: formatMoney(deal.value_cents, shop.currency, shop.locale) })}</p> : null}
 
-          {status === "live" ? (
+          {status === "live" && buyHref !== null ? (
             <a href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">
               {t.buy}
             </a>
           ) : (
             <span className="shop-btn w-full" aria-disabled="true">
-              {status === "sold_out" ? t.soldOut : status === "scheduled" ? t.comingSoon : t.ended}
+              {status === "sold_out" ? t.soldOut : status === "scheduled" || status === "live" ? t.comingSoon : t.ended}
             </span>
           )}
 

@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      buyers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          newsletter_opt_in_at: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          newsletter_opt_in_at?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          newsletter_opt_in_at?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -311,6 +349,148 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          deal_id: string | null
+          id: string
+          order_id: string
+          qty: number
+          tenant_id: string
+          title: string
+          total_cents: number
+          unit_cents: number
+        }
+        Insert: {
+          deal_id?: string | null
+          id?: string
+          order_id: string
+          qty: number
+          tenant_id: string
+          title: string
+          total_cents: number
+          unit_cents: number
+        }
+        Update: {
+          deal_id?: string | null
+          id?: string
+          order_id?: string
+          qty?: number
+          tenant_id?: string
+          title?: string
+          total_cents?: number
+          unit_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount_cents: number
+          buyer_id: string
+          created_at: string
+          currency: string
+          email: string
+          fee_cents: number
+          id: string
+          locale: string
+          name: string | null
+          newsletter: boolean
+          number: string
+          oversold: boolean
+          paid_at: string | null
+          refunded_cents: number
+          restocked: boolean
+          status: Database["public"]["Enums"]["order_status"]
+          stripe_account_id: string | null
+          stripe_payment_intent: string | null
+          stripe_session_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          buyer_id: string
+          created_at?: string
+          currency: string
+          email: string
+          fee_cents?: number
+          id?: string
+          locale?: string
+          name?: string | null
+          newsletter?: boolean
+          number: string
+          oversold?: boolean
+          paid_at?: string | null
+          refunded_cents?: number
+          restocked?: boolean
+          status?: Database["public"]["Enums"]["order_status"]
+          stripe_account_id?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          buyer_id?: string
+          created_at?: string
+          currency?: string
+          email?: string
+          fee_cents?: number
+          id?: string
+          locale?: string
+          name?: string | null
+          newsletter?: boolean
+          number?: string
+          oversold?: boolean
+          paid_at?: string | null
+          refunded_cents?: number
+          restocked?: boolean
+          status?: Database["public"]["Enums"]["order_status"]
+          stripe_account_id?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_locations: {
         Row: {
           city: string | null
@@ -546,6 +726,33 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_events: {
+        Row: {
+          account: string | null
+          created_at: string
+          error: string | null
+          id: string
+          status: string
+          type: string
+        }
+        Insert: {
+          account?: string | null
+          created_at?: string
+          error?: string | null
+          id: string
+          status: string
+          type: string
+        }
+        Update: {
+          account?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          status?: string
+          type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -569,6 +776,64 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string
+          deal_id: string
+          email: string
+          expires_at: string
+          id: string
+          order_id: string
+          qty: number
+          status: Database["public"]["Enums"]["reservation_status"]
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          email: string
+          expires_at: string
+          id?: string
+          order_id: string
+          qty: number
+          status?: Database["public"]["Enums"]["reservation_status"]
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          qty?: number
+          status?: Database["public"]["Enums"]["reservation_status"]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shop_themes: {
         Row: {
@@ -595,6 +860,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "shop_themes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_accounts: {
+        Row: {
+          account_id: string
+          business_name: string | null
+          charges_enabled: boolean
+          connected_at: string
+          country: string | null
+          default_currency: string | null
+          details_submitted: boolean
+          livemode: boolean
+          payouts_enabled: boolean
+          requirements: Json
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          business_name?: string | null
+          charges_enabled?: boolean
+          connected_at?: string
+          country?: string | null
+          default_currency?: string | null
+          details_submitted?: boolean
+          livemode?: boolean
+          payouts_enabled?: boolean
+          requirements?: Json
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          business_name?: string | null
+          charges_enabled?: boolean
+          connected_at?: string
+          country?: string | null
+          default_currency?: string | null
+          details_submitted?: boolean
+          livemode?: boolean
+          payouts_enabled?: boolean
+          requirements?: Json
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_accounts_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: true
             referencedRelation: "tenants"
@@ -805,7 +1123,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      application_fee: {
+        Args: { p_amount: number; p_tenant: string }
+        Returns: number
+      }
       can_edit: { Args: { p_tenant: string }; Returns: boolean }
+      can_manage: { Args: { p_tenant: string }; Returns: boolean }
+      can_see_orders: { Args: { p_tenant: string }; Returns: boolean }
       create_tenant: {
         Args: {
           p_locale?: string
@@ -813,6 +1137,10 @@ export type Database = {
           p_root: string
           p_slug: string
         }
+        Returns: string
+      }
+      fulfil_order: {
+        Args: { p_payment_intent: string; p_session: string }
         Returns: string
       }
       has_tenant_role: {
@@ -835,6 +1163,12 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      record_refund: {
+        Args: { p_payment_intent: string; p_refunded: number }
+        Returns: string
+      }
+      release_expired: { Args: { p_deal?: string }; Returns: number }
+      release_order: { Args: { p_order: string }; Returns: boolean }
       resolve_shop: {
         Args: { p_host?: string; p_slug?: string }
         Returns: {
@@ -845,6 +1179,7 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      restock_order: { Args: { p_order: string }; Returns: boolean }
       shop_legal_complete: { Args: { p_tenant: string }; Returns: boolean }
       shop_profile: {
         Args: { p_tenant: string }
@@ -853,6 +1188,7 @@ export type Database = {
           legal_complete: boolean
           locale: string
           name: string
+          payments_ready: boolean
           primary_host: string
           settings: Json
           slug: string
@@ -861,6 +1197,27 @@ export type Database = {
         }[]
       }
       slug_available: { Args: { p_slug: string }; Returns: boolean }
+      start_checkout: {
+        Args: {
+          p_deal: string
+          p_email: string
+          p_locale: string
+          p_minutes?: number
+          p_name: string
+          p_newsletter: boolean
+          p_qty: number
+        }
+        Returns: {
+          amount_cents: number
+          currency: string
+          expires_at: string
+          fee_cents: number
+          order_id: string
+          order_number: string
+          title: string
+          unit_cents: number
+        }[]
+      }
       tenant_is_public: { Args: { p_tenant: string }; Returns: boolean }
       tenant_role: {
         Args: { p_tenant: string }
@@ -885,8 +1242,15 @@ export type Database = {
       domain_status: "pending" | "dns_ok" | "active" | "error"
       legal_kind: "imprint" | "terms" | "privacy"
       member_role: "owner" | "admin" | "editor" | "redeemer" | "partner"
+      order_status:
+        | "pending"
+        | "paid"
+        | "partially_refunded"
+        | "refunded"
+        | "expired"
       platform_role: "superadmin" | "support"
       redeem_validity: "none" | "until_date" | "days_after_purchase"
+      reservation_status: "active" | "converted" | "released"
       signup_mode: "open" | "paused"
       tenant_status: "trial" | "active" | "suspended" | "closed"
     }
@@ -1034,8 +1398,16 @@ export const Constants = {
       domain_status: ["pending", "dns_ok", "active", "error"],
       legal_kind: ["imprint", "terms", "privacy"],
       member_role: ["owner", "admin", "editor", "redeemer", "partner"],
+      order_status: [
+        "pending",
+        "paid",
+        "partially_refunded",
+        "refunded",
+        "expired",
+      ],
       platform_role: ["superadmin", "support"],
       redeem_validity: ["none", "until_date", "days_after_purchase"],
+      reservation_status: ["active", "converted", "released"],
       signup_mode: ["open", "paused"],
       tenant_status: ["trial", "active", "suspended", "closed"],
     },

@@ -76,7 +76,7 @@ async function CachedDeal({ tenantId, slug }: { tenantId: string; slug: string }
         deal={deal}
         shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }}
         t={t}
-        buyHref={`/checkout/${deal.slug}`}
+        buyHref={shop.paymentsReady ? `/checkout/${deal.slug}` : null}
         mapUrl={staticMapUrl(points, shop.theme.colors.primary)}
         routeUrls={routes}
         now={now}

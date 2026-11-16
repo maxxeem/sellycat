@@ -25,17 +25,17 @@ async function Overview({ t }: { t: Awaited<ReturnType<typeof fromParams>>["t"] 
   if (!tenant) return <EmptyState title={t.dashboard.noTenant} />;
   const shopUrl = shopUrlForSlug(tenant.slug);
   const supabase = await createClient();
-  const [{ data: theme }, { data: legal }, { count: deals }] = await Promise.all([
+  const [{ data: theme }, { data: legal }, { count: deals }, { data: profile }] = await Promise.all([
     supabase.from("shop_themes").select("published_at").eq("tenant_id", tenant.id).maybeSingle(),
     supabase.rpc("shop_legal_complete", { p_tenant: tenant.id }),
     supabase.from("deals").select("id", { count: "exact", head: true }).eq("tenant_id", tenant.id).eq("state", "published"),
+    supabase.rpc("shop_profile", { p_tenant: tenant.id }),
   ]);
-  // Payments get their real status with Stripe Connect (phase 3).
   const steps: Array<{ label: string; done: boolean; href: string }> = [
     { label: t.dashboard.setup.design, done: Boolean(theme?.published_at), href: "/dashboard/design" },
     { label: t.dashboard.setup.legal, done: Boolean(legal), href: "/dashboard/settings" },
     { label: t.dashboard.setup.deal, done: Boolean(deals), href: "/dashboard/deals" },
-    { label: t.dashboard.setup.payments, done: false, href: "/dashboard/payments" },
+    { label: t.dashboard.setup.payments, done: Boolean(profile?.[0]?.payments_ready), href: "/dashboard/payments" },
   ];
   return (
     <>

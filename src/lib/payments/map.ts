@@ -1,0 +1,153 @@
+/**
+ * Pure payment helpers (unit-tested): key hygiene, Connect account state, OAuth state tokens,
+ * checkout input and error mapping, Stripe dashboard links.
+ */
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { z } from "zod";
+
+/**
+ * A key as it should reach Stripe. A paste into a hosting dashboard easily adds a newline, a
+ * space or quotes, which Stripe's client reports as a vague connection error.
+ */
+export function cleanSecret(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined;
+  const cleaned = raw.replace(/[^\x21-\x7e]/g, "").replace(/^["']+|["']+$/g, "");
+  return cleaned || undefined;
+}
+
+export function looksLikeStripeKey(key: string | undefined): boolean {
+  return Boolean(key && /^(sk|rk)_(test|live)_[A-Za-z0-9]{16,}$/.test(key));
+}
+
+/** The part of a Stripe account we keep (`stripe_accounts`). */
+export type AccountState = {
+  charges_enabled: boolean;
+  payouts_enabled: boolean;
+  details_submitted: boolean;
+  requirements: string[];
+  business_name: string | null;
+  country: string | null;
+  default_currency: string | null;
+};
+
+type AccountLike = {
+  charges_enabled?: boolean | null;
+  payouts_enabled?: boolean | null;
+  details_submitted?: boolean | null;
+  requirements?: { currently_due?: string[] | null; past_due?: string[] | null } | null;
+  business_profile?: { name?: string | null } | null;
+  settings?: { dashboard?: { display_name?: string | null } | null } | null;
+  country?: string | null;
+  default_currency?: string | null;
+};
+
+export function accountState(a: AccountLike): AccountState {
+  const due = [...(a.requirements?.past_due ?? []), ...(a.requirements?.currently_due ?? [])];
+  return {
+    charges_enabled: Boolean(a.charges_enabled),
+    payouts_enabled: Boolean(a.payouts_enabled),
+    details_submitted: Boolean(a.details_submitted),
+    requirements: [...new Set(due)],
+    business_name: a.business_profile?.name || a.settings?.dashboard?.display_name || null,
+    country: a.country ?? null,
+    default_currency: a.default_currency ?? null,
+  };
+}
+
+export type ConnectStatus = "none" | "pending" | "active";
+
+/** What the dashboard shows: not connected, connected but Stripe still needs something, ready. */
+export function connectStatus(row: { charges_enabled: boolean } | null | undefined): ConnectStatus {
+  if (!row) return "none";
+  return row.charges_enabled ? "active" : "pending";
+}
+
+// ---------------------------------------------------------------- OAuth state
+/** Cookie holding the nonce of a running Connect OAuth round trip. */
+export const CONNECT_COOKIE = "sc_connect";
+
+/**
+ * The `state` of the Connect OAuth round trip: tenant, user, a nonce (also kept in a cookie, so
+ * the callback only completes in the browser that started it) and an expiry, signed with HMAC.
+ */
+export type ConnectState = { tenantId: string; userId: string; nonce: string; exp: number };
+
+export function signState(state: ConnectState, secret: string): string {
+  const body = Buffer.from(JSON.stringify(state)).toString("base64url");
+  const sig = createHmac("sha256", secret).update(body).digest("base64url");
+  return `${body}.${sig}`;
+}
+
+export function verifyState(token: string | null | undefined, secret: string, now = Date.now()): ConnectState | null {
+  if (!token) return null;
+  const [body, sig] = token.split(".");
+  if (!body || !sig) return null;
+  const expected = createHmac("sha256", secret).update(body).digest();
+  const given = Buffer.from(sig, "base64url");
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  try {
+    const state = JSON.parse(Buffer.from(body, "base64url").toString()) as ConnectState;
+    if (typeof state.exp !== "number" || state.exp < now) return null;
+    if (!state.tenantId || !state.userId || !state.nonce) return null;
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+/** Stripe's Connect OAuth page: the customer signs in to (or creates) their own Stripe account. */
+export function authorizeUrl(p: { clientId: string; state: string; redirectUri: string; email?: string; businessName?: string; country?: string }): string {
+  const url = new URL("https://connect.stripe.com/oauth/authorize");
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("client_id", p.clientId);
+  url.searchParams.set("scope", "read_write");
+  url.searchParams.set("state", p.state);
+  url.searchParams.set("redirect_uri", p.redirectUri);
+  if (p.email) url.searchParams.set("stripe_user[email]", p.email);
+  if (p.businessName) url.searchParams.set("stripe_user[business_name]", p.businessName);
+  if (p.country) url.searchParams.set("stripe_user[country]", p.country);
+  return url.toString();
+}
+
+/** A page in the customer's own Stripe dashboard (test-mode objects live under /test). */
+export function stripeDashboardUrl(livemode: boolean, path = ""): string {
+  return `https://dashboard.stripe.com${livemode ? "" : "/test"}${path}`;
+}
+
+// ---------------------------------------------------------------- checkout
+export const checkoutInput = z.object({
+  qty: z.coerce.number().int().min(1).max(100),
+  email: z.string().trim().toLowerCase().email().max(200),
+  name: z.string().trim().max(120).optional().default(""),
+  newsletter: z.coerce.boolean().optional().default(false),
+  terms: z.literal(true),
+});
+export type CheckoutInput = z.infer<typeof checkoutInput>;
+
+export const CHECKOUT_ERRORS = ["quantity", "email", "unavailable", "not_started", "ended", "max_per_order", "max_per_buyer", "sold_out", "not_enough", "payments", "rate", "failed"] as const;
+export type CheckoutError = (typeof CHECKOUT_ERRORS)[number];
+
+/** `checkout:<reason>` raised by start_checkout() → a known reason (anything else: failed). */
+export function checkoutError(message: string | null | undefined): CheckoutError {
+  const m = /checkout:([a-z_]+)/.exec(message ?? "");
+  const key = m?.[1] as CheckoutError | undefined;
+  return key && (CHECKOUT_ERRORS as readonly string[]).includes(key) ? key : "failed";
+}
+
+/**
+ * Stripe Checkout sessions expire after 30 minutes at the earliest. The session gets 31 minutes,
+ * the reservation in the database 35, so stock is never released while Stripe can still be paid.
+ */
+export const SESSION_MINUTES = 31;
+export const RESERVATION_MINUTES = 35;
+
+/** The largest quantity the form offers: per-order limit, stock left, hard cap. */
+export function maxQuantity(deal: { max_per_order: number | null; total_qty: number | null; sold_qty: number; reserved_qty: number }, cap = 20): number {
+  const left = deal.total_qty === null ? Infinity : Math.max(0, deal.total_qty - deal.sold_qty - deal.reserved_qty);
+  return Math.max(0, Math.min(cap, deal.max_per_order ?? cap, left));
+}
+
+/** Refund amount a form may ask for: positive, at most what is left on the order. */
+export function refundable(order: { amount_cents: number; refunded_cents: number }): number {
+  return Math.max(0, order.amount_cents - order.refunded_cents);
+}

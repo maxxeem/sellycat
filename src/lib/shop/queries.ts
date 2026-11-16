@@ -23,6 +23,8 @@ export type ShopProfile = {
   settings: { contact_email: string | null; contact_phone: string | null; ga4_id: string | null; meta_pixel_id: string | null; seo_description: string | null };
   legalComplete: boolean;
   primaryHost: string | null;
+  /** The shop's Stripe account can take payments (else the buy button stays disabled). */
+  paymentsReady: boolean;
 };
 
 export async function getShopProfile(tenantId: string): Promise<ShopProfile | null> {
@@ -43,6 +45,7 @@ export async function getShopProfile(tenantId: string): Promise<ShopProfile | nu
     settings: row.settings as ShopProfile["settings"],
     legalComplete: row.legal_complete,
     primaryHost: row.primary_host,
+    paymentsReady: row.payments_ready,
   };
 }
 
