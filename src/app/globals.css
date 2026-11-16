@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* Class-based dark mode (next-themes sets <html class="dark">). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Sellycat design tokens – single source of truth for Sellycat's own surfaces
+ * (login, dashboard, staff admin). Derived from Sellycat-Brandkit (docs/PLAN.md 1.2).
+ * Shops do NOT use these: each shop gets its own theme tokens (phase 2).
+ *
+ * Brand rules: text on coral is ink (white on coral is only 3.3:1); coral as text on white
+ * uses --accent-text (#C7381A, 5.2:1). Danger is deliberately deeper than coral.
+ */
+:root {
+  --coral: #ff4b23;
+  --ink-brand: #111111;
+  --mist: #f5f5f5;
+  --gray: #666666;
+
+  --surface: #f5f5f5;
+  --surface-2: #ffffff;
+  --ink: #111111;
+  --muted: #666666;
+  --line: #e5e5e5;
+  --accent: var(--coral);
+  --on-accent: #111111;
+  --accent-text: #c7381a;
+  --success: #1a7f37;
+  --warn: #b25e00;
+  --danger: #b42318;
+
+  --sc-radius-input: 8px;
+  --sc-radius-button: 12px;
+  --sc-radius-card: 16px;
+  --sc-shadow-sm: 0 1px 2px rgb(17 17 17 / 0.06);
+  --sc-shadow-md: 0 8px 24px rgb(17 17 17 / 0.08);
+}
+
+.dark {
+  --surface: #111111;
+  --surface-2: #1c1c1c;
+  --ink: #ffffff;
+  --muted: #a3a3a3;
+  --line: #2a2a2a;
+  --accent-text: #ff4b23;
+  --success: #3fb950;
+  --warn: #e3a008;
+  --danger: #f87171;
+  --sc-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --sc-shadow-md: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-coral: var(--coral);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --radius-input: var(--sc-radius-input);
+  --radius-button: var(--sc-radius-button);
+  --radius-card: var(--sc-radius-card);
+  --shadow-card: var(--sc-shadow-sm);
+  --shadow-pop: var(--sc-shadow-md);
+}
+
+html {
+  color-scheme: light;
+  background: var(--surface);
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Brand typography scale (Markenkit p. 4). */
+@utility text-h1 {
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  @media (width >= 48rem) {
+    font-size: 48px;
+    line-height: 52px;
+  }
+}
+@utility text-h2 {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  @media (width >= 48rem) {
+    font-size: 32px;
+    line-height: 38px;
+  }
+}
+
+a {
+  text-underline-offset: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

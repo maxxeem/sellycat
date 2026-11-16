@@ -1,0 +1,5 @@
+@font-face {font-family: Inter; src: url('../fonts/Inter-Regular.ttf') format('truetype'); font-weight:400; font-display:swap;}
+@font-face {font-family: Inter; src: url('../fonts/Inter-SemiBold.ttf') format('truetype'); font-weight:600; font-display:swap;}
+@font-face {font-family: Inter; src: url('../fonts/Inter-Bold.ttf') format('truetype'); font-weight:700; font-display:swap;}
+:root {--sellycat-coral:#FF4B23; --sellycat-ink:#111111; --sellycat-white:#FFFFFF; --sellycat-mist:#F5F5F5; --sellycat-gray:#666666; --font-brand:Inter,Arial,sans-serif;}
+body {font-family:var(--font-brand); color:var(--sellycat-ink);}
