@@ -4,7 +4,7 @@
  */
 export const STAGING_COOKIE = "sc_staging";
 export const STAGING_GATE_PATH = "/staging";
-const EXEMPT = [STAGING_GATE_PATH, "/api/staging", "/api/health", "/api/cron/", "/api/webhooks/"];
+const EXEMPT = [STAGING_GATE_PATH, "/api/staging", "/api/health", "/api/cron/", "/api/webhooks/", "/api/stripe/webhook"];
 
 export const stagingGateEnabled = () => Boolean(process.env.STAGING_PASSWORD);
 export const stagingExempt = (pathname: string) => EXEMPT.some((p) => (p.endsWith("/") ? pathname.startsWith(p) : pathname === p));
