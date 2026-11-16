@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "@/lib/design/color";
-import { DEFAULT_THEME, contrastIssues, parseTheme, themeFontCss, themeVars } from "./theme";
+import { DEFAULT_THEME, contrastIssues, headerLook, parseTheme, themeFontCss, themeVars } from "./theme";
 
 describe("theme", () => {
   it("fills defaults for empty and broken input", () => {
@@ -26,5 +26,18 @@ describe("theme", () => {
   it("loads Google fonts through our proxy only", () => {
     const { links } = themeFontCss(parseTheme({ fonts: { heading: { source: "google", family: "Playfair Display" } } }));
     expect(links).toEqual(["/api/fonts/css2?family=Playfair+Display:wght@400;600;700&display=swap"]);
+  });
+});
+
+describe("header look", () => {
+  it("is transparent with the page's text colour by default", () => {
+    const t = parseTheme({});
+    expect(headerLook(t)).toEqual({ background: "transparent", text: t.colors.text, tone: "light" });
+  });
+  it("uses a readable text colour on a colour or gradient", () => {
+    expect(headerLook(parseTheme({ header: { fill: "color", from: "#0b3d25" } }))).toMatchObject({ background: "#0b3d25", text: "#ffffff", tone: "dark" });
+    const g = headerLook(parseTheme({ header: { fill: "gradient", from: "#fff3b0", to: "#ffd166", direction: "right" } }));
+    expect(g.background).toBe("linear-gradient(90deg, #fff3b0, #ffd166)");
+    expect(g.tone).toBe("light");
   });
 });

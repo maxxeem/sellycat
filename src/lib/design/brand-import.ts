@@ -32,6 +32,10 @@ async function assertPublic(url: URL) {
   if (!addresses.length || addresses.some((a) => privateAddress(a.address))) throw new Error("private address");
 }
 
+/** Bot protection (Cloudflare and similar) answered instead of the site. We respect it and say so. */
+export class BlockedError extends Error {}
+const BLOCK_PAGE = /Attention Required! \| Cloudflare|cf-chl-|challenge-platform|Just a moment\.\.\.|captcha-delivery|px-captcha/i;
+
 async function fetchText(start: string, accept: string): Promise<{ url: URL; text: string } | null> {
   let url = new URL(start);
   for (let hop = 0; hop < 4; hop++) {
@@ -41,6 +45,7 @@ async function fetchText(start: string, accept: string): Promise<{ url: URL; tex
       url = new URL(res.headers.get("location")!, url);
       continue;
     }
+    if ([401, 403, 429, 503].includes(res.status) && (res.headers.get("server")?.toLowerCase().includes("cloudflare") || res.headers.has("cf-mitigated") || res.status === 403)) throw new BlockedError(String(res.status));
     if (!res.ok || !res.body) return null;
     const reader = res.body.getReader();
     const chunks: Uint8Array[] = [];
@@ -55,26 +60,51 @@ async function fetchText(start: string, accept: string): Promise<{ url: URL; tex
       }
       chunks.push(value);
     }
-    return { url, text: new TextDecoder().decode(Buffer.concat(chunks)) };
+    const text = new TextDecoder().decode(Buffer.concat(chunks));
+    if (accept.includes("html") && BLOCK_PAGE.test(text.slice(0, 20_000))) throw new BlockedError("challenge page");
+    return { url, text };
   }
   return null;
 }
 
-export async function importBranding(input: string): Promise<BrandingSuggestion | null> {
+export type ImportResult = { ok: true; suggestion: BrandingSuggestion } | { ok: false; reason: "blocked" | "unreachable" | "nothing" };
+
+/** Stylesheets of UI libraries carry their own colours, never the brand's. */
+const LIBRARY_SHEET = /vendor|swiper|slick|owl\.|fontawesome|font-awesome|normalize|reset\.|animate|aos\.|leaflet|mapbox|cookie|typekit|fonts\.googleapis/i;
+
+export async function importBranding(input: string): Promise<ImportResult> {
   const start = /^https?:\/\//i.test(input.trim()) ? input.trim() : `https://${input.trim()}`;
-  const page = await fetchText(start, "text/html").catch(() => null);
-  if (!page) return null;
-  // Up to two same-site stylesheets add colours and fonts the HTML does not mention.
+  let page: { url: URL; text: string } | null;
+  try {
+    page = await fetchText(start, "text/html");
+  } catch (e) {
+    return { ok: false, reason: e instanceof BlockedError ? "blocked" : "unreachable" };
+  }
+  if (!page) return { ok: false, reason: "unreachable" };
+  // Up to five stylesheets (libraries skipped) add colours and fonts the HTML does not mention.
   const sheets = [...page.text.matchAll(/<link[^>]+rel=["']?stylesheet["']?[^>]*>/gi)]
     .map((m) => m[0].match(/href=["']([^"']+)["']/i)?.[1])
-    .filter((h): h is string => Boolean(h) && !/fonts\.googleapis/.test(h!))
-    .slice(0, 2);
+    .filter((h): h is string => Boolean(h) && !LIBRARY_SHEET.test(h!))
+    .slice(0, 5);
   let css = "";
   for (const href of sheets) {
+    if (css.length > 900_000) break;
     const sheet = await fetchText(new URL(href, page.url).toString(), "text/css").catch(() => null);
     if (sheet) css += `\n${sheet.text.slice(0, 400_000)}`;
   }
-  const suggestion = extractBranding(page.text, css, page.url.toString());
+  // The web manifest names the app's theme and background colours.
+  let manifest: { theme_color?: string; background_color?: string } | null = null;
+  const manifestHref = page.text.match(/<link[^>]+rel=["']?manifest["']?[^>]*>/i)?.[0].match(/href=["']([^"']+)["']/i)?.[1];
+  if (manifestHref) {
+    const m = await fetchText(new URL(manifestHref, page.url).toString(), "application/manifest+json, application/json").catch(() => null);
+    try {
+      manifest = m ? JSON.parse(m.text) : null;
+    } catch {
+      manifest = null;
+    }
+  }
+  const suggestion = extractBranding(page.text, css, page.url.toString(), manifest);
   if (suggestion.colors.primary) suggestion.colors.primary = normaliseHex(suggestion.colors.primary) ?? undefined;
-  return suggestion;
+  const useful = suggestion.logo || suggestion.colors.primary || suggestion.fonts.heading || suggestion.favicon;
+  return useful ? { ok: true, suggestion } : { ok: false, reason: "nothing" };
 }

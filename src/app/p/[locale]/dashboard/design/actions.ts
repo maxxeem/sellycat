@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
-import { importBranding } from "@/lib/design/brand-import";
-import type { BrandingSuggestion } from "@/lib/design/brand-parse";
+import { importBranding, type ImportResult } from "@/lib/design/brand-import";
 import { themeSchema, type ShopTheme } from "@/lib/shop/theme";
 import { createRateLimiter } from "@/lib/rate-limit";
 
@@ -23,12 +22,12 @@ export async function saveTheme(theme: ShopTheme, publish: boolean): Promise<{ o
 
 const importLimit = createRateLimiter({ limit: 10, windowMs: 60 * 60 * 1000 });
 
-export async function importFromWebsite(url: string): Promise<BrandingSuggestion | null> {
+export async function importFromWebsite(url: string): Promise<ImportResult> {
   const { tenant } = await requireTenant("editor");
-  if (!importLimit.check(tenant.id).ok || url.length > 300) return null;
+  if (!importLimit.check(tenant.id).ok || url.length > 300) return { ok: false, reason: "unreachable" };
   try {
     return await importBranding(url);
   } catch {
-    return null;
+    return { ok: false, reason: "unreachable" };
   }
 }

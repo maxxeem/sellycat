@@ -10,7 +10,7 @@ import { DealCard } from "@/components/shop/deal-card";
 import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
 import { DealDetail } from "@/components/shop/deal-detail";
 import { ShopFrame } from "@/components/shop/shop-frame";
-import { SHOP_CSS, themeStyle } from "@/components/shop/shop-styles";
+import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles";
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Badge, Card, Field, Input, Notice, Select, buttonClass, inputClass } from "@/components/ui";
 import { STATUS_TONE } from "@/lib/dashboard/deal-ui";
@@ -429,12 +429,12 @@ export function DealEditor(props: {
             </div>
           </div>
           <div className="overflow-hidden rounded-card border border-line bg-surface">
-            <PreviewFrame device={device} testId="deal-preview">
+            <PreviewFrame device={device} scheme={props.theme.mode === "dark" ? "dark" : "light"} testId="deal-preview">
               <style>{SHOP_CSS + fonts.faces}</style>
               {fonts.links.map((href) => (
                 <link key={href} rel="stylesheet" href={href} />
               ))}
-              <div className="shop-root min-h-dvh" style={themeStyle(props.theme)} data-card={props.theme.cardStyle} data-button={props.theme.buttonStyle} data-mode={props.theme.mode}>
+              <div className="shop-root min-h-dvh" style={themeStyle(props.theme)} {...themeAttrs(props.theme)}>
                 <ShopFrame name={props.shop.name} theme={props.theme} t={t.shop} inert>
                   {preview === "card" ? (
                     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">

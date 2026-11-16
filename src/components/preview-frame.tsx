@@ -13,7 +13,7 @@ export type PreviewDevice = keyof typeof PREVIEW_WIDTHS;
  * dashboard window. The frame is scaled down to fit the column, like a screenshot of the device.
  * The app's stylesheets are mirrored into the frame (also after hot reloads in development).
  */
-export function PreviewFrame({ device, height = "75vh", children, testId }: { device: PreviewDevice; height?: string; children: ReactNode; testId?: string }) {
+export function PreviewFrame({ device, scheme = "light", height = "75vh", children, testId }: { device: PreviewDevice; scheme?: "light" | "dark"; height?: string; children: ReactNode; testId?: string }) {
   const outer = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [body, setBody] = useState<HTMLElement | null>(null);
@@ -62,6 +62,16 @@ export function PreviewFrame({ device, height = "75vh", children, testId }: { de
       observer?.disconnect();
     };
   }, []);
+
+  // Scrollbar like the real device: none on a phone (overlay scrollbars), thin in the shop's
+  // light/dark scheme on desktop instead of the browser's default white bar.
+  useEffect(() => {
+    const root = body ? frame.current?.contentDocument?.documentElement : null;
+    if (!root) return;
+    root.style.setProperty("color-scheme", scheme);
+    root.style.setProperty("scrollbar-width", device === "mobile" ? "none" : "thin");
+    root.style.setProperty("scrollbar-color", scheme === "dark" ? "rgba(255,255,255,.25) transparent" : "rgba(0,0,0,.25) transparent");
+  }, [body, device, scheme]);
 
   const scale = box.width ? Math.min(1, box.width / width) : 1;
   return (

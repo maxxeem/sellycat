@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { ShopTheme } from "@/lib/shop/theme";
+import { headerLook, type ShopTheme } from "@/lib/shop/theme";
 import type { ShopTexts } from "./shop-texts";
 
 /**
@@ -22,16 +22,23 @@ export function ShopFrame({
   contact?: { email?: string | null; phone?: string | null };
   inert?: boolean;
 }) {
-  const logo = theme.mode === "dark" ? theme.logoDark || theme.logoLight : theme.logoLight || theme.logoDark;
+  // Two logo variants: the stylesheet shows the one that fits the header's background.
+  const forLight = theme.logoLight || theme.logoDark;
+  const forDark = theme.logoDark || theme.logoLight;
+  const tone = headerLook(theme).tone;
   const a = (href: string) => (inert ? { href: "#", onClick: undefined, tabIndex: -1 } : { href });
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-[var(--shop-line)]">
+      <header className="shop-header" data-tone={tone}>
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6">
           <Link {...a("/")} className="flex min-w-0 items-center" aria-label={name}>
-            {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logo} alt={name} className="h-9 w-auto max-w-[200px] object-contain sm:h-11" />
+            {forLight ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={forLight} alt={name} className="shop-logo-for-light h-9 w-auto max-w-[200px] object-contain sm:h-11" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={forDark} alt="" aria-hidden className="shop-logo-for-dark h-9 w-auto max-w-[200px] object-contain sm:h-11" />
+              </>
             ) : (
               <span className="shop-heading truncate text-xl font-bold">{name}</span>
             )}

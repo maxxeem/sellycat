@@ -44,6 +44,19 @@ export const themeSchema = z.object({
   cardStyle: z.enum(["flat", "bordered", "elevated"]).default("elevated"),
   listLayout: z.enum(["grid", "list", "featured"]).default("grid"),
   mode: z.enum(["light", "dark"]).default("light"),
+  /**
+   * Header: a bar above the page, or one block with the hero (start page). Background none, a
+   * colour or a gradient; the text colour follows the background automatically.
+   */
+  header: z
+    .object({
+      style: z.enum(["bar", "integrated"]).default("bar"),
+      fill: z.enum(["none", "color", "gradient"]).default("none"),
+      from: hex.default("#ff4b23"),
+      to: hex.default("#7a1fa2"),
+      direction: z.enum(["down", "right", "diagonal"]).default("diagonal"),
+    })
+    .default({ style: "bar", fill: "none", from: "#ff4b23", to: "#7a1fa2", direction: "diagonal" }),
   hero: z
     .object({ enabled: z.boolean().default(true), title: z.string().max(120).default(""), subtitle: z.string().max(240).default(""), image: url })
     .default({ enabled: true, title: "", subtitle: "", image: "" }),
@@ -79,6 +92,21 @@ function fontStack(font: ThemeFont): string {
   return `"${font.family.replace(/"/g, "")}", ${SYSTEM_STACK}`;
 }
 
+const ANGLE = { down: "180deg", right: "90deg", diagonal: "135deg" } as const;
+
+/** Header background (CSS value), its text colour and whether it reads as dark. */
+export function headerLook(theme: ShopTheme): { background: string; text: string; tone: "light" | "dark" } {
+  const h = theme.header;
+  if (h.fill === "none") return { background: "transparent", text: theme.colors.text, tone: theme.mode };
+  const base = h.fill === "color" ? h.from : mix(h.from, h.to, 0.5);
+  const text = readableOn(base, "#111111", "#ffffff");
+  return {
+    background: h.fill === "color" ? h.from : `linear-gradient(${ANGLE[h.direction]}, ${h.from}, ${h.to})`,
+    text,
+    tone: text === "#ffffff" ? "dark" : "light",
+  };
+}
+
 /** CSS custom properties for a theme (applied on the shop's root element). */
 export function themeVars(theme: ShopTheme): Record<string, string> {
   const c = theme.colors;
@@ -101,6 +129,8 @@ export function themeVars(theme: ShopTheme): Record<string, string> {
     "--shop-radius-button": theme.buttonStyle === "pill" ? "999px" : `${Math.min(theme.radius, 16)}px`,
     "--shop-font-heading": fontStack(theme.fonts.heading),
     "--shop-font-body": fontStack(theme.fonts.body),
+    "--shop-header-bg": headerLook(theme).background,
+    "--shop-on-header": headerLook(theme).text,
   };
 }
 

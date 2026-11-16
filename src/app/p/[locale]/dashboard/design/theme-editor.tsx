@@ -2,12 +2,12 @@
 
 import { AlertTriangle, CheckCircle2, Monitor, Plus, Smartphone, Trash2, Wand2 } from "lucide-react";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
-import { ColorPicker } from "@/components/color-picker";
+import { ColorField, ColorFieldGroup } from "@/components/color-field";
 import { ImageUpload, uploadMedia } from "@/components/image-upload";
 import { ShopFrame } from "@/components/shop/shop-frame";
 import { ShopHome } from "@/components/shop/shop-home";
 import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
-import { SHOP_CSS, themeStyle } from "@/components/shop/shop-styles";
+import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles";
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Card, Field, Input, Notice, Select, buttonClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n";
@@ -25,12 +25,12 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
   const g = t.design;
   const [theme, setTheme] = useState<ShopTheme>(props.initial);
   const [dirty, setDirty] = useState(props.hasUnpublished);
-  const [openColor, setOpenColor] = useState<ColorKey | null>(null);
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [importUrl, setImportUrl] = useState("");
-  const [suggestion, setSuggestion] = useState<BrandingSuggestion | null | undefined>(undefined);
+  const [suggestion, setSuggestion] = useState<BrandingSuggestion | undefined>(undefined);
+  const [importError, setImportError] = useState<"blocked" | "unreachable" | "nothing" | null>(null);
   const [importing, startImport] = useTransition();
 
   const update = (fn: (t: ShopTheme) => ShopTheme) => {
@@ -64,7 +64,10 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
         primary: normaliseHex(s.colors.primary) ?? th.colors.primary,
         accent: normaliseHex(s.colors.accent) ?? th.colors.accent,
         text: normaliseHex(s.colors.text) ?? th.colors.text,
+        background: normaliseHex(s.colors.background) ?? th.colors.background,
+        surface: normaliseHex(s.colors.surface) ?? th.colors.surface,
       },
+      mode: s.mode ?? th.mode,
       fonts: {
         heading: s.fonts.heading && (GOOGLE_FONTS as readonly string[]).includes(s.fonts.heading) ? { source: "google", family: s.fonts.heading, url: "" } : th.fonts.heading,
         body: s.fonts.body && (GOOGLE_FONTS as readonly string[]).includes(s.fonts.body) ? { source: "google", family: s.fonts.body, url: "" } : th.fonts.body,
@@ -103,7 +106,11 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
               className="flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                startImport(async () => setSuggestion(await importFromWebsite(importUrl)));
+                startImport(async () => {
+                  const r = await importFromWebsite(importUrl);
+                  setSuggestion(r.ok ? r.suggestion : undefined);
+                  setImportError(r.ok ? null : r.reason);
+                });
               }}
             >
               <Input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="www.kundenfirma.ch" inputMode="url" required />
@@ -111,7 +118,7 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
                 <Wand2 className="h-4 w-4" aria-hidden /> {importing ? t.common.loading : g.importRun}
               </button>
             </form>
-            {suggestion === null ? <p className="mt-3 text-sm text-muted">{g.importNothing}</p> : null}
+            {importError ? <p className="mt-3 text-sm text-muted">{importError === "blocked" ? g.importBlocked : importError === "unreachable" ? g.importUnreachable : g.importNothing}</p> : null}
             {suggestion ? (
               <div className="mt-4 flex flex-col gap-3 rounded-input border border-line p-3 text-sm">
                 {suggestion.logo ? (
@@ -119,7 +126,7 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
                   <img src={suggestion.logo} alt="Logo" className="h-10 w-auto max-w-[200px] object-contain" />
                 ) : null}
                 <div className="flex flex-wrap gap-2">
-                  {[suggestion.colors.primary, suggestion.colors.accent, suggestion.colors.text].filter(Boolean).map((c) => (
+                  {[suggestion.colors.primary, suggestion.colors.accent, suggestion.colors.background, suggestion.colors.text].filter(Boolean).map((c) => (
                     <span key={c} className="flex items-center gap-1.5 rounded-full border border-line px-2 py-1 font-mono text-xs">
                       <span className="h-4 w-4 rounded-full border border-line" style={{ background: c }} /> {c}
                     </span>
@@ -132,29 +139,12 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
           </Card>
 
           <Card title={g.colors}>
-            <div className="flex flex-col gap-3">
-              {COLORS.map(([key, label]) => (
-                <div key={key}>
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setOpenColor(openColor === key ? null : key)} className="h-9 w-9 shrink-0 rounded-input border border-line" style={{ background: theme.colors[key] }} aria-label={label} aria-expanded={openColor === key} />
-                    <span className="flex-1 text-sm font-semibold">{label}</span>
-                    <Input
-                      value={theme.colors[key]}
-                      onChange={(e) => {
-                        const v = normaliseHex(e.target.value);
-                        if (v) setColor(key, v);
-                      }}
-                      className="w-28 font-mono"
-                      aria-label={`${label} Hex`}
-                    />
-                  </div>
-                  {openColor === key ? (
-                    <div className="mt-3 max-w-xs">
-                      <ColorPicker value={theme.colors[key]} onChange={(hex) => setColor(key, hex.toLowerCase())} presets={Object.values(theme.colors)} />
-                    </div>
-                  ) : null}
-                </div>
-              ))}
+            <div className="flex flex-col gap-4">
+              <ColorFieldGroup>
+                {COLORS.map(([key, label]) => (
+                  <ColorField key={key} label={label} value={theme.colors[key]} onChange={(hex) => setColor(key, hex)} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
+                ))}
+              </ColorFieldGroup>
               {issues.length ? (
                 <Notice tone="error">
                   <AlertTriangle className="mr-1 inline h-4 w-4" aria-hidden />
@@ -196,6 +186,24 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
                 }
                 options={[["light", g.light], ["dark", g.dark]]}
               />
+            </div>
+          </Card>
+
+          <Card title={g.header} description={g.headerHint}>
+            <div className="flex flex-col gap-4">
+              <Segmented label={g.headerStyle} value={theme.header.style} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, style: v } }))} options={[["bar", g.headerBar], ["integrated", g.headerIntegrated]]} />
+              <Segmented label={g.headerFill} value={theme.header.fill} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, fill: v } }))} options={[["none", g.fillNone], ["color", g.fillColor], ["gradient", g.fillGradient]]} />
+              {theme.header.fill !== "none" ? (
+                <ColorFieldGroup>
+                  <ColorField label={theme.header.fill === "gradient" ? g.gradientFrom : g.fillColor} value={theme.header.from} onChange={(hex) => update((th) => ({ ...th, header: { ...th.header, from: hex } }))} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
+                  {theme.header.fill === "gradient" ? (
+                    <ColorField label={g.gradientTo} value={theme.header.to} onChange={(hex) => update((th) => ({ ...th, header: { ...th.header, to: hex } }))} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
+                  ) : null}
+                </ColorFieldGroup>
+              ) : null}
+              {theme.header.fill === "gradient" ? (
+                <Segmented label={g.direction} value={theme.header.direction} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, direction: v } }))} options={[["down", g.dirDown], ["right", g.dirRight], ["diagonal", g.dirDiagonal]]} />
+              ) : null}
             </div>
           </Card>
 
@@ -252,12 +260,12 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
             </div>
           </div>
           <div className="overflow-hidden rounded-card border border-line bg-surface">
-            <PreviewFrame device={device} height="78vh" testId="theme-preview">
+            <PreviewFrame device={device} scheme={theme.mode === "dark" ? "dark" : "light"} height="78vh" testId="theme-preview">
               {fonts.links.map((href) => (
                 <link key={href} rel="stylesheet" href={href} />
               ))}
               <style>{SHOP_CSS + fonts.faces}</style>
-              <div className="shop-root min-h-dvh" style={themeStyle(theme)} data-card={theme.cardStyle} data-button={theme.buttonStyle} data-mode={theme.mode}>
+              <div className="shop-root min-h-dvh" style={themeStyle(theme)} {...themeAttrs(theme)}>
                 <ShopFrame name={props.shop.name} theme={theme} t={t.shop} inert>
                   <ShopHome shop={props.shop} theme={theme} t={t.shop} deals={sampleDeals} categories={props.categories} inert />
                 </ShopFrame>
