@@ -8,6 +8,7 @@ import { safeNext } from "@/lib/site/routing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getSignupMode } from "@/lib/platform/settings";
+import { registerDomain } from "@/lib/vercel/domains";
 
 /** Error/notice keys map to the `auth` dictionary on the client. */
 export type AuthState = { error?: string; notice?: string; field?: string } | null;
@@ -90,7 +91,10 @@ export async function provisionFromSignup(): Promise<void> {
   const root = (siteHost() || DEFAULT_ROOT).split(":")[0];
   for (const candidate of [meta.shop_slug, `${meta.shop_slug.slice(0, 35)}-${Math.random().toString(36).slice(2, 6)}`]) {
     const { error } = await supabase.rpc("create_tenant", { p_name: meta.shop_name, p_slug: candidate, p_root: root, p_locale: meta.locale ?? "de" });
-    if (!error) return;
+    if (!error) {
+      await registerDomain(`${candidate}.${root}`);
+      return;
+    }
     if (!error.message.includes("duplicate")) return;
   }
 }

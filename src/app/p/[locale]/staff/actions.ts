@@ -8,6 +8,7 @@ import { SETTINGS_TAG } from "@/lib/platform/settings";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { DEFAULT_ROOT, siteHost, validateSlug } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registerDomain } from "@/lib/vercel/domains";
 
 export type StaffFormState = { error?: string; ok?: boolean } | null;
 
@@ -56,7 +57,8 @@ export async function createTenant(_: StaffFormState, form: FormData): Promise<S
   if (error || !tenant) return { error: error?.code === "23505" ? "slug taken" : (error?.message ?? "insert failed") };
   await db.from("tenant_members").insert({ tenant_id: tenant.id, user_id: ownerId, role: "owner" });
   await db.from("tenant_domains").insert({ tenant_id: tenant.id, hostname: `${slug}.${root}`, kind: "subdomain", status: "active", is_primary: true });
-  await audit(staff.id, "tenant.created", { tenantId: tenant.id, type: "tenant", id: tenant.id, meta: { slug, ownerEmail } });
+  const vercel = await registerDomain(`${slug}.${root}`);
+  await audit(staff.id, "tenant.created", { tenantId: tenant.id, type: "tenant", id: tenant.id, meta: { slug, ownerEmail, vercel: vercel.message } });
   redirect(`/admin/tenants/${tenant.id}`);
 }
 
