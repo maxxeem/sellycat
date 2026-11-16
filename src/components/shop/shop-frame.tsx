@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ShopTheme } from "@/lib/shop/theme";
 import type { ShopTexts } from "./shop-texts";
 
 /**
- * Header and footer of a shop (shop pages and editor previews). Links are plain anchors with
- * paths relative to the shop host; previews pass `inert` to keep clicks inside the editor.
+ * Header and footer of a shop (shop pages and editor previews). Internal links navigate client-side
+ * (paths relative to the shop host, the frame stays); previews pass `inert` to keep clicks inside the editor.
  */
 export function ShopFrame({
   name,
@@ -27,14 +28,14 @@ export function ShopFrame({
     <div className="flex min-h-full flex-col">
       <header className="border-b border-[var(--shop-line)]">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6">
-          <a {...a("/")} className="flex min-w-0 items-center" aria-label={name}>
+          <Link {...a("/")} className="flex min-w-0 items-center" aria-label={name}>
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logo} alt={name} className="h-9 w-auto max-w-[200px] object-contain sm:h-11" />
             ) : (
               <span className="shop-heading truncate text-xl font-bold">{name}</span>
             )}
-          </a>
+          </Link>
         </div>
       </header>
       <main className="flex-1">{children}</main>
@@ -46,9 +47,9 @@ export function ShopFrame({
                 {l.label}
               </a>
             ))}
-            <a {...a("/impressum")} className="hover:text-[var(--shop-text)]">{t.imprint}</a>
-            <a {...a("/agb")} className="hover:text-[var(--shop-text)]">{t.terms}</a>
-            <a {...a("/datenschutz")} className="hover:text-[var(--shop-text)]">{t.privacy}</a>
+            <Link {...a("/impressum")} className="hover:text-[var(--shop-text)]">{t.imprint}</Link>
+            <Link {...a("/agb")} className="hover:text-[var(--shop-text)]">{t.terms}</Link>
+            <Link {...a("/datenschutz")} className="hover:text-[var(--shop-text)]">{t.privacy}</Link>
           </nav>
           <div className="flex flex-col gap-1 sm:items-end">
             {contact?.email ? <a {...a(`mailto:${contact.email}`)} className="hover:text-[var(--shop-text)]">{contact.email}</a> : null}

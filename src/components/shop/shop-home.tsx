@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ShopTheme } from "@/lib/shop/theme";
 import { DealCard } from "./deal-card";
 import type { ShopTexts } from "./shop-texts";
@@ -54,13 +55,14 @@ export function ShopHome({
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         {usedCategories.length > 1 ? (
           <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 py-6 [scrollbar-width:none] sm:mx-0 sm:px-0" aria-label="Categories">
-            <a href={inert ? undefined : "/"} className="shop-chip" aria-current={!activeCategory ? "page" : undefined}>
+            {/* Client-side navigation: the shop frame stays, only the list changes (no flash). */}
+            <Chip href={inert ? undefined : "/"} active={!activeCategory}>
               {t.all}
-            </a>
+            </Chip>
             {usedCategories.map((c) => (
-              <a key={c.slug} href={inert ? undefined : `/k/${c.slug}`} className="shop-chip" aria-current={activeCategory === c.slug ? "page" : undefined}>
+              <Chip key={c.slug} href={inert ? undefined : `/k/${c.slug}`} active={activeCategory === c.slug}>
                 {c.name}
-              </a>
+              </Chip>
             ))}
           </nav>
         ) : (
@@ -92,5 +94,16 @@ export function ShopHome({
         ) : null}
       </div>
     </>
+  );
+}
+
+function Chip({ href, active, children }: { href?: string; active: boolean; children: React.ReactNode }) {
+  const props = { className: "shop-chip", "aria-current": active ? ("page" as const) : undefined };
+  return href ? (
+    <Link href={href} scroll={false} {...props}>
+      {children}
+    </Link>
+  ) : (
+    <span {...props}>{children}</span>
   );
 }

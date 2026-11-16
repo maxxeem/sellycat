@@ -134,11 +134,11 @@ await seedShop(pizzeria, {
       description: doc("Zwei Pizzas nach Wahl aus der ganzen Karte, frisch aus dem Holzofen.", "Einfach den Gutschein an der Kasse zeigen."), terms: "Nicht kumulierbar mit anderen Aktionen. Gilt nicht für Hauslieferung.",
       faq: [{ q: "Kann ich den Gutschein verschenken?", a: "Ja, beim Kauf kannst du einen Empfänger angeben." }], total_qty: 200, max_per_order: 4, max_per_buyer: 6, sales_end: days(21),
       redeem_validity: "days_after_purchase", redeem_days: 90, redeem_windows: [{ days: [1, 2, 3, 4, 5], from: "11:00", to: "14:00" }, { days: [1, 2, 3, 4, 5, 6, 7], from: "17:00", to: "22:00" }],
-      show_remaining: true, show_countdown: true, featured: true, code_format: "qr", images: [img("pizza-1"), img("pizza-2"), img("pizza-3")], locations: ["Pizzeria Demo Kreis 1", "Pizzeria Demo Oerlikon"] },
+      show_remaining: true, show_countdown: true, show_stock_bar: true, featured: true, code_format: "qr", images: [img("pizza-1"), img("pizza-2"), img("pizza-3")], locations: ["Pizzeria Demo Kreis 1", "Pizzeria Demo Oerlikon"] },
     { slug: "wertgutschein-50", title: "Wertgutschein CHF 50", subtitle: "Zahle 40, geniesse für 50", partner: "Pizzeria Demo", category: "gutscheine", state: "published", deal_type: "value", price_cents: 4000, value_cents: 5000, partial_redemption: true,
       description: doc("Ein Gutschein über CHF 50, einlösbar in mehreren Besuchen."), redeem_validity: "until_date", redeem_until: days(365).slice(0, 10), code_format: "numeric", images: [img("voucher-1")], locations: ["Pizzeria Demo Kreis 1"] },
     { slug: "pizzakurs", title: "Pizzakurs für 2 Personen", subtitle: "3 Stunden mit unserem Pizzaiolo", partner: "Pizzeria Demo", category: "kurse", state: "published", deal_type: "fixed", price_cents: 12900, compare_at_cents: 16000,
-      description: doc("Lerne Teig, Sauce und den perfekten Holzofen-Moment."), total_qty: 12, max_per_order: 1, show_remaining: true, sales_start: days(3), code_format: "barcode", barcode_type: "code128", images: [img("course-1")], locations: ["Pizzeria Demo Kreis 1"] },
+      description: doc("Lerne Teig, Sauce und den perfekten Holzofen-Moment."), total_qty: 12, max_per_order: 1, show_remaining: true, show_countdown: true, sales_start: days(3), code_format: "barcode", barcode_type: "code128", images: [img("course-1")], locations: ["Pizzeria Demo Kreis 1"] },
     { slug: "tiramisu", title: "Tiramisu zum Mitnehmen", partner: "Pizzeria Demo", state: "draft", deal_type: "fixed", price_cents: 690, code_format: "qr" },
   ],
 });
@@ -159,7 +159,7 @@ await seedShop(city, {
   ],
   deals: [
     { slug: "day-pass", title: "Adventure park day pass", subtitle: "All courses, all day", partner: "Aare Adventure Park", category: "leisure", state: "published", deal_type: "fixed", price_cents: 3900, compare_at_cents: 5900,
-      description: doc("Unlimited climbing on all eight courses."), total_qty: 500, sales_end: days(45), show_countdown: true, redeem_validity: "until_date", redeem_until: days(200).slice(0, 10),
+      description: doc("Unlimited climbing on all eight courses."), total_qty: 500, sales_end: days(45), show_countdown: true, show_stock_bar: true, redeem_validity: "until_date", redeem_until: days(200).slice(0, 10),
       code_format: "barcode", barcode_type: "ean13", images: [img("park-1"), img("park-2")], locations: ["Aare Adventure Park"] },
     { slug: "coffee-card", title: "10 coffees card", subtitle: "Pay 8, drink 10", partner: "Café Zytglogge", category: "food", state: "published", deal_type: "fixed", price_cents: 3600, compare_at_cents: 4500,
       description: doc("Ten coffees of your choice, any size."), redeem_validity: "days_after_purchase", redeem_days: 180, code_format: "qr", images: [img("coffee-1")], locations: ["Café Zytglogge"] },

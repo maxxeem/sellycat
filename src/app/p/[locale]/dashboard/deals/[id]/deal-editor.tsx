@@ -7,7 +7,9 @@ import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { uploadMedia } from "@/components/image-upload";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { DealCard } from "@/components/shop/deal-card";
+import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
 import { DealDetail } from "@/components/shop/deal-detail";
+import { ShopFrame } from "@/components/shop/shop-frame";
 import { SHOP_CSS, themeStyle } from "@/components/shop/shop-styles";
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Badge, Card, Field, Input, Notice, Select, buttonClass, inputClass } from "@/components/ui";
@@ -16,7 +18,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { BARCODE_TYPES, slugifyTitle, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { dealStatus, parseMoney } from "@/lib/shop/deal-status";
 import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
-import type { ShopTheme } from "@/lib/shop/theme";
+import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { deleteDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 
@@ -47,7 +49,8 @@ export function DealEditor(props: {
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<"card" | "detail">("card");
-  const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
+  const [device, setDevice] = useState<PreviewDevice>("mobile");
+  const fonts = useMemo(() => themeFontCss(props.theme), [props.theme]);
 
   const set = <K extends keyof DealForm>(key: K, value: DealForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const err = (key: keyof DealForm) => (errors[key] ? d.errors[errors[key]!] : undefined);
@@ -86,6 +89,7 @@ export function DealEditor(props: {
       redeem_windows: form.windows,
       show_remaining: form.showRemaining,
       show_countdown: form.showCountdown,
+      show_stock_bar: form.showStockBar && form.totalQty !== "",
       featured: form.featured,
       images: form.images.map((i) => ({ url: i.url, alt: i.alt || null })),
       partner: partner ? { name: partner.name, logo_url: partner.logo_url, website_url: partner.website_url } : null,
@@ -403,6 +407,7 @@ export function DealEditor(props: {
             <div className="flex flex-col gap-3">
               <Check label={d.showRemaining} checked={form.showRemaining} onChange={(v) => set("showRemaining", v)} />
               <Check label={d.showCountdown} checked={form.showCountdown} onChange={(v) => set("showCountdown", v)} />
+              <Check label={form.totalQty ? d.showStockBar : d.showStockBarNeedsQty} checked={form.showStockBar && form.totalQty !== ""} disabled={!form.totalQty} onChange={(v) => set("showStockBar", v)} />
               <Check label={d.featured} checked={form.featured} onChange={(v) => set("featured", v)} />
             </div>
           </Card>
@@ -423,24 +428,28 @@ export function DealEditor(props: {
               <IconToggle on={device === "desktop"} onClick={() => setDevice("desktop")} label={t.design.previewDesktop}><Monitor className="h-4 w-4" /></IconToggle>
             </div>
           </div>
-          <div className="overflow-hidden rounded-card border border-line">
-            <style>{SHOP_CSS}</style>
-            <div
-              className={`shop-root max-h-[75vh] overflow-y-auto p-4 ${device === "mobile" ? "mx-auto max-w-[390px]" : ""}`}
-              style={themeStyle(props.theme)}
-              data-card={props.theme.cardStyle}
-              data-button={props.theme.buttonStyle}
-            >
-              {preview === "card" ? (
-                <div className={device === "mobile" ? "" : "mx-auto max-w-sm"}>
-                  <DealCard deal={view} shop={props.shop} t={t.shop} variant="grid" />
-                </div>
-              ) : (
-                <div className={device === "mobile" ? "" : "min-w-[720px]"}>
-                  <DealDetail deal={view} shop={props.shop} t={t.shop} />
-                </div>
-              )}
-            </div>
+          <div className="overflow-hidden rounded-card border border-line bg-surface">
+            <PreviewFrame device={device} testId="deal-preview">
+              <style>{SHOP_CSS + fonts.faces}</style>
+              {fonts.links.map((href) => (
+                <link key={href} rel="stylesheet" href={href} />
+              ))}
+              <div className="shop-root min-h-dvh" style={themeStyle(props.theme)} data-card={props.theme.cardStyle} data-button={props.theme.buttonStyle} data-mode={props.theme.mode}>
+                <ShopFrame name={props.shop.name} theme={props.theme} t={t.shop} inert>
+                  {preview === "card" ? (
+                    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+                      <div className={props.theme.listLayout === "list" ? "flex flex-col gap-4" : "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"}>
+                        <DealCard deal={view} shop={props.shop} t={t.shop} variant={props.theme.listLayout === "list" ? "list" : "grid"} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+                      <DealDetail deal={view} shop={props.shop} t={t.shop} />
+                    </div>
+                  )}
+                </ShopFrame>
+              </div>
+            </PreviewFrame>
           </div>
         </div>
       </div>
@@ -457,10 +466,10 @@ function Choice({ checked, onSelect, title, hint }: { checked: boolean; onSelect
   );
 }
 
-function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Check({ label, checked, onChange, disabled = false }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
-    <label className="flex items-center gap-3 text-sm">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[var(--coral)]" />
+    <label className={`flex items-center gap-3 text-sm ${disabled ? "text-muted" : ""}`}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[var(--coral)]" />
       {label}
     </label>
   );

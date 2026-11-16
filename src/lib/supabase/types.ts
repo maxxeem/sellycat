@@ -206,6 +206,7 @@ export type Database = {
           sales_start: string | null
           show_countdown: boolean
           show_remaining: boolean
+          show_stock_bar: boolean
           slug: string
           sold_qty: number
           sort_order: number
@@ -245,6 +246,7 @@ export type Database = {
           sales_start?: string | null
           show_countdown?: boolean
           show_remaining?: boolean
+          show_stock_bar?: boolean
           slug: string
           sold_qty?: number
           sort_order?: number
@@ -284,6 +286,7 @@ export type Database = {
           sales_start?: string | null
           show_countdown?: boolean
           show_remaining?: boolean
+          show_stock_bar?: boolean
           slug?: string
           sold_qty?: number
           sort_order?: number

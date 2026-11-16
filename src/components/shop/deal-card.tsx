@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { dealStatus, formatMoney, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { Countdown } from "./countdown";
+import { StockBar } from "./stock-bar";
 import type { ShopTexts } from "./shop-texts";
 import type { DealView, ShopInfo } from "./types";
 
@@ -13,11 +15,12 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
   const left = remaining(deal);
   const savings = savingsPercent(deal.price_cents, deal.compare_at_cents);
   const cover = deal.images[0];
-  const Tag = href ? "a" : "div";
   const isHero = variant === "hero";
+  const countdown = deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
+  const stockBar = deal.show_stock_bar && deal.total_qty && (status === "live" || status === "sold_out");
   return (
-    <Tag
-      {...(href ? { href } : {})}
+    <CardRoot
+      href={href}
       className={`shop-card group flex overflow-hidden ${variant === "list" ? "flex-row" : "flex-col"} ${isHero ? "md:flex-row" : ""}`}
       data-status={status}
     >
@@ -33,6 +36,11 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
           {deal.deal_type === "value" ? <span className="shop-badge">{t.valueVoucher}</span> : null}
           {status === "sold_out" ? <span className="shop-badge shop-badge-dark">{t.soldOut}</span> : null}
         </div>
+        {countdown ? (
+          <div className="absolute bottom-3 left-3">
+            <Countdown until={countdown.until} mode={countdown.mode} t={t} variant="chip" />
+          </div>
+        ) : null}
       </div>
       <div className={`flex min-w-0 flex-1 flex-col gap-1.5 p-4 ${isHero ? "md:justify-center md:p-8" : ""}`}>
         {deal.partner ? <p className="truncate text-xs font-semibold uppercase tracking-wide text-[var(--shop-muted)]">{deal.partner.name}</p> : null}
@@ -46,14 +54,23 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
             </span>
           ) : null}
         </div>
+        {stockBar ? (
+          <div className="pt-1">
+            <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} slim />
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--shop-muted)]">
-          {status === "live" && deal.show_remaining && left !== null && left <= 50 ? <span className="text-xs font-semibold text-[var(--shop-warning)]">{fmt(t.onlyLeft, { count: left })}</span> : null}
-          {status === "live" && deal.show_countdown && deal.sales_end ? <Countdown until={deal.sales_end} t={t} compact /> : null}
+          {status === "live" && !stockBar && deal.show_remaining && left !== null && left <= 50 ? <span className="text-xs font-semibold text-[var(--shop-warning)]">{fmt(t.onlyLeft, { count: left })}</span> : null}
           {status === "scheduled" && deal.sales_start ? (
             <span className="text-xs font-semibold">{fmt(t.startsAt, { date: new Date(deal.sales_start).toLocaleDateString(shop.locale === "de" ? "de-CH" : "en-CH", { day: "numeric", month: "long", timeZone: "Europe/Zurich" }) })}</span>
           ) : null}
         </div>
       </div>
-    </Tag>
+    </CardRoot>
   );
+}
+
+/** Link when the card leads somewhere (shop), plain box in previews. */
+function CardRoot({ href, ...props }: { href?: string; className: string; "data-status": string; children: React.ReactNode }) {
+  return href ? <Link href={href} {...props} /> : <div {...props} />;
 }

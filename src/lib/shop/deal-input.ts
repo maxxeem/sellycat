@@ -38,6 +38,7 @@ export type DealForm = {
   codeSource: "generated" | "pool";
   showRemaining: boolean;
   showCountdown: boolean;
+  showStockBar: boolean;
   featured: boolean;
 };
 
@@ -112,6 +113,7 @@ export function dealRow(f: DealForm) {
     code_source: f.codeSource,
     show_remaining: f.showRemaining,
     show_countdown: f.showCountdown,
+    show_stock_bar: f.showStockBar && f.totalQty !== "",
     featured: f.featured,
   };
 }
@@ -126,7 +128,7 @@ type DealRowIn = {
   max_per_order: number | null; max_per_buyer: number | null; sales_start: string | null; sales_end: string | null;
   redeem_validity: "none" | "until_date" | "days_after_purchase"; redeem_until: string | null; redeem_days: number | null;
   redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool";
-  show_remaining: boolean; show_countdown: boolean; featured: boolean;
+  show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean;
 };
 
 /** Deal row → form state. */
@@ -161,6 +163,7 @@ export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: strin
     codeSource: d.code_source,
     showRemaining: d.show_remaining,
     showCountdown: d.show_countdown,
+    showStockBar: d.show_stock_bar ?? false,
     featured: d.featured,
   };
 }

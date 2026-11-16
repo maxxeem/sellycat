@@ -6,6 +6,7 @@ import { ColorPicker } from "@/components/color-picker";
 import { ImageUpload, uploadMedia } from "@/components/image-upload";
 import { ShopFrame } from "@/components/shop/shop-frame";
 import { ShopHome } from "@/components/shop/shop-home";
+import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
 import { SHOP_CSS, themeStyle } from "@/components/shop/shop-styles";
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Card, Field, Input, Notice, Select, buttonClass } from "@/components/ui";
@@ -25,7 +26,7 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
   const [theme, setTheme] = useState<ShopTheme>(props.initial);
   const [dirty, setDirty] = useState(props.hasUnpublished);
   const [openColor, setOpenColor] = useState<ColorKey | null>(null);
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [importUrl, setImportUrl] = useState("");
@@ -251,17 +252,17 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
             </div>
           </div>
           <div className="overflow-hidden rounded-card border border-line bg-surface">
-            {fonts.links.map((href) => (
-              <link key={href} rel="stylesheet" href={href} />
-            ))}
-            <style>{SHOP_CSS + fonts.faces}</style>
-            <div className={`mx-auto ${device === "mobile" ? "max-w-[390px] border-x border-line" : ""}`}>
-              <div className="shop-root max-h-[78vh] overflow-y-auto" style={themeStyle(theme)} data-card={theme.cardStyle} data-button={theme.buttonStyle} data-testid="theme-preview">
+            <PreviewFrame device={device} height="78vh" testId="theme-preview">
+              {fonts.links.map((href) => (
+                <link key={href} rel="stylesheet" href={href} />
+              ))}
+              <style>{SHOP_CSS + fonts.faces}</style>
+              <div className="shop-root min-h-dvh" style={themeStyle(theme)} data-card={theme.cardStyle} data-button={theme.buttonStyle} data-mode={theme.mode}>
                 <ShopFrame name={props.shop.name} theme={theme} t={t.shop} inert>
                   <ShopHome shop={props.shop} theme={theme} t={t.shop} deals={sampleDeals} categories={props.categories} inert />
                 </ShopFrame>
               </div>
-            </div>
+            </PreviewFrame>
           </div>
         </div>
       </div>
@@ -348,7 +349,7 @@ function sampleDealsFor(locale: "de" | "en"): DealView[] {
   const base = {
     subtitle: null, description: null, terms: null, faq: [], value_cents: null, state: "published" as const, sales_start: null, sales_end: null, total_qty: null,
     sold_qty: 0, reserved_qty: 0, max_per_order: null, redeem_validity: "none" as const, redeem_until: null, redeem_days: null, redeem_windows: [], show_remaining: false,
-    show_countdown: false, images: [], partner: null, category: null, locations: [],
+    show_countdown: false, show_stock_bar: false, images: [], partner: null, category: null, locations: [],
   };
   const items = locale === "de" ? ["2 Pizzas nach Wahl", "Wertgutschein CHF 50", "Tageseintritt Freizeitpark"] : ["Two pizzas of your choice", "Gift voucher CHF 50", "Theme park day pass"];
   return items.map((title, i) => ({

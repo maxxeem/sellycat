@@ -2,6 +2,7 @@ import { CalendarClock, Clock, ExternalLink, MapPin } from "lucide-react";
 import { describeWindows, dealStatus, formatMoney, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { Countdown } from "./countdown";
+import { StockBar } from "./stock-bar";
 import type { ShopTexts } from "./shop-texts";
 import type { DealView, ShopInfo } from "./types";
 
@@ -40,10 +41,14 @@ export function DealDetail({
         ? fmt(t.validDays, { days: deal.redeem_days })
         : null;
   const windows = describeWindows(deal.redeem_windows, shop.locale);
+  const countdown = deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
+  const stockBar = Boolean(deal.show_stock_bar && deal.total_qty && (status === "live" || status === "sold_out"));
 
   return (
-    <article className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-12">
-      <div className="min-w-0">
+    // Mobile: pictures, then title/price/buy, then the details. Desktop: buy box in a sticky
+    // second column next to pictures and details.
+    <article className="grid content-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-x-12">
+      <div className="min-w-0 lg:col-start-1 lg:row-start-1">
         <div className="overflow-hidden rounded-[var(--shop-radius)] bg-[var(--shop-surface)]">
           {cover ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -60,7 +65,51 @@ export function DealDetail({
             ))}
           </div>
         ) : null}
+      </div>
 
+      <aside className="lg:sticky lg:top-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <div className="shop-card flex flex-col gap-4 p-6">
+          {deal.partner ? <p className="text-xs font-semibold uppercase tracking-wide text-[var(--shop-muted)]">{deal.partner.name}</p> : null}
+          <h1 className="shop-heading text-2xl font-bold leading-tight md:text-3xl">{deal.title}</h1>
+          {deal.subtitle ? <p className="text-[var(--shop-muted)]">{deal.subtitle}</p> : null}
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-3xl font-bold">{formatMoney(deal.price_cents, shop.currency, shop.locale)}</span>
+            {deal.compare_at_cents ? <span className="text-lg text-[var(--shop-muted)] line-through">{formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}</span> : null}
+            {savings ? <span className="shop-badge shop-badge-primary">{fmt(t.save, { percent: savings })}</span> : null}
+          </div>
+          {deal.deal_type === "value" && deal.value_cents ? <p className="text-sm font-semibold">{fmt(t.worth, { value: formatMoney(deal.value_cents, shop.currency, shop.locale) })}</p> : null}
+
+          {countdown ? <Countdown until={countdown.until} mode={countdown.mode} t={t} variant="boxes" /> : null}
+          {stockBar ? <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} /> : null}
+
+          {status === "live" && buyHref !== null ? (
+            <a href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">
+              {t.buy}
+            </a>
+          ) : (
+            <span className="shop-btn w-full" aria-disabled="true">
+              {status === "sold_out" ? t.soldOut : status === "scheduled" || status === "live" ? t.comingSoon : t.ended}
+            </span>
+          )}
+
+          <div className="flex flex-col gap-2 text-sm">
+            {status === "live" && !stockBar && deal.show_remaining && left !== null ? <p className="font-semibold text-[var(--shop-warning)]">{fmt(t.onlyLeft, { count: left })}</p> : null}
+            {status === "scheduled" && deal.sales_start ? <p className="font-semibold">{fmt(t.startsAt, { date: dateText(deal.sales_start, shop.locale) })}</p> : null}
+            {validity ? (
+              <p className="flex items-center gap-2 text-[var(--shop-muted)]">
+                <CalendarClock className="h-4 w-4" aria-hidden /> {validity}
+              </p>
+            ) : null}
+            {windows.length ? (
+              <p className="flex items-start gap-2 text-[var(--shop-muted)]">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {t.redeemTimes}: {windows.join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </aside>
+
+      <div className="min-w-0 empty:hidden lg:col-start-1 lg:row-start-2 [&>section:first-child]:mt-0">
         {deal.descriptionHtml ? (
           <section className="mt-8">
             <h2 className="shop-heading mb-2 text-xl font-bold">{t.description}</h2>
@@ -116,46 +165,6 @@ export function DealDetail({
           </section>
         ) : null}
       </div>
-
-      <aside className="lg:sticky lg:top-6 lg:self-start">
-        <div className="shop-card flex flex-col gap-4 p-6">
-          {deal.partner ? <p className="text-xs font-semibold uppercase tracking-wide text-[var(--shop-muted)]">{deal.partner.name}</p> : null}
-          <h1 className="shop-heading text-2xl font-bold leading-tight md:text-3xl">{deal.title}</h1>
-          {deal.subtitle ? <p className="text-[var(--shop-muted)]">{deal.subtitle}</p> : null}
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-3xl font-bold">{formatMoney(deal.price_cents, shop.currency, shop.locale)}</span>
-            {deal.compare_at_cents ? <span className="text-lg text-[var(--shop-muted)] line-through">{formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}</span> : null}
-            {savings ? <span className="shop-badge shop-badge-primary">{fmt(t.save, { percent: savings })}</span> : null}
-          </div>
-          {deal.deal_type === "value" && deal.value_cents ? <p className="text-sm font-semibold">{fmt(t.worth, { value: formatMoney(deal.value_cents, shop.currency, shop.locale) })}</p> : null}
-
-          {status === "live" && buyHref !== null ? (
-            <a href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">
-              {t.buy}
-            </a>
-          ) : (
-            <span className="shop-btn w-full" aria-disabled="true">
-              {status === "sold_out" ? t.soldOut : status === "scheduled" || status === "live" ? t.comingSoon : t.ended}
-            </span>
-          )}
-
-          <div className="flex flex-col gap-2 text-sm">
-            {status === "live" && deal.show_remaining && left !== null ? <p className="font-semibold text-[var(--shop-warning)]">{fmt(t.onlyLeft, { count: left })}</p> : null}
-            {status === "live" && deal.show_countdown && deal.sales_end ? <Countdown until={deal.sales_end} t={t} /> : null}
-            {status === "scheduled" && deal.sales_start ? <p className="font-semibold">{fmt(t.startsAt, { date: dateText(deal.sales_start, shop.locale) })}</p> : null}
-            {validity ? (
-              <p className="flex items-center gap-2 text-[var(--shop-muted)]">
-                <CalendarClock className="h-4 w-4" aria-hidden /> {validity}
-              </p>
-            ) : null}
-            {windows.length ? (
-              <p className="flex items-start gap-2 text-[var(--shop-muted)]">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {t.redeemTimes}: {windows.join(" · ")}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </aside>
     </article>
   );
 }

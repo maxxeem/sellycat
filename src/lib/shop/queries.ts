@@ -50,7 +50,7 @@ export async function getShopProfile(tenantId: string): Promise<ShopProfile | nu
 }
 
 const DEAL_SELECT =
-  "id, slug, title, subtitle, description, terms, faq, deal_type, price_cents, compare_at_cents, value_cents, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, max_per_order, redeem_validity, redeem_until, redeem_days, redeem_windows, show_remaining, show_countdown, featured, sort_order, published_at, deal_images(url, alt, width, height, sort_order), partners(name, logo_url, website_url), categories(name, slug), deal_locations(partner_locations(id, name, street, zip, city, lat, lng, opening_hours))";
+  "id, slug, title, subtitle, description, terms, faq, deal_type, price_cents, compare_at_cents, value_cents, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, max_per_order, redeem_validity, redeem_until, redeem_days, redeem_windows, show_remaining, show_countdown, show_stock_bar, featured, sort_order, published_at, deal_images(url, alt, width, height, sort_order), partners(name, logo_url, website_url), categories(name, slug), deal_locations(partner_locations(id, name, street, zip, city, lat, lng, opening_hours))";
 
 type DealRow = Record<string, unknown> & {
   deal_images: Array<{ url: string; alt: string | null; width: number | null; height: number | null; sort_order: number }> | null;
@@ -87,6 +87,7 @@ function toView(row: DealRow, withHtml: boolean): DealView {
     redeem_windows: Array.isArray(row.redeem_windows) ? (row.redeem_windows as RedeemWindow[]) : [],
     show_remaining: r.show_remaining,
     show_countdown: r.show_countdown,
+    show_stock_bar: r.show_stock_bar,
     featured: r.featured,
     images: [...(row.deal_images ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(({ url, alt, width, height }) => ({ url, alt, width, height })),
     partner: row.partners,

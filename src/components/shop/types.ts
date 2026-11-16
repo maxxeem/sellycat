@@ -28,6 +28,7 @@ export type DealView = {
   redeem_windows: RedeemWindow[];
   show_remaining: boolean;
   show_countdown: boolean;
+  show_stock_bar: boolean;
   featured: boolean;
   images: Array<{ url: string; alt: string | null; width?: number | null; height?: number | null }>;
   partner: { name: string; logo_url: string | null; website_url: string | null } | null;
