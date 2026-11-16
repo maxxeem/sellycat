@@ -234,4 +234,6 @@ Preise: Stand meines Wissens, ungefähr – vor Abschluss jeweils auf der Anbiet
 
 Erledigt (lokal, Build grün): eigenes Repo, Next.js 16 mit Cache Components, Brand-Tokens/Inter/Favicons, Proxy mit Tenant- und Sprachauflösung, Migration `core` (Tenants, Rollen, Domains, Pläne, Staff, Signup-Schalter, Audit, RLS, Definer-Funktionen), Login/Signup (pausiert)/Passwort vergessen/Einladungs-Links, Dashboard-Gerüst, Staff-Admin (Kunden, Kunde anlegen, Status/Plan/Gebühr, Signup-Schalter, Audit-Log, TOTP), Platzhalter-Startseite und -Shop, Staging-Passwortschutz, Health-Route, CI- und Migrations-Workflow, Seed-Skript, Cross-Tenant-Tests.
 
-Offen (braucht externe Accounts): Supabase-Projekte anlegen und Migration ausrollen, RLS-Tests gegen Staging laufen lassen, GitHub-Repo, Vercel-Projekt + Env-Variablen, DNS bei GoDaddy, Seed auf Staging, Impersonation (kommt mit Phase 7, Audit ist vorbereitet).
+Infrastruktur (16.11.2026): Supabase `sellycat-staging` (Frankfurt) mit Migration, Auth-Einstellungen und Seed; GitHub `maxxeem/sellycat` mit CI und Migrations-Workflow (grün); Vercel-Projekt `sellycat` (Production-Branch `release`, `main` = Staging, Region fra1); DNS bei GoDaddy für `staging` und `*.staging`; staging.sellycat.com mit Passwortschutz online.
+
+Offen für später: Production (Supabase-Projekt, Vercel-Production-Variablen, DNS für `sellycat.com` und `*`) vor dem ersten echten Kunden; Impersonation mit Phase 7.
