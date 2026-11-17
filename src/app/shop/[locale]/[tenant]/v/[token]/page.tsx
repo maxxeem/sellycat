@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
@@ -53,9 +54,12 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
               valueCents: v.value_cents,
               remainingCents: v.remaining_cents,
               partner: v.partner_name,
-              link: checkUrl(shop.primaryHost ?? "", token),
+              link: checkUrl(shop.primaryHost ?? (await headers()).get("host") ?? "", token),
             }}
           />
+          <a href={`/v/${token}/pdf`} target="_blank" rel="noopener" className="shop-btn w-full" data-testid="voucher-pdf">
+            {t.downloadPdf}
+          </a>
           {v.deal_slug ? (
             <Link href={`/d/${v.deal_slug}`} className="text-center text-sm font-semibold underline underline-offset-2">
               {t.toDeal}

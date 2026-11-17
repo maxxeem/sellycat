@@ -1,7 +1,9 @@
 import "server-only";
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deliverOrder } from "@/lib/mail/deliver";
 import { accountState } from "./map";
 import { getStripe } from "./stripe";
 
@@ -26,6 +28,8 @@ export async function completeSession(session: Pick<Stripe.Checkout.Session, "id
   if (!orderId) return null;
   const { data: order } = await admin.from("orders").select("tenant_id").eq("id", orderId).maybeSingle();
   if (refresh) refreshShopCache(order?.tenant_id);
+  // Voucher mail with PDF (and the gift mail when due) after the response; claimed, so never twice.
+  after(() => deliverOrder(orderId).catch((e) => console.error(`[mail] order ${orderId}:`, e instanceof Error ? e.message : e)));
   return order?.tenant_id ?? null;
 }
 

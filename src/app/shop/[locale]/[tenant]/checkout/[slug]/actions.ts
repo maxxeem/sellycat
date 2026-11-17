@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { requestOrigin } from "@/lib/auth/session";
-import { RESERVATION_MINUTES, SESSION_MINUTES, checkoutError, checkoutInput, stripeBranding, type CheckoutError } from "@/lib/payments/map";
+import { RESERVATION_MINUTES, SESSION_MINUTES, checkoutError, checkoutInput, giftFields, stripeBranding, type CheckoutError } from "@/lib/payments/map";
 import { getStripe, publishableKey, stripeConfigured } from "@/lib/payments/stripe";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { getShopProfile } from "@/lib/shop/queries";
@@ -28,6 +28,8 @@ export async function startCheckout(tenantId: string, slug: string, raw: unknown
   const parsed = checkoutInput.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues.some((i) => i.path[0] === "email") ? "email" : "quantity" };
   const input = parsed.data;
+  const gift = giftFields(input.gift, new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" }));
+  if (gift === "invalid") return { ok: false, error: "gift" };
   if (!stripeConfigured()) return { ok: false, error: "payments" };
 
   // The form must be posted from this shop's own host; the return URL is built from it.
@@ -55,6 +57,13 @@ export async function startCheckout(tenantId: string, slug: string, raw: unknown
   });
   const order = rows?.[0];
   if (error || !order) return { ok: false, error: checkoutError(error?.message) };
+  if (gift) {
+    const { error: giftError } = await admin.from("orders").update(gift).eq("id", order.order_id);
+    if (giftError) {
+      await admin.rpc("release_order", { p_order: order.order_id });
+      return { ok: false, error: "failed" };
+    }
+  }
 
   try {
     const origin = await requestOrigin();

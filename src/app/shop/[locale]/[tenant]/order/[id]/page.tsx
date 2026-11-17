@@ -39,7 +39,7 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
   const shop = await getShopProfile(tenant);
   if (!shop) notFound();
   const admin = createAdminClient();
-  const load = () => admin.from("orders").select("id, number, status, email, currency, amount_cents, stripe_session_id, stripe_account_id, order_items(title, qty, total_cents)").eq("id", id).eq("tenant_id", tenant).maybeSingle();
+  const load = () => admin.from("orders").select("id, number, status, email, currency, amount_cents, stripe_session_id, stripe_account_id, gift, gift_email, gift_send_on, gift_sent_at, order_items(title, qty, total_cents)").eq("id", id).eq("tenant_id", tenant).maybeSingle();
   let { data: order } = await load();
   if (!order || order.stripe_session_id !== sessionId) notFound();
 
@@ -70,6 +70,17 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
           {paid ? t.thanks : order.status === "pending" ? t.processing : order.status === "refunded" ? t.orderRefunded : t.orderExpired}
         </h1>
         {paid ? <p>{fmt(t.vouchersByMail, { email: order.email })}</p> : null}
+        {paid && order.gift && order.gift_email ? (
+          <p className="rounded-[var(--shop-radius)] bg-[var(--shop-surface)] p-3 text-sm" data-testid="gift-note">
+            🎁{" "}
+            {order.gift_sent_at || !order.gift_send_on
+              ? fmt(t.giftSentTo, { email: order.gift_email })
+              : fmt(t.giftScheduled, {
+                  email: order.gift_email,
+                  date: new Date(`${order.gift_send_on}T12:00:00Z`).toLocaleDateString(shop.locale === "de" ? "de-CH" : "en-CH", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Zurich" }),
+                })}
+          </p>
+        ) : null}
         <ul className="flex flex-col gap-2 border-t border-[var(--shop-line)] pt-4">
           {order.order_items.map((i, n) => (
             <li key={n} className="flex justify-between gap-4">
@@ -90,7 +101,12 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
       </div>
       {vouchers?.length ? (
         <section className="mt-8 flex flex-col gap-4">
-          <h2 className="shop-heading text-xl font-bold">{t.yourVouchers}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="shop-heading text-xl font-bold">{t.yourVouchers}</h2>
+            <a href={`/order/${order.id}/pdf?session_id=${encodeURIComponent(sessionId)}`} target="_blank" rel="noopener" className="inline-flex min-h-10 items-center rounded-[var(--shop-radius-button)] border border-[var(--shop-line)] px-4 text-sm font-semibold hover:border-[var(--shop-primary)]" data-testid="order-pdf">
+              {t.downloadPdf}
+            </a>
+          </div>
           {vouchers.map((v) => (
             <VoucherCard
               key={v.id}

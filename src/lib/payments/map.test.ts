@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountState, authorizeUrl, checkoutError, checkoutInput, cleanSecret, connectStatus, maxQuantity, refundable, signState, stripeBranding, stripeDashboardUrl, verifyState } from "./map";
+import { accountState, authorizeUrl, checkoutError, checkoutInput, cleanSecret, giftFields, connectStatus, maxQuantity, refundable, signState, stripeBranding, stripeDashboardUrl, verifyState } from "./map";
 
 describe("payments map", () => {
   it("cleans pasted secrets", () => {
@@ -75,3 +75,20 @@ describe("stripeBranding", () => {
     expect(stripeBranding({ ...theme, fonts: { body: { source: "upload", family: "Brand Sans" } } }).font_family).toBe("default");
   });
 });
+
+describe("giftFields", () => {
+  const g = { name: " Anna ", email: "anna@example.ch", from: "", message: "Alles Gute\r\n", sendOn: "" };
+  it("no gift", () => expect(giftFields(null, "2026-11-20")).toBeNull());
+  it("sends right away without a date or today", () => {
+    expect(giftFields(g, "2026-11-20")).toEqual({ gift: true, gift_name: "Anna", gift_email: "anna@example.ch", gift_from: null, gift_message: "Alles Gute", gift_send_on: null });
+    expect(giftFields({ ...g, sendOn: "2026-11-20" }, "2026-11-20")).toMatchObject({ gift_send_on: null });
+  });
+  it("schedules within a year", () => {
+    expect(giftFields({ ...g, sendOn: "2026-12-24" }, "2026-11-20")).toMatchObject({ gift_send_on: "2026-12-24" });
+    expect(giftFields({ ...g, sendOn: "2026-11-19" }, "2026-11-20")).toBe("invalid");
+    expect(giftFields({ ...g, sendOn: "2028-01-01" }, "2026-11-20")).toBe("invalid");
+    expect(giftFields({ ...g, sendOn: "24.12.2026" }, "2026-11-20")).toBe("invalid");
+  });
+  it("needs a valid recipient email", () => expect(giftFields({ ...g, email: "anna" }, "2026-11-20")).toBe("invalid"));
+});
+

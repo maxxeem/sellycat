@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      buyer_links: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          tenant_id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          tenant_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          tenant_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_links_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyers: {
         Row: {
           created_at: string
@@ -401,6 +436,107 @@ export type Database = {
           },
         ]
       }
+      mail_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          error: string | null
+          last_checked_at: string | null
+          local_part: string
+          records: Json
+          status: string
+          tenant_id: string
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          error?: string | null
+          last_checked_at?: string | null
+          local_part?: string
+          records?: Json
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          error?: string | null
+          last_checked_at?: string | null
+          local_part?: string
+          records?: Json
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_domains_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_log: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          order_id: string | null
+          provider_id: string | null
+          recipient: string
+          sender: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          order_id?: string | null
+          provider_id?: string | null
+          recipient: string
+          sender?: string | null
+          status: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          order_id?: string | null
+          provider_id?: string | null
+          recipient?: string
+          sender?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_log_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           deal_id: string | null
@@ -464,8 +600,16 @@ export type Database = {
           currency: string
           email: string
           fee_cents: number
+          gift: boolean
+          gift_email: string | null
+          gift_from: string | null
+          gift_message: string | null
+          gift_name: string | null
+          gift_send_on: string | null
+          gift_sent_at: string | null
           id: string
           locale: string
+          mail_sent_at: string | null
           name: string | null
           newsletter: boolean
           number: string
@@ -487,8 +631,16 @@ export type Database = {
           currency: string
           email: string
           fee_cents?: number
+          gift?: boolean
+          gift_email?: string | null
+          gift_from?: string | null
+          gift_message?: string | null
+          gift_name?: string | null
+          gift_send_on?: string | null
+          gift_sent_at?: string | null
           id?: string
           locale?: string
+          mail_sent_at?: string | null
           name?: string | null
           newsletter?: boolean
           number: string
@@ -510,8 +662,16 @@ export type Database = {
           currency?: string
           email?: string
           fee_cents?: number
+          gift?: boolean
+          gift_email?: string | null
+          gift_from?: string | null
+          gift_message?: string | null
+          gift_name?: string | null
+          gift_send_on?: string | null
+          gift_sent_at?: string | null
           id?: string
           locale?: string
+          mail_sent_at?: string | null
           name?: string | null
           newsletter?: boolean
           number?: string
@@ -1408,6 +1568,10 @@ export type Database = {
           p_format: Database["public"]["Enums"]["code_format"]
         }
         Returns: string
+      }
+      plan_allows: {
+        Args: { p_feature: string; p_tenant: string }
+        Returns: boolean
       }
       random_digits: { Args: { n: number }; Returns: string }
       record_refund: {

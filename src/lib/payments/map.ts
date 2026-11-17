@@ -121,10 +121,39 @@ export const checkoutInput = z.object({
   name: z.string().trim().max(120).optional().default(""),
   newsletter: z.coerce.boolean().optional().default(false),
   terms: z.literal(true),
+  gift: z
+    .object({
+      name: z.string().trim().max(120).optional().default(""),
+      email: z.string().trim().toLowerCase().max(200).optional().default(""),
+      from: z.string().trim().max(120).optional().default(""),
+      message: z.string().trim().max(500).optional().default(""),
+      sendOn: z.string().trim().optional().default(""),
+    })
+    .nullish(),
 });
 export type CheckoutInput = z.infer<typeof checkoutInput>;
 
-export const CHECKOUT_ERRORS = ["quantity", "email", "unavailable", "not_started", "ended", "max_per_order", "max_per_buyer", "sold_out", "not_enough", "payments", "rate", "failed"] as const;
+export type GiftFields = { gift: true; gift_name: string | null; gift_email: string; gift_from: string | null; gift_message: string | null; gift_send_on: string | null };
+
+/**
+ * The gift part of a checkout → order columns, or "invalid". The send day is a Zurich date from
+ * today up to a year ahead; today (or empty) means right after payment.
+ */
+export function giftFields(gift: CheckoutInput["gift"], today: string): GiftFields | null | "invalid" {
+  if (!gift) return null;
+  if (!z.string().email().safeParse(gift.email).success) return "invalid";
+  let sendOn: string | null = null;
+  if (gift.sendOn) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(gift.sendOn) || Number.isNaN(Date.parse(`${gift.sendOn}T00:00:00Z`))) return "invalid";
+    const max = new Date(Date.parse(`${today}T00:00:00Z`) + 366 * 86_400_000).toISOString().slice(0, 10);
+    if (gift.sendOn < today || gift.sendOn > max) return "invalid";
+    sendOn = gift.sendOn === today ? null : gift.sendOn;
+  }
+  const opt = (s: string) => s.replace(/\r\n?/g, "\n").trim() || null;
+  return { gift: true, gift_name: opt(gift.name), gift_email: gift.email, gift_from: opt(gift.from), gift_message: opt(gift.message), gift_send_on: sendOn };
+}
+
+export const CHECKOUT_ERRORS = ["quantity", "email", "unavailable", "not_started", "ended", "max_per_order", "max_per_buyer", "sold_out", "not_enough", "payments", "gift", "rate", "failed"] as const;
 export type CheckoutError = (typeof CHECKOUT_ERRORS)[number];
 
 /** `checkout:<reason>` raised by start_checkout() → a known reason (anything else: failed). */

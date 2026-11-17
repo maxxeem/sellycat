@@ -10,6 +10,9 @@ import { startCheckout, type StartResult } from "./actions";
 
 type Props = { tenantId: string; slug: string; unitCents: number; currency: string; locale: "de" | "en"; maxQty: number; shopName: string; t: ShopTexts };
 
+/** A Zurich day (YYYY-MM-DD), `plus` days from now. */
+const today = (plus = 0) => new Date(Date.now() + plus * 86_400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" });
+
 /** loadStripe once per connected account (direct charges run on the shop's own Stripe account). */
 const stripes = new Map<string, Promise<Stripe | null>>();
 function stripeFor(publishableKey: string, account: string) {
@@ -24,6 +27,8 @@ function stripeFor(publishableKey: string, account: string) {
  */
 export function CheckoutForm({ tenantId, slug, unitCents, currency, locale, maxQty, shopName, t }: Props) {
   const [qty, setQty] = useState(1);
+  const [gift, setGift] = useState(false);
+  const [later, setLater] = useState(false);
   const [session, setSession] = useState<Extract<StartResult, { ok: true }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -38,6 +43,15 @@ export function CheckoutForm({ tenantId, slug, unitCents, currency, locale, maxQ
         name: String(form.get("name") ?? ""),
         newsletter: form.get("newsletter") === "on",
         terms: form.get("terms") === "on",
+        gift: gift
+          ? {
+              name: String(form.get("giftName") ?? ""),
+              email: String(form.get("giftEmail") ?? ""),
+              from: String(form.get("giftFrom") ?? ""),
+              message: String(form.get("giftMessage") ?? ""),
+              sendOn: later ? String(form.get("giftSendOn") ?? "") : "",
+            }
+          : null,
       });
       if (res.ok) setSession(res);
       else setError(t.checkoutErrors[res.error]);
@@ -90,6 +104,54 @@ export function CheckoutForm({ tenantId, slug, unitCents, currency, locale, maxQ
         <span className="font-semibold">{t.name}</span>
         <input type="text" name="name" autoComplete="name" maxLength={120} className={field} />
       </label>
+      <div className="rounded-[var(--shop-radius)] border border-[var(--shop-line)] p-4">
+        <label className="flex items-start gap-3">
+          <input type="checkbox" checked={gift} onChange={(e) => setGift(e.target.checked)} className="mt-1 h-4 w-4 accent-[var(--shop-primary)]" data-testid="gift-toggle" />
+          <span>
+            <span className="font-semibold">🎁 {t.giftToggle}</span>
+            <span className="block text-xs text-[var(--shop-muted)]">{t.giftHint}</span>
+          </span>
+        </label>
+        {gift ? (
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-semibold">{t.giftName}</span>
+                <input type="text" name="giftName" maxLength={120} autoComplete="off" className={field} />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-semibold">{t.giftEmail}</span>
+                <input type="email" name="giftEmail" required maxLength={200} autoComplete="off" className={field} data-testid="gift-email" />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-semibold">{t.giftFrom}</span>
+              <input type="text" name="giftFrom" maxLength={120} autoComplete="name" className={field} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-semibold">{t.giftMessage}</span>
+              <textarea name="giftMessage" maxLength={500} rows={3} className={`${field} resize-y`} />
+            </label>
+            <fieldset className="flex flex-col gap-2 text-sm">
+              <legend className="mb-1.5 font-semibold">{t.giftWhen}</legend>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="giftWhen" checked={!later} onChange={() => setLater(false)} className="h-4 w-4 accent-[var(--shop-primary)]" />
+                {t.giftNow}
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="giftWhen" checked={later} onChange={() => setLater(true)} className="h-4 w-4 accent-[var(--shop-primary)]" />
+                {t.giftLater}
+              </label>
+              {later ? (
+                <>
+                  <input type="date" name="giftSendOn" required min={today()} max={today(365)} className={`${field} sm:w-56`} />
+                  <span className="text-xs text-[var(--shop-muted)]">{t.giftDateHint}</span>
+                </>
+              ) : null}
+            </fieldset>
+          </div>
+        ) : null}
+      </div>
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="newsletter" className="mt-1 h-4 w-4 accent-[var(--shop-primary)]" />
         <span>{fmt(t.newsletter, { shop: shopName })}</span>

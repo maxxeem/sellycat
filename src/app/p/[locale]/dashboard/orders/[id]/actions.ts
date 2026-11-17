@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
+import { deliverGift, deliverOrder } from "@/lib/mail/deliver";
 import { refundable } from "@/lib/payments/map";
 import { getStripe, stripeConfigured } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -34,4 +35,14 @@ export async function refundOrder(orderId: string, _: RefundState, form: FormDat
   refreshShop(tenant.id);
   revalidatePath("/p/[locale]/dashboard/orders", "layout");
   return { ok: true };
+}
+
+/** Send the voucher mail again, or the gift mail now (editor and up). */
+export async function resendMail(orderId: string, kind: "order" | "gift"): Promise<{ ok: boolean }> {
+  const { tenant } = await requireTenant("editor");
+  const { data: order } = await createAdminClient().from("orders").select("id, status, gift").eq("id", orderId).eq("tenant_id", tenant.id).maybeSingle();
+  if (!order || !["paid", "partially_refunded"].includes(order.status) || (kind === "gift" && !order.gift)) return { ok: false };
+  const ok = kind === "gift" ? await deliverGift(order.id, { force: true }) : (await deliverOrder(order.id, { force: true })).order;
+  revalidatePath("/p/[locale]/dashboard/orders", "layout");
+  return { ok };
 }

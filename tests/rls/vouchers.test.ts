@@ -118,7 +118,8 @@ describe.skipIf(!rlsEnabled)("RLS vouchers", () => {
   it("respects redemption windows and roles", async () => {
     const [w] = await buy("window", 1);
     expect((await a.client.rpc("redeem_voucher", { p_voucher: w.id })).data).toMatchObject({ ok: false, error: "outside_window" });
-    const [, , third] = (await db.from("vouchers").select("id, code").eq("order_id", orders.fixed).order("created_at")).data!;
+    // Vouchers of one order share created_at: pick one that is still unused.
+    const [third] = (await db.from("vouchers").select("id, code").eq("order_id", orders.fixed).eq("status", "valid").order("code")).data!;
     expect((await redeemer.client.rpc("find_voucher", { p_tenant: a.tenantId, p_code: third.code.toLowerCase().replace(/-/g, " ") })).data).toBe(third.id);
     expect((await redeemer.client.rpc("redeem_voucher", { p_voucher: third.id })).data).toMatchObject({ ok: true });
   });

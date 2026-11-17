@@ -54,6 +54,7 @@ export function ShopFrame({
                 {l.label}
               </a>
             ))}
+            <Link {...a("/my")} className="hover:text-[var(--shop-text)]">{t.myVouchers}</Link>
             <Link {...a("/impressum")} className="hover:text-[var(--shop-text)]">{t.imprint}</Link>
             <Link {...a("/agb")} className="hover:text-[var(--shop-text)]">{t.terms}</Link>
             <Link {...a("/datenschutz")} className="hover:text-[var(--shop-text)]">{t.privacy}</Link>
