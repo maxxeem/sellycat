@@ -42,6 +42,7 @@ Stack: Next.js 16 App Router (Cache Components, `proxy.ts`), TypeScript strict, 
 - **Einlöse-App (Phase 4)**: `/redeem` auf der Shop-Domain (`shop/[locale]/[tenant]/redeem`), Aktionen ermitteln den Shop immer aus dem Host, nie aus Browser-Daten; Rechte über `can_use_redeem`/`can_redeem`. Anmeldung per Code: `src/lib/vouchers/redeem-login.ts`. Gemeinsame Einlöse-Logik (Dashboard + App): `src/lib/vouchers/redeem.ts`, Scan-Erkennung `scan.ts`.
 - **Code-Pools**: `deals.pool_free` zählt freie Codes (Trigger), zählt bei `code_source = 'pool'` als Bestand (`remaining()`, `start_checkout`).
 - **PDF-Vorlagen**: `src/lib/vouchers/design.ts` (Layout classic/ticket/minimal, A4/A6), Tabelle `voucher_designs` (eine pro Shop), `pdf.tsx` rendert alle Varianten (Test `pdf.test.ts`, mit `PDF_OUT=<ordner>` lokal ansehen).
+- **Eigene Domains (Phase 6)**: `src/lib/site/custom-domain.ts` (rein, getestet: Eingabe, DNS-Einträge, Anbieter), `src/lib/site/shop-domains.ts` (Vercel, Status, Hauptadresse), Vercel-Aufrufe in `src/lib/vercel/domains.ts`. Zeilen in `tenant_domains` schreibt nur der Server. Der Proxy leitet auf `redirect_host` (aktive eigene Hauptdomain) um.
 - **Supabase-Clients**: `lib/supabase/server.ts` (Cookies, RLS), `client.ts` (Browser), `proxy.ts` (Session-Refresh), `admin.ts` (Service-Role + öffentlicher Client).
 
 ## Next.js 16
