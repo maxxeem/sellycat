@@ -85,8 +85,8 @@ export function Badge({ tone = "neutral", children }: { tone?: BadgeTone; childr
   return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE_TONES[tone]}`}>{children}</span>;
 }
 
-export function Notice({ tone = "info", children }: { tone?: "info" | "error" | "success"; children: ReactNode }) {
-  const tones = { info: "border-line bg-surface text-ink", error: "border-danger/40 bg-danger/10 text-danger", success: "border-success/40 bg-success/10 text-success" };
+export function Notice({ tone = "info", children }: { tone?: "info" | "error" | "success" | "warning"; children: ReactNode }) {
+  const tones = { info: "border-line bg-surface text-ink", error: "border-danger/40 bg-danger/10 text-danger", success: "border-success/40 bg-success/10 text-success", warning: "border-warn/40 bg-warn/10 text-warn" };
   return (
     <p role={tone === "error" ? "alert" : "status"} className={`rounded-input border px-3 py-2 text-sm ${tones[tone]}`}>
       {children}

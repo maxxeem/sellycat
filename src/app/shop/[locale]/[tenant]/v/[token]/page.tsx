@@ -8,6 +8,9 @@ import { VoucherCard } from "@/components/shop/voucher-card";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createPublicClient } from "@/lib/supabase/admin";
 import { checkUrl } from "@/lib/vouchers/symbol";
+import { getSessionUser } from "@/lib/auth/session";
+import { getDictionary } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/server";
 
 export function generateStaticParams() {
   return [{ token: "placeholder" }];
@@ -32,6 +35,8 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
   const { data } = /^[A-Za-z0-9_-]{20,64}$/.test(token) ? await createPublicClient().rpc("voucher_public", { p_token: token }) : { data: null };
   const v = data?.[0];
   const found = v && v.tenant_id === tenant;
+  // The shop's team (signed in on this host) gets a redeem button right here.
+  const canRedeem = found && (await getSessionUser()) ? (await (await createClient()).rpc("can_use_redeem", { p_tenant: tenant })).data === true : false;
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
@@ -57,6 +62,11 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
               link: checkUrl(shop.primaryHost ?? (await headers()).get("host") ?? "", token),
             }}
           />
+          {canRedeem && v.status === "valid" ? (
+            <Link href={`/redeem?t=${token}`} className="shop-btn min-h-[3.5rem] w-full text-lg" data-testid="voucher-redeem">
+              {getDictionary(shop.locale).redeem.checkButton}
+            </Link>
+          ) : null}
           <a href={`/v/${token}/pdf`} target="_blank" rel="noopener" className="shop-btn w-full" data-testid="voucher-pdf">
             {t.downloadPdf}
           </a>

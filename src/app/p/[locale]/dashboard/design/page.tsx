@@ -3,15 +3,21 @@ import { Skeleton } from "@/components/ui";
 import { requireTenant } from "@/lib/dashboard/context";
 import { getShopDeals, listedDeals } from "@/lib/shop/queries";
 import { parseTheme } from "@/lib/shop/theme";
+import { fromParams } from "@/lib/i18n/params";
+import { DesignTabs } from "./design-tabs";
 import { ThemeEditor } from "./theme-editor";
 
 export const metadata = { title: "Design" };
 
-export default function DesignPage() {
+export default async function DesignPage({ params }: PageProps<"/p/[locale]/dashboard/design">) {
+  const { t } = await fromParams(params);
   return (
-    <Suspense fallback={<Skeleton className="h-[80vh]" />}>
-      <Design />
-    </Suspense>
+    <div className="flex flex-col gap-4">
+      <DesignTabs active="shop" t={t.voucherDesign} />
+      <Suspense fallback={<Skeleton className="h-[80vh]" />}>
+        <Design />
+      </Suspense>
+    </div>
   );
 }
 

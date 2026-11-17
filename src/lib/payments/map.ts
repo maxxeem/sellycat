@@ -4,6 +4,7 @@
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { remaining } from "@/lib/shop/deal-status";
 
 /**
  * A key as it should reach Stripe. A paste into a hosting dashboard easily adds a newline, a
@@ -171,8 +172,8 @@ export const SESSION_MINUTES = 31;
 export const RESERVATION_MINUTES = 35;
 
 /** The largest quantity the form offers: per-order limit, stock left, hard cap. */
-export function maxQuantity(deal: { max_per_order: number | null; total_qty: number | null; sold_qty: number; reserved_qty: number }, cap = 20): number {
-  const left = deal.total_qty === null ? Infinity : Math.max(0, deal.total_qty - deal.sold_qty - deal.reserved_qty);
+export function maxQuantity(deal: { max_per_order: number | null } & Parameters<typeof remaining>[0], cap = 20): number {
+  const left = remaining(deal) ?? Infinity;
   return Math.max(0, Math.min(cap, deal.max_per_order ?? cap, left));
 }
 

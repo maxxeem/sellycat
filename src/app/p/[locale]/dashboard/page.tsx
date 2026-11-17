@@ -47,7 +47,7 @@ async function Home({ t, locale }: { t: Dictionary; locale: string }) {
   const [{ data: theme }, { data: legal }, { data: deals }, { data: profile }, { data: paid }, { data: recent }] = await Promise.all([
     supabase.from("shop_themes").select("published_at, published, draft").eq("tenant_id", tenant.id).maybeSingle(),
     supabase.rpc("shop_legal_complete", { p_tenant: tenant.id }),
-    supabase.from("deals").select("state, sales_start, sales_end, total_qty, sold_qty, reserved_qty").eq("tenant_id", tenant.id).eq("state", "published"),
+    supabase.from("deals").select("state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free").eq("tenant_id", tenant.id).eq("state", "published"),
     supabase.rpc("shop_profile", { p_tenant: tenant.id }),
     supabase.from("orders").select("paid_at, amount_cents, refunded_cents, order_items(title, qty, deal_id)").eq("tenant_id", tenant.id).gte("paid_at", since).limit(5000),
     supabase.from("orders").select("id, number, status, email, currency, amount_cents, created_at").eq("tenant_id", tenant.id).neq("status", "expired").order("created_at", { ascending: false }).limit(5),

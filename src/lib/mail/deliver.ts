@@ -26,7 +26,7 @@ export function shopBase(shop: Pick<ShopProfile, "primaryHost" | "slug">): strin
   return `${shop.primaryHost.startsWith("localhost") || shop.primaryHost.includes(".localhost") ? "http" : "https"}://${shop.primaryHost}`;
 }
 
-function brandOf(shop: ShopProfile): MailBrand {
+export function brandOf(shop: ShopProfile): MailBrand {
   return { shopName: shop.name, locale: shop.locale, primary: shop.theme.colors.primary, logoUrl: lightLogo(shop), shopUrl: shopBase(shop) };
 }
 

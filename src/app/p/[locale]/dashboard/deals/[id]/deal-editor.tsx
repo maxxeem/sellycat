@@ -23,6 +23,7 @@ import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 import { deleteDeal, saveDeal, setDealState, type SaveResult } from "../actions";
+import { PoolPanel } from "./pool-panel";
 import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
 
 type Partner = { id: string; name: string; logo_url: string | null; website_url: string | null; partner_locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null }> };
@@ -34,7 +35,7 @@ export function DealEditor(props: {
   tenantId: string;
   initial: DealForm;
   state: "draft" | "published" | "ended";
-  stock: { sold_qty: number; reserved_qty: number };
+  stock: { sold_qty: number; reserved_qty: number; pool_free: number; pool_used: number };
   partners: Partner[];
   categories: Array<{ id: string; name: string; slug: string }>;
   shop: ShopInfo;
@@ -88,6 +89,8 @@ export function DealEditor(props: {
       total_qty: form.totalQty ? Number(form.totalQty) : null,
       sold_qty: props.stock.sold_qty,
       reserved_qty: props.stock.reserved_qty,
+      code_source: form.codeSource,
+      pool_free: props.stock.pool_free,
       max_per_order: form.maxPerOrder ? Number(form.maxPerOrder) : null,
       redeem_validity: form.redeemValidity,
       redeem_until: form.redeemUntil || null,
@@ -423,6 +426,7 @@ export function DealEditor(props: {
                 <Choice checked={form.codeSource === "generated"} onSelect={() => set("codeSource", "generated")} title={d.sourceGenerated} />
                 <Choice checked={form.codeSource === "pool"} onSelect={() => set("codeSource", "pool")} title={d.sourcePool} />
               </div>
+              {form.codeSource === "pool" ? <PoolPanel dealId={props.id} free={props.stock.pool_free} used={props.stock.pool_used} saved={props.initial.codeSource === "pool"} /> : null}
             </div>
           </Card>
 

@@ -279,6 +279,7 @@ export type Database = {
           max_per_order: number | null
           partial_redemption: boolean
           partner_id: string | null
+          pool_free: number
           price_cents: number
           published_at: string | null
           redeem_days: number | null
@@ -319,6 +320,7 @@ export type Database = {
           max_per_order?: number | null
           partial_redemption?: boolean
           partner_id?: string | null
+          pool_free?: number
           price_cents: number
           published_at?: string | null
           redeem_days?: number | null
@@ -359,6 +361,7 @@ export type Database = {
           max_per_order?: number | null
           partial_redemption?: boolean
           partner_id?: string | null
+          pool_free?: number
           price_cents?: number
           published_at?: string | null
           redeem_days?: number | null
@@ -989,6 +992,47 @@ export type Database = {
         }
         Relationships: []
       }
+      redeem_logins: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          tenant_id: string
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          tenant_id: string
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          tenant_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redeem_logins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       redemptions: {
         Row: {
           amount_cents: number | null
@@ -1404,6 +1448,50 @@ export type Database = {
           },
         ]
       }
+      voucher_designs: {
+        Row: {
+          accent: string | null
+          layout: string
+          note: string | null
+          show_image: boolean
+          show_locations: boolean
+          show_terms: boolean
+          size: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accent?: string | null
+          layout?: string
+          note?: string | null
+          show_image?: boolean
+          show_locations?: boolean
+          show_terms?: boolean
+          size?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accent?: string | null
+          layout?: string
+          note?: string | null
+          show_image?: boolean
+          show_locations?: boolean
+          show_terms?: boolean
+          size?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_designs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vouchers: {
         Row: {
           barcode_type: Database["public"]["Enums"]["barcode_type"] | null
@@ -1519,6 +1607,8 @@ export type Database = {
         Returns: boolean
       }
       can_see_orders: { Args: { p_tenant: string }; Returns: boolean }
+      can_use_redeem: { Args: { p_tenant: string }; Returns: boolean }
+      clear_pool_codes: { Args: { p_deal: string }; Returns: Json }
       create_tenant: {
         Args: {
           p_locale?: string
@@ -1532,6 +1622,10 @@ export type Database = {
         Args: { p_code: string; p_tenant: string }
         Returns: string
       }
+      find_voucher_by_token: {
+        Args: { p_tenant: string; p_token: string }
+        Returns: string
+      }
       fulfil_order: {
         Args: { p_payment_intent: string; p_session: string }
         Returns: string
@@ -1543,6 +1637,10 @@ export type Database = {
           p_tenant: string
         }
         Returns: boolean
+      }
+      import_pool_codes: {
+        Args: { p_codes: string[]; p_deal: string }
+        Returns: Json
       }
       in_redeem_window: {
         Args: { p_at: string; p_windows: Json }
@@ -1576,6 +1674,10 @@ export type Database = {
       random_digits: { Args: { n: number }; Returns: string }
       record_refund: {
         Args: { p_payment_intent: string; p_refunded: number }
+        Returns: string
+      }
+      redeem_user_id: {
+        Args: { p_email: string; p_tenant: string }
         Returns: string
       }
       redeem_voucher: {

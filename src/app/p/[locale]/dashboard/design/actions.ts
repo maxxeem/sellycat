@@ -5,6 +5,7 @@ import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { importBranding, type ImportResult } from "@/lib/design/brand-import";
 import { themeSchema, type ShopTheme } from "@/lib/shop/theme";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { designToRow, parseDesign, type VoucherDesign } from "@/lib/vouchers/design";
 
 export async function saveTheme(theme: ShopTheme, publish: boolean): Promise<{ ok: boolean; error?: string }> {
   const { tenant, supabase } = await requireTenant("editor");
@@ -30,4 +31,13 @@ export async function importFromWebsite(url: string): Promise<ImportResult> {
   } catch {
     return { ok: false, reason: "unreachable" };
   }
+}
+
+/** Voucher PDF design of the shop (editor and up). */
+export async function saveVoucherDesign(input: VoucherDesign): Promise<{ ok: boolean }> {
+  const { tenant, supabase } = await requireTenant("editor");
+  const design = parseDesign(input);
+  const { error } = await supabase.from("voucher_designs").upsert({ tenant_id: tenant.id, ...designToRow(design) }, { onConflict: "tenant_id" });
+  revalidatePath("/p/[locale]/dashboard/design/voucher", "page");
+  return { ok: !error };
 }

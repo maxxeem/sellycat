@@ -13,12 +13,17 @@ export type DealStock = {
   total_qty: number | null;
   sold_qty: number;
   reserved_qty: number;
+  /** Pool deals sell at most as many units as there are free codes (auto-stop). */
+  code_source?: "generated" | "pool";
+  pool_free?: number;
 };
 
 /** Units still for sale (null = unlimited). */
-export function remaining(d: Pick<DealStock, "total_qty" | "sold_qty" | "reserved_qty">): number | null {
-  if (d.total_qty === null) return null;
-  return Math.max(0, d.total_qty - d.sold_qty - d.reserved_qty);
+export function remaining(d: Pick<DealStock, "total_qty" | "sold_qty" | "reserved_qty" | "code_source" | "pool_free">): number | null {
+  const byQty = d.total_qty === null ? null : Math.max(0, d.total_qty - d.sold_qty - d.reserved_qty);
+  if (d.code_source !== "pool") return byQty;
+  const byPool = Math.max(0, (d.pool_free ?? 0) - d.reserved_qty);
+  return byQty === null ? byPool : Math.min(byQty, byPool);
 }
 
 export function dealStatus(d: DealStock, now: Date = new Date()): DealStatus {

@@ -1,6 +1,7 @@
 import "server-only";
 import { getShopProfile, type ShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { designFromRow, type VoucherDesign } from "./design";
 import type { PdfInput, PdfVoucher } from "./pdf";
 import { checkUrl, type BarcodeType, type CodeFormat } from "./symbol";
 
@@ -12,7 +13,7 @@ const SELECT =
   "id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, order_id, partners(name), deals(subtitle, terms, deal_images(url, sort_order), deal_locations(partner_locations(name, street, zip, city))), orders(number, currency, gift, gift_from, gift_message)";
 
 export type LoadedVoucher = PdfVoucher & { id: string; token: string; orderId: string };
-export type VoucherBundle = { shop: ShopProfile; host: string; vouchers: LoadedVoucher[]; order: { number: string; gift: { from: string | null; message: string | null } | null } | null };
+export type VoucherBundle = { shop: ShopProfile; host: string; design: VoucherDesign; vouchers: LoadedVoucher[]; order: { number: string; gift: { from: string | null; message: string | null } | null } | null };
 
 type Row = {
   id: string;
@@ -43,7 +44,7 @@ export async function loadVouchers(tenantId: string, by: { orderId: string } | {
   if ("orderId" in by) query = query.eq("order_id", by.orderId);
   else if ("token" in by) query = query.eq("token", by.token);
   else query = query.in("order_id", by.orderIds.length ? by.orderIds : ["00000000-0000-0000-0000-000000000000"]);
-  const { data } = await query;
+  const [{ data }, design] = await Promise.all([query, loadDesign(tenantId)]);
   const rows = (data ?? []) as unknown as Row[];
   if (!rows.length) return null;
   const host = shop.primaryHost ?? fallbackHost;
@@ -51,6 +52,7 @@ export async function loadVouchers(tenantId: string, by: { orderId: string } | {
   return {
     shop,
     host,
+    design,
     order: "orderId" in by && first ? { number: first.number, gift: first.gift ? { from: first.gift_from, message: first.gift_message } : null } : null,
     vouchers: rows.map((r) => ({
       id: r.id,
@@ -75,6 +77,12 @@ export async function loadVouchers(tenantId: string, by: { orderId: string } | {
   };
 }
 
+/** The shop's voucher design (defaults when none is saved). */
+export async function loadDesign(tenantId: string): Promise<VoucherDesign> {
+  const { data } = await createAdminClient().from("voucher_designs").select("layout, size, accent, show_image, show_locations, show_terms, note").eq("tenant_id", tenantId).maybeSingle();
+  return designFromRow(data);
+}
+
 /** Logo for a white page or mail: the one made for light backgrounds first. */
 export const lightLogo = (shop: ShopProfile) => shop.theme.logoLight || shop.theme.logoDark || null;
 
@@ -88,6 +96,7 @@ export function pdfInput(b: VoucherBundle, gift: PdfInput["gift"] = b.order?.gif
     orderNumber: b.order?.number ?? null,
     gift,
     vouchers: b.vouchers,
+    design: b.design,
   };
 }
 

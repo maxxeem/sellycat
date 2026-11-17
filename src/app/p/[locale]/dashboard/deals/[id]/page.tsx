@@ -24,7 +24,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
   const id = await idPromise;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { tenant, supabase } = await requireTenant("editor");
-  const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }] = await Promise.all([
+  const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }, { count: poolUsed }] = await Promise.all([
     supabase.from("deals").select("*, deal_images(url, alt, sort_order), deal_locations(location_id)").eq("id", id).eq("tenant_id", tenant.id).maybeSingle(),
     supabase.from("partners").select("id, name, logo_url, website_url, partner_locations(id, name, street, zip, city, lat, lng, opening_hours)").eq("tenant_id", tenant.id).order("name"),
     supabase.from("categories").select("id, name, slug").eq("tenant_id", tenant.id).order("sort_order"),
@@ -33,6 +33,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
     supabase.rpc("shop_legal_complete", { p_tenant: tenant.id }),
     // Conditions and FAQ of the shop's other deals, newest first, to reuse as a starting point.
     supabase.from("deals").select("title, terms, faq").eq("tenant_id", tenant.id).neq("id", id).order("updated_at", { ascending: false }).limit(200),
+    supabase.from("code_pool").select("id", { count: "exact", head: true }).eq("deal_id", id).not("voucher_id", "is", null),
   ]);
   if (!deal) notFound();
   const images = [...(deal.deal_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
@@ -43,7 +44,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
       tenantId={tenant.id}
       initial={form}
       state={deal.state}
-      stock={{ sold_qty: deal.sold_qty, reserved_qty: deal.reserved_qty }}
+      stock={{ sold_qty: deal.sold_qty, reserved_qty: deal.reserved_qty, pool_free: deal.pool_free, pool_used: poolUsed ?? 0 }}
       partners={partners ?? []}
       categories={categories ?? []}
       shop={{ name: info?.name ?? "", currency: info?.currency ?? "CHF", locale: info?.locale === "en" ? "en" : "de" }}

@@ -34,7 +34,9 @@ export async function proxy(request: NextRequest) {
   if (route.type === "pass") return NextResponse.next({ request: { headers: forwardHeaders(request) } });
   if (route.type === "not_found") return rewrite(request, NOT_FOUND_PATH);
 
-  // Shops are public: no session work, so they stay fast and cacheable.
+  // Shops are public: no session work, so they stay fast and cacheable. Only the redemption
+  // app and the check page (which shows a redeem button to the shop's team) need the session.
+  if (route.area === "shop" && shopNeedsSession(pathname)) return (await readSession(request)).apply(rewrite(request, route.path));
   if (route.area === "shop" || route.area === "public") return rewrite(request, route.path);
 
   const session = await readSession(request);
@@ -53,6 +55,10 @@ export async function proxy(request: NextRequest) {
     return session.apply(NextResponse.redirect(new URL(safeNext(next), request.url)));
   }
   return session.apply(rewrite(request, route.path));
+}
+
+function shopNeedsSession(pathname: string) {
+  return pathname === "/redeem" || pathname.startsWith("/redeem/") || /^\/v\/[^/]+$/.test(pathname);
 }
 
 function isPassThroughPath(pathname: string) {

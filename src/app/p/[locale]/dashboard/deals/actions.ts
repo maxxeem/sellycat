@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { dealRow, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { EMPTY_DOC } from "@/lib/shop/rich-text";
+import { POOL_MAX_CODE, POOL_MAX_IMPORT } from "@/lib/vouchers/pool";
 
 export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "error" };
 
@@ -62,4 +63,30 @@ export async function deleteDeal(id: string) {
   await supabase.from("deals").delete().eq("id", id).eq("tenant_id", tenant.id).eq("state", "draft");
   refreshShop(tenant.id);
   redirect("/dashboard/deals");
+}
+
+export type PoolResult = { ok: true; added?: number; skipped?: number; removed?: number } | { ok: false; error: "tooMany" | "failed" };
+
+/** Adds codes to the deal's pool (the database skips blanks, duplicates and codes in use). */
+export async function importPoolCodes(dealId: string, codes: string[]): Promise<PoolResult> {
+  const { tenant, supabase } = await requireTenant("editor");
+  if (codes.length > POOL_MAX_IMPORT) return { ok: false, error: "tooMany" };
+  const clean = codes.map((c) => String(c).trim()).filter((c) => c && c.length <= POOL_MAX_CODE);
+  const { data, error } = await supabase.rpc("import_pool_codes", { p_deal: dealId, p_codes: clean });
+  const r = data as { ok: boolean; added?: number; skipped?: number; error?: string } | null;
+  if (error || !r?.ok) return { ok: false, error: r?.error === "too_many" ? "tooMany" : "failed" };
+  refreshShop(tenant.id);
+  revalidatePath("/p/[locale]/dashboard/deals", "layout");
+  return { ok: true, added: r.added ?? 0, skipped: (r.skipped ?? 0) + (codes.length - clean.length) };
+}
+
+/** Deletes the codes that were not handed out yet. */
+export async function clearPoolCodes(dealId: string): Promise<PoolResult> {
+  const { tenant, supabase } = await requireTenant("editor");
+  const { data, error } = await supabase.rpc("clear_pool_codes", { p_deal: dealId });
+  const r = data as { ok: boolean; removed?: number } | null;
+  if (error || !r?.ok) return { ok: false, error: "failed" };
+  refreshShop(tenant.id);
+  revalidatePath("/p/[locale]/dashboard/deals", "layout");
+  return { ok: true, removed: r.removed ?? 0 };
 }

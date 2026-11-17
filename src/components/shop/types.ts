@@ -21,6 +21,8 @@ export type DealView = {
   total_qty: number | null;
   sold_qty: number;
   reserved_qty: number;
+  code_source?: "generated" | "pool";
+  pool_free?: number;
   max_per_order: number | null;
   redeem_validity: "none" | "until_date" | "days_after_purchase";
   redeem_until: string | null;
