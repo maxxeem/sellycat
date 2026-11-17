@@ -87,6 +87,55 @@ export type Database = {
           },
         ]
       }
+      code_pool: {
+        Row: {
+          code: string
+          created_at: string
+          deal_id: string
+          id: string
+          tenant_id: string
+          voucher_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deal_id: string
+          id?: string
+          tenant_id: string
+          voucher_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+          tenant_id?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "code_pool_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "code_pool_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "code_pool_voucher_fk"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_images: {
         Row: {
           alt: string | null
@@ -780,6 +829,80 @@ export type Database = {
         }
         Relationships: []
       }
+      redemptions: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          id: string
+          location_id: string | null
+          note: string | null
+          partner_id: string | null
+          source: Database["public"]["Enums"]["redemption_source"]
+          tenant_id: string
+          undone_at: string | null
+          undone_by: string | null
+          user_id: string | null
+          voucher_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          note?: string | null
+          partner_id?: string | null
+          source?: Database["public"]["Enums"]["redemption_source"]
+          tenant_id: string
+          undone_at?: string | null
+          undone_by?: string | null
+          user_id?: string | null
+          voucher_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          note?: string | null
+          partner_id?: string | null
+          source?: Database["public"]["Enums"]["redemption_source"]
+          tenant_id?: string
+          undone_at?: string | null
+          undone_by?: string | null
+          user_id?: string | null
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "partner_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemptions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           created_at: string
@@ -1121,6 +1244,105 @@ export type Database = {
           },
         ]
       }
+      vouchers: {
+        Row: {
+          barcode_type: Database["public"]["Enums"]["barcode_type"] | null
+          code: string
+          code_format: Database["public"]["Enums"]["code_format"]
+          created_at: string
+          deal_id: string | null
+          id: string
+          order_id: string
+          order_item_id: string | null
+          partial: boolean
+          partner_id: string | null
+          redeemed_at: string | null
+          remaining_cents: number | null
+          status: Database["public"]["Enums"]["voucher_status"]
+          tenant_id: string
+          title: string
+          token: string
+          valid_until: string | null
+          value_cents: number | null
+        }
+        Insert: {
+          barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
+          code: string
+          code_format: Database["public"]["Enums"]["code_format"]
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          order_id: string
+          order_item_id?: string | null
+          partial?: boolean
+          partner_id?: string | null
+          redeemed_at?: string | null
+          remaining_cents?: number | null
+          status?: Database["public"]["Enums"]["voucher_status"]
+          tenant_id: string
+          title: string
+          token: string
+          valid_until?: string | null
+          value_cents?: number | null
+        }
+        Update: {
+          barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
+          code?: string
+          code_format?: Database["public"]["Enums"]["code_format"]
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          order_id?: string
+          order_item_id?: string | null
+          partial?: boolean
+          partner_id?: string | null
+          redeemed_at?: string | null
+          remaining_cents?: number | null
+          status?: Database["public"]["Enums"]["voucher_status"]
+          tenant_id?: string
+          title?: string
+          token?: string
+          valid_until?: string | null
+          value_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1132,6 +1354,10 @@ export type Database = {
       }
       can_edit: { Args: { p_tenant: string }; Returns: boolean }
       can_manage: { Args: { p_tenant: string }; Returns: boolean }
+      can_redeem: {
+        Args: { p_partner: string; p_tenant: string }
+        Returns: boolean
+      }
       can_see_orders: { Args: { p_tenant: string }; Returns: boolean }
       create_tenant: {
         Args: {
@@ -1142,10 +1368,15 @@ export type Database = {
         }
         Returns: string
       }
+      find_voucher: {
+        Args: { p_code: string; p_tenant: string }
+        Returns: string
+      }
       fulfil_order: {
         Args: { p_payment_intent: string; p_session: string }
         Returns: string
       }
+      gs1_check: { Args: { p_digits: string }; Returns: string }
       has_tenant_role: {
         Args: {
           p_roles: Database["public"]["Enums"]["member_role"][]
@@ -1153,9 +1384,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      in_redeem_window: {
+        Args: { p_at: string; p_windows: Json }
+        Returns: boolean
+      }
       is_staff: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       is_tenant_member: { Args: { p_tenant: string }; Returns: boolean }
+      issue_vouchers: { Args: { p_order: string }; Returns: number }
       my_tenants: {
         Args: never
         Returns: {
@@ -1166,9 +1402,27 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      new_voucher_code: {
+        Args: {
+          p_barcode: Database["public"]["Enums"]["barcode_type"]
+          p_format: Database["public"]["Enums"]["code_format"]
+        }
+        Returns: string
+      }
+      random_digits: { Args: { n: number }; Returns: string }
       record_refund: {
         Args: { p_payment_intent: string; p_refunded: number }
         Returns: string
+      }
+      redeem_voucher: {
+        Args: {
+          p_amount?: number
+          p_location?: string
+          p_note?: string
+          p_source?: Database["public"]["Enums"]["redemption_source"]
+          p_voucher: string
+        }
+        Returns: Json
       }
       release_expired: { Args: { p_deal?: string }; Returns: number }
       release_order: { Args: { p_order: string }; Returns: boolean }
@@ -1226,6 +1480,33 @@ export type Database = {
         Args: { p_tenant: string }
         Returns: Database["public"]["Enums"]["member_role"]
       }
+      undo_redemption: { Args: { p_redemption: string }; Returns: Json }
+      void_voucher: { Args: { p_voucher: string }; Returns: Json }
+      voucher_code_text: { Args: { p_groups?: number }; Returns: string }
+      voucher_public: {
+        Args: { p_token: string }
+        Returns: {
+          barcode_type: Database["public"]["Enums"]["barcode_type"]
+          code: string
+          code_format: Database["public"]["Enums"]["code_format"]
+          currency: string
+          deal_slug: string
+          partner_name: string
+          remaining_cents: number
+          status: Database["public"]["Enums"]["voucher_status"]
+          tenant_id: string
+          title: string
+          valid_until: string
+          value_cents: number
+        }[]
+      }
+      voucher_valid_until: {
+        Args: {
+          d: Database["public"]["Tables"]["deals"]["Row"]
+          p_from: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       barcode_type:
@@ -1253,9 +1534,11 @@ export type Database = {
         | "expired"
       platform_role: "superadmin" | "support"
       redeem_validity: "none" | "until_date" | "days_after_purchase"
+      redemption_source: "dashboard" | "pwa" | "api"
       reservation_status: "active" | "converted" | "released"
       signup_mode: "open" | "paused"
       tenant_status: "trial" | "active" | "suspended" | "closed"
+      voucher_status: "valid" | "redeemed" | "expired" | "refunded" | "void"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1410,9 +1693,11 @@ export const Constants = {
       ],
       platform_role: ["superadmin", "support"],
       redeem_validity: ["none", "until_date", "days_after_purchase"],
+      redemption_source: ["dashboard", "pwa", "api"],
       reservation_status: ["active", "converted", "released"],
       signup_mode: ["open", "paused"],
       tenant_status: ["trial", "active", "suspended", "closed"],
+      voucher_status: ["valid", "redeemed", "expired", "refunded", "void"],
     },
   },
 } as const

@@ -43,10 +43,10 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Shop card in the shop's own colour, with its address and the main actions. */}
+      {/* Shop card with a Sellycat-orange glow, the shop's address and the main actions. */}
       <section
         className="relative overflow-hidden rounded-card border border-line bg-surface-2 shadow-card"
-        style={{ backgroundImage: `radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, ${brand} 22%, transparent), transparent 60%)` }}
+        style={{ backgroundImage: "radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%)" }}
       >
         <div className="flex flex-col gap-5 p-5 sm:p-7 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
