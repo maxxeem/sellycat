@@ -304,6 +304,7 @@ export type Database = {
           total_qty: number | null
           updated_at: string
           value_cents: number | null
+          view_count: number
         }
         Insert: {
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
@@ -346,6 +347,7 @@ export type Database = {
           total_qty?: number | null
           updated_at?: string
           value_cents?: number | null
+          view_count?: number
         }
         Update: {
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
@@ -388,6 +390,7 @@ export type Database = {
           total_qty?: number | null
           updated_at?: string
           value_cents?: number | null
+          view_count?: number
         }
         Relationships: [
           {
@@ -1914,6 +1917,7 @@ export type Database = {
         Args: { p_tenant: string }
         Returns: Database["public"]["Enums"]["member_role"]
       }
+      track_deal_view: { Args: { p_deal: string }; Returns: undefined }
       undo_redemption: { Args: { p_redemption: string }; Returns: Json }
       void_voucher: { Args: { p_voucher: string }; Returns: Json }
       voucher_code_text: { Args: { p_groups?: number }; Returns: string }

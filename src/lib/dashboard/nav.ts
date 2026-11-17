@@ -8,6 +8,7 @@ export const DASHBOARD_SECTIONS = [
   { key: "vouchers", phase: 4 },
   { key: "redemptions", phase: 4 },
   { key: "design", phase: 2 },
+  { key: "arrangement", phase: 2 },
   { key: "payments", phase: 3 },
   { key: "domains", phase: 6 },
   { key: "analytics", phase: 7 },
@@ -23,4 +24,4 @@ export type SectionKey = (typeof DASHBOARD_SECTIONS)[number]["key"];
 export const isSection = (v: string): v is SectionKey => DASHBOARD_SECTIONS.some((s) => s.key === v);
 
 /** Sections that already have their own page (the placeholder route skips them). */
-export const BUILT_SECTIONS = new Set<SectionKey>(["deals", "partners", "orders", "vouchers", "redemptions", "design", "payments", "domains", "settings"]);
+export const BUILT_SECTIONS = new Set<SectionKey>(["deals", "partners", "orders", "vouchers", "redemptions", "design", "arrangement", "payments", "domains", "settings"]);

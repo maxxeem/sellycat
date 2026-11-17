@@ -7,6 +7,7 @@ import { DealDetail } from "@/components/shop/deal-detail";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { routeUrl, staticMapUrl } from "@/lib/geo/geocode";
 import { dealStatus, isTeaser, remaining } from "@/lib/shop/deal-status";
+import { TrackView } from "./track-view";
 import { getShopDeal, getShopProfile } from "@/lib/shop/queries";
 
 export function generateStaticParams() {
@@ -75,6 +76,7 @@ async function CachedDeal({ tenantId, slug }: { tenantId: string; slug: string }
       <Link href="/" className="mb-4 inline-block text-sm text-[var(--shop-muted)] hover:text-[var(--shop-text)]">
         ← {t.backToShop}
       </Link>
+      <TrackView dealId={deal.id} />
       <DealDetail
         deal={deal}
         shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }}
