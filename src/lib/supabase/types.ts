@@ -297,6 +297,7 @@ export type Database = {
           sort_order: number
           state: Database["public"]["Enums"]["deal_state"]
           subtitle: string | null
+          teaser: boolean
           tenant_id: string
           terms: string | null
           title: string
@@ -338,6 +339,7 @@ export type Database = {
           sort_order?: number
           state?: Database["public"]["Enums"]["deal_state"]
           subtitle?: string | null
+          teaser?: boolean
           tenant_id: string
           terms?: string | null
           title: string
@@ -379,6 +381,7 @@ export type Database = {
           sort_order?: number
           state?: Database["public"]["Enums"]["deal_state"]
           subtitle?: string | null
+          teaser?: boolean
           tenant_id?: string
           terms?: string | null
           title?: string
@@ -711,6 +714,8 @@ export type Database = {
           city: string | null
           country: string
           created_at: string
+          google_place_id: string | null
+          hours: Json | null
           id: string
           lat: number | null
           lng: number | null
@@ -726,6 +731,8 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          google_place_id?: string | null
+          hours?: Json | null
           id?: string
           lat?: number | null
           lng?: number | null
@@ -741,6 +748,8 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          google_place_id?: string | null
+          hours?: Json | null
           id?: string
           lat?: number | null
           lng?: number | null

@@ -5,7 +5,7 @@ const form: DealForm = {
   title: "2 Pizzas", subtitle: "", slug: "2-pizzas", description: null, terms: "", faq: [], partnerId: "", categoryId: "", locationIds: [], images: [],
   dealType: "fixed", price: "20", compareAt: "40", value: "", partial: false, totalQty: "100", maxPerOrder: "4", maxPerBuyer: "", salesStart: "2026-12-01T09:00",
   salesEnd: "2026-12-31T23:59", redeemValidity: "days_after_purchase", redeemUntil: "", redeemDays: "90", windows: [{ days: [1, 2, 3, 4, 5], from: "11:00", to: "14:00" }],
-  codeFormat: "qr", barcodeType: "", codeSource: "generated", showRemaining: true, showCountdown: true, showStockBar: false, featured: false,
+  codeFormat: "qr", barcodeType: "", codeSource: "generated", showRemaining: true, showCountdown: true, showStockBar: false, featured: false, teaser: false,
 };
 
 describe("deal form", () => {
@@ -30,4 +30,12 @@ describe("deal form", () => {
     expect(back.salesStart).toBe("2026-12-01T09:00");
   });
   it("makes slugs from titles", () => expect(slugifyTitle("2 Pizzas für CHF 20!")).toBe("2-pizzas-fuer-chf-20"));
+});
+
+describe("teaser in the form", () => {
+  it("needs a sales start", () => {
+    expect(validateDeal({ ...form, teaser: true, salesStart: "" }).salesStart).toBe("teaserStart");
+    expect(validateDeal({ ...form, teaser: true, salesStart: "2026-12-01T09:00" }).salesStart).toBeUndefined();
+    expect(dealRow({ ...form, teaser: true, salesStart: "2026-12-01T09:00" }).teaser).toBe(true);
+  });
 });

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { CalendarClock, Clock, ExternalLink, MapPin } from "lucide-react";
-import { describeWindows, dealStatus, formatMoney, remaining, savingsPercent } from "@/lib/shop/deal-status";
+import { describeWindows, dealStatus, formatMoney, isTeaser, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { Countdown } from "./countdown";
+import { formatHours, parseHours } from "@/lib/shop/hours";
 import { DealGallery } from "./deal-gallery";
 import { StockBar } from "./stock-bar";
 import type { ShopTexts } from "./shop-texts";
@@ -34,7 +35,8 @@ export function DealDetail({
 }) {
   const status = dealStatus(deal, now);
   const left = remaining(deal);
-  const savings = savingsPercent(deal.price_cents, deal.compare_at_cents);
+  const teaser = isTeaser(deal, now);
+  const savings = teaser ? null : savingsPercent(deal.price_cents, deal.compare_at_cents);
   const validity =
     deal.redeem_validity === "until_date" && deal.redeem_until
       ? fmt(t.validUntil, { date: dateText(deal.redeem_until, shop.locale) })
@@ -42,7 +44,7 @@ export function DealDetail({
         ? fmt(t.validDays, { days: deal.redeem_days })
         : null;
   const windows = describeWindows(deal.redeem_windows, shop.locale);
-  const countdown = deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
+  const countdown = teaser && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
   const stockBar = Boolean(deal.show_stock_bar && deal.total_qty && (status === "live" || status === "sold_out"));
 
   return (
@@ -58,15 +60,22 @@ export function DealDetail({
           {deal.partner ? <p className="text-xs font-semibold uppercase tracking-wide text-[var(--shop-muted)]">{deal.partner.name}</p> : null}
           <h1 className="shop-heading text-2xl font-bold leading-tight md:text-3xl">{deal.title}</h1>
           {deal.subtitle ? <p className="text-[var(--shop-muted)]">{deal.subtitle}</p> : null}
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-3xl font-bold">{formatMoney(deal.price_cents, shop.currency, shop.locale)}</span>
-            {deal.compare_at_cents ? <span className="text-lg text-[var(--shop-muted)] line-through">{formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}</span> : null}
-            {savings ? <span className="shop-badge shop-badge-primary">{fmt(t.save, { percent: savings })}</span> : null}
-          </div>
-          {deal.deal_type === "value" && deal.value_cents ? <p className="text-sm font-semibold">{fmt(t.worth, { value: formatMoney(deal.value_cents, shop.currency, shop.locale) })}</p> : null}
+          {teaser ? (
+            <p className="flex flex-wrap items-center gap-2" data-testid="teaser-price">
+              <span className="shop-badge shop-badge-primary">{t.teaserLabel}</span>
+              <span className="font-semibold">{t.teaserPrice}</span>
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-3xl font-bold">{formatMoney(deal.price_cents, shop.currency, shop.locale)}</span>
+              {deal.compare_at_cents ? <span className="text-lg text-[var(--shop-muted)] line-through">{formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}</span> : null}
+              {savings ? <span className="shop-badge shop-badge-primary">{fmt(t.save, { percent: savings })}</span> : null}
+            </div>
+          )}
+          {!teaser && deal.deal_type === "value" && deal.value_cents ? <p className="text-sm font-semibold">{fmt(t.worth, { value: formatMoney(deal.value_cents, shop.currency, shop.locale) })}</p> : null}
 
           {countdown ? <Countdown until={countdown.until} mode={countdown.mode} t={t} variant="boxes" /> : null}
-          {stockBar ? <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} /> : null}
+          {stockBar && !teaser ? <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} /> : null}
 
           {status === "live" && buyHref !== null ? (
             <Link href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">
@@ -117,7 +126,7 @@ export function DealDetail({
                   <div className="min-w-0">
                     <p className="font-semibold">{l.name}</p>
                     <p className="text-[var(--shop-muted)]">{[l.street, [l.zip, l.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</p>
-                    {l.opening_hours ? <p className="mt-1 whitespace-pre-line text-xs text-[var(--shop-muted)]">{l.opening_hours}</p> : null}
+                    <LocationHours hours={l.hours} legacy={l.opening_hours} locale={shop.locale} />
                     {routeUrls[l.id] ? (
                       <a href={routeUrls[l.id]} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-[var(--shop-primary)]">
                         {t.route} <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -153,4 +162,24 @@ export function DealDetail({
       </div>
     </article>
   );
+}
+
+/** Opening hours in one uniform layout (grouped days); old free text only where nothing structured exists. */
+function LocationHours({ hours, legacy, locale }: { hours: unknown; legacy: string | null; locale: "de" | "en" }) {
+  const h = parseHours(hours);
+  if (h)
+    return (
+      <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 text-xs text-[var(--shop-muted)]" data-testid="location-hours">
+        {formatHours(h, locale).map((line) => {
+          const [days, ...rest] = line.split(" ");
+          return (
+            <div key={line} className="contents">
+              <dt className="font-semibold">{days}</dt>
+              <dd className="tabular-nums">{rest.join(" ")}</dd>
+            </div>
+          );
+        })}
+      </dl>
+    );
+  return legacy ? <p className="mt-1 whitespace-pre-line text-xs text-[var(--shop-muted)]">{legacy}</p> : null;
 }

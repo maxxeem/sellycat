@@ -111,6 +111,19 @@ describe.skipIf(!rlsEnabled)("RLS payments", () => {
     expect((await anon().rpc("fulfil_order", { p_session: "x", p_payment_intent: "y" })).error).not.toBeNull();
   });
 
+  it("one Stripe account can serve several shops, each still only sees its own row", async () => {
+    const shared = `acct_shared_${run}`;
+    expect((await db.from("stripe_accounts").insert({ tenant_id: b.tenantId, account_id: shared })).error).toBeNull();
+    const c = await makeTenant(db, `${run}-c`);
+    try {
+      expect((await db.from("stripe_accounts").insert({ tenant_id: c.tenantId, account_id: shared })).error).toBeNull();
+      expect((await c.client.from("stripe_accounts").select("tenant_id")).data).toEqual([{ tenant_id: c.tenantId }]);
+    } finally {
+      await db.from("stripe_accounts").delete().eq("tenant_id", b.tenantId);
+      await dropTenant(db, c);
+    }
+  });
+
   it("orders, buyers and Stripe accounts stay inside their tenant", async () => {
     await db.from("stripe_accounts").insert({ tenant_id: a.tenantId, account_id: `acct_${run}`, charges_enabled: true });
     expect((await a.client.from("orders").select("id").eq("tenant_id", a.tenantId)).data?.length).toBeGreaterThan(0);

@@ -7,7 +7,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { deleteLocation, deletePartner } from "../actions";
 import { LocationForm } from "../partner-form";
 
-type Location = { id: string; name: string; street: string | null; zip: string | null; city: string | null; country: string; opening_hours: string | null; lat: number | null };
+type Location = { id: string; name: string; street: string | null; zip: string | null; city: string | null; country: string; opening_hours: string | null; hours: unknown; google_place_id: string | null; lat: number | null; lng: number | null };
 
 export function LocationList({ partnerId, locations }: { partnerId: string; locations: Location[] }) {
   const { t } = useI18n();

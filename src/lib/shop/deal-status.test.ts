@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealStatus, describeWindows, formatMoney, isListed, parseMoney, remaining, savingsPercent, withinWindows, type DealStock } from "./deal-status";
+import { dealStatus, describeWindows, formatMoney, isListed, isTeaser, parseMoney, remaining, savingsPercent, withinWindows, type DealStock } from "./deal-status";
 
 const base: DealStock = { state: "published", sales_start: null, sales_end: null, total_qty: null, sold_qty: 0, reserved_qty: 0 };
 const now = new Date("2026-12-01T12:00:00Z");
@@ -56,5 +56,16 @@ describe("redemption windows", () => {
     expect(withinWindows(lunch, new Date("2026-12-01T14:30:00Z"))).toBe(false); // 15:30
     expect(withinWindows(lunch, new Date("2026-12-05T11:30:00Z"))).toBe(false); // Saturday
     expect(withinWindows([], now)).toBe(true);
+  });
+});
+
+describe("teaser", () => {
+  const base = { state: "published" as const, sales_end: null, total_qty: null, sold_qty: 0, reserved_qty: 0 };
+  const now = new Date("2026-11-20T10:00:00Z");
+  it("is a teaser only before the sales start", () => {
+    expect(isTeaser({ ...base, teaser: true, sales_start: "2026-12-01T08:00:00Z" }, now)).toBe(true);
+    expect(isTeaser({ ...base, teaser: true, sales_start: "2026-11-01T08:00:00Z" }, now)).toBe(false);
+    expect(isTeaser({ ...base, teaser: false, sales_start: "2026-12-01T08:00:00Z" }, now)).toBe(false);
+    expect(isTeaser({ ...base, state: "draft", teaser: true, sales_start: "2026-12-01T08:00:00Z" }, now)).toBe(false);
   });
 });

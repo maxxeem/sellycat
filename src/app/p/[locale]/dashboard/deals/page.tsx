@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { poolLevel } from "@/lib/vouchers/pool";
+import { isTeaser } from "@/lib/shop/deal-status";
 import { Suspense } from "react";
 import { Badge, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 import { STATUS_TONE } from "@/lib/dashboard/deal-ui";
@@ -29,7 +30,7 @@ async function DealList({ t, locale }: { t: Dictionary; locale: Locale }) {
   const [{ data: deals }, { data: info }] = await Promise.all([
     supabase
       .from("deals")
-      .select("id, title, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, price_cents, featured, partners(name), deal_images(url, sort_order)")
+      .select("id, title, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, teaser, price_cents, featured, partners(name), deal_images(url, sort_order)")
       .eq("tenant_id", tenant.id)
       .order("sort_order")
       .order("created_at", { ascending: false }),
@@ -57,6 +58,7 @@ async function DealList({ t, locale }: { t: Dictionary; locale: Locale }) {
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1">
                 <Badge tone={STATUS_TONE[status]}>{t.deals.status[status]}</Badge>
+                {isTeaser(d) ? <Badge tone="amber">{t.deals.teaserBadge}</Badge> : null}
                 {pool !== "ok" ? <Badge tone={pool === "empty" ? "red" : "amber"}>{t.deals.pool.badge[pool]}</Badge> : null}
               </span>
             </Link>

@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Monitor, Plus, Smartphone, Trash2, Wand2 } from "lucide-react";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { ColorField, ColorFieldGroup } from "@/components/color-field";
+import { FontPicker } from "@/components/font-picker";
 import { ImageUpload, uploadMedia } from "@/components/image-upload";
 import { ShopFrame } from "@/components/shop/shop-frame";
 import { ShopHome } from "@/components/shop/shop-home";
@@ -280,7 +281,6 @@ function FontField({ label, value, onChange, tenantId }: { label: string; value:
   const { t } = useI18n();
   const g = t.design;
   const [uploading, setUploading] = useState(false);
-  const listId = `fonts-${label.replace(/\W/g, "")}`;
   return (
     <div className="flex flex-col gap-2 text-sm">
       <span className="font-semibold">{label}</span>
@@ -290,14 +290,7 @@ function FontField({ label, value, onChange, tenantId }: { label: string; value:
         <option value="custom">{g.fontCustom}</option>
       </Select>
       {value.source === "google" ? (
-        <>
-          <Input list={listId} value={value.family} placeholder={g.fontSearch} onChange={(e) => onChange({ ...value, family: e.target.value })} />
-          <datalist id={listId}>
-            {GOOGLE_FONTS.map((f) => (
-              <option key={f} value={f} />
-            ))}
-          </datalist>
-        </>
+        <FontPicker value={value.family} placeholder={g.fontSearch} onChange={(family) => onChange({ ...value, family })} />
       ) : null}
       {value.source === "custom" ? (
         <div className="flex flex-col gap-2">

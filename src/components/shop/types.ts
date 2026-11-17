@@ -23,6 +23,7 @@ export type DealView = {
   reserved_qty: number;
   code_source?: "generated" | "pool";
   pool_free?: number;
+  teaser?: boolean;
   max_per_order: number | null;
   redeem_validity: "none" | "until_date" | "days_after_purchase";
   redeem_until: string | null;
@@ -35,7 +36,7 @@ export type DealView = {
   images: Array<{ url: string; alt: string | null; width?: number | null; height?: number | null }>;
   partner: { name: string; logo_url: string | null; website_url: string | null } | null;
   category: { name: string; slug: string } | null;
-  locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null }>;
+  locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null; hours?: unknown }>;
 };
 
 export type ShopInfo = { name: string; currency: string; locale: "de" | "en" };

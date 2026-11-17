@@ -6,7 +6,7 @@ import { PageFallback } from "@/components/shop/page-fallback";
 import { DealDetail } from "@/components/shop/deal-detail";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { routeUrl, staticMapUrl } from "@/lib/geo/geocode";
-import { dealStatus, remaining } from "@/lib/shop/deal-status";
+import { dealStatus, isTeaser, remaining } from "@/lib/shop/deal-status";
 import { getShopDeal, getShopProfile } from "@/lib/shop/queries";
 
 export function generateStaticParams() {
@@ -47,7 +47,8 @@ async function CachedDeal({ tenantId, slug }: { tenantId: string; slug: string }
     description: deal.subtitle ?? undefined,
     image: deal.images.map((i) => i.url),
     brand: deal.partner ? { "@type": "Brand", name: deal.partner.name } : undefined,
-    offers: {
+    // A teaser has no public price yet: no offer for search engines until the sales start.
+    offers: isTeaser(deal, now) ? undefined : {
       "@type": "Offer",
       url: `${base}/d/${deal.slug}`,
       priceCurrency: shop.currency,

@@ -6,6 +6,7 @@ import { Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { acceptedFiles, uploadMedia } from "@/components/image-upload";
 import { DealImages, IMAGE_TYPES } from "./deal-images";
+import { DateTimePicker } from "@/components/date-time-picker";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { DealCard } from "@/components/shop/deal-card";
 import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
@@ -23,10 +24,11 @@ import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 import { deleteDeal, saveDeal, setDealState, type SaveResult } from "../actions";
+import { AiImport } from "./ai-import";
 import { PoolPanel } from "./pool-panel";
 import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
 
-type Partner = { id: string; name: string; logo_url: string | null; website_url: string | null; partner_locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null }> };
+type Partner = { id: string; name: string; logo_url: string | null; website_url: string | null; partner_locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null; hours?: unknown }> };
 
 const WEEKDAYS = { de: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"], en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] };
 
@@ -48,6 +50,8 @@ export function DealEditor(props: {
   const { t, locale } = useI18n();
   const d = t.deals;
   const [form, setForm] = useState<DealForm>(props.initial);
+  // Rebuilds the rich-text editor when a draft replaces the description from outside.
+  const [descriptionKey, setDescriptionKey] = useState(0);
   const [state, setState] = useState(props.state);
   const [errors, setErrors] = useState<DealErrors>({});
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
@@ -91,6 +95,7 @@ export function DealEditor(props: {
       reserved_qty: props.stock.reserved_qty,
       code_source: form.codeSource,
       pool_free: props.stock.pool_free,
+      teaser: form.teaser,
       max_per_order: form.maxPerOrder ? Number(form.maxPerOrder) : null,
       redeem_validity: form.redeemValidity,
       redeem_until: form.redeemUntil || null,
@@ -244,6 +249,22 @@ export function DealEditor(props: {
 
           <Card title={d.sections.content}>
             <div className="flex flex-col gap-4">
+              <AiImport
+                onDraft={(draft) => {
+                  setForm((f) => ({
+                    ...f,
+                    title: draft.title || f.title,
+                    slug: slugTouched ? f.slug : slugifyTitle(draft.title || f.title) || f.slug,
+                    subtitle: draft.subtitle,
+                    description: draft.description,
+                    terms: draft.terms || f.terms,
+                    faq: draft.faq.length ? draft.faq : f.faq,
+                    images: [...f.images, ...draft.images].slice(0, 12),
+                    compareAt: !f.compareAt && draft.regularPrice ? String(draft.regularPrice) : f.compareAt,
+                  }));
+                  setDescriptionKey((k) => k + 1);
+                }}
+              />
               <DealImages
                 images={form.images}
                 uploading={uploading}
@@ -255,7 +276,7 @@ export function DealEditor(props: {
               />
               <div className="flex flex-col gap-1.5 text-sm">
                 <span className="font-semibold">{d.description}</span>
-                <RichTextEditor value={form.description} onChange={(doc) => set("description", doc)} label={d.description} />
+                <RichTextEditor key={descriptionKey} value={form.description} onChange={(doc) => set("description", doc)} label={d.description} />
               </div>
               <div className="flex flex-col gap-1.5 text-sm">
                 <div className="flex items-center justify-between gap-2">
@@ -347,14 +368,18 @@ export function DealEditor(props: {
                 </Field>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={d.salesStart}>
-                  <Input type="datetime-local" value={form.salesStart} onChange={(e) => set("salesStart", e.target.value)} />
+                <Field label={d.salesStart} error={err("salesStart")}>
+                  <DateTimePicker value={form.salesStart} onChange={(v) => set("salesStart", v)} aria-label={d.salesStart} />
                 </Field>
                 <Field label={d.salesEnd} error={err("salesEnd")}>
-                  <Input type="datetime-local" value={form.salesEnd} onChange={(e) => set("salesEnd", e.target.value)} />
+                  <DateTimePicker value={form.salesEnd} onChange={(v) => set("salesEnd", v)} aria-label={d.salesEnd} />
                 </Field>
               </div>
               <p className="text-xs text-muted">{d.timezoneHint}</p>
+              <div className="rounded-input border border-line p-3" data-testid="teaser-toggle">
+                <Check label={d.teaser} checked={form.teaser} onChange={(v) => set("teaser", v)} />
+                <p className="mt-1 pl-7 text-xs text-muted">{d.teaserHint}</p>
+              </div>
             </div>
           </Card>
 
@@ -367,7 +392,7 @@ export function DealEditor(props: {
               </div>
               {form.redeemValidity === "until_date" ? (
                 <Field label={d.redeemUntil} error={err("redeemUntil")}>
-                  <Input type="date" value={form.redeemUntil} onChange={(e) => set("redeemUntil", e.target.value)} className="max-w-xs" />
+                  <DateTimePicker mode="date" value={form.redeemUntil} onChange={(v) => set("redeemUntil", v)} className="max-w-xs" aria-label={d.redeemUntil} />
                 </Field>
               ) : null}
               {form.redeemValidity === "days_after_purchase" ? (
@@ -394,9 +419,9 @@ export function DealEditor(props: {
                         </button>
                       );
                     })}
-                    <Input type="time" value={w.from} onChange={(e) => set("windows", form.windows.map((x, j) => (j === i ? { ...x, from: e.target.value } : x)))} className="w-28" aria-label={d.from} />
+                    <DateTimePicker mode="time" value={w.from} onChange={(v) => set("windows", form.windows.map((x, j) => (j === i ? { ...x, from: v } : x)))} className="w-32" aria-label={d.from} />
                     <span>–</span>
-                    <Input type="time" value={w.to} onChange={(e) => set("windows", form.windows.map((x, j) => (j === i ? { ...x, to: e.target.value } : x)))} className="w-28" aria-label={d.to} />
+                    <DateTimePicker mode="time" value={w.to} onChange={(v) => set("windows", form.windows.map((x, j) => (j === i ? { ...x, to: v } : x)))} className="w-32" aria-label={d.to} />
                     <button type="button" onClick={() => set("windows", form.windows.filter((_, j) => j !== i))} className="p-2 text-danger" aria-label={t.design.remove}><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}

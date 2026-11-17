@@ -28,7 +28,7 @@ async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { data: partner } = await supabase
     .from("partners")
-    .select("id, name, description, website_url, email, phone, logo_url, partner_locations(id, name, street, zip, city, country, opening_hours, lat)")
+    .select("id, name, description, website_url, email, phone, logo_url, partner_locations(id, name, street, zip, city, country, opening_hours, hours, google_place_id, lat, lng)")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle();

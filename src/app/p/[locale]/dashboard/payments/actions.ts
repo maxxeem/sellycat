@@ -52,7 +52,9 @@ export async function disconnectStripe(): Promise<void> {
   const admin = createAdminClient();
   const { data: row } = await admin.from("stripe_accounts").select("account_id").eq("tenant_id", tenant.id).maybeSingle();
   if (!row) return;
-  if (stripeConfigured()) {
+  // Other shops on the same Stripe account keep their access: only the last one revokes it at Stripe.
+  const { count: others } = await admin.from("stripe_accounts").select("tenant_id", { count: "exact", head: true }).eq("account_id", row.account_id).neq("tenant_id", tenant.id);
+  if (stripeConfigured() && !others) {
     try {
       await getStripe().oauth.deauthorize({ client_id: connectClientId()!, stripe_user_id: row.account_id });
     } catch (e) {

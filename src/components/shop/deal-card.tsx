@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { dealStatus, formatMoney, remaining, savingsPercent } from "@/lib/shop/deal-status";
+import { dealStatus, formatMoney, isTeaser, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { Countdown } from "./countdown";
 import { StockBar } from "./stock-bar";
@@ -13,10 +13,12 @@ import type { DealView, ShopInfo } from "./types";
 export function DealCard({ deal, shop, t, variant = "grid", href, now, priority = false }: { deal: DealView; shop: ShopInfo; t: ShopTexts; variant?: "grid" | "list" | "hero"; href?: string; now?: Date; priority?: boolean }) {
   const status = dealStatus(deal, now);
   const left = remaining(deal);
-  const savings = savingsPercent(deal.price_cents, deal.compare_at_cents);
+  const teaser = isTeaser(deal, now);
+  const savings = teaser ? null : savingsPercent(deal.price_cents, deal.compare_at_cents);
   const cover = deal.images[0];
   const isHero = variant === "hero";
-  const countdown = deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
+  // A teaser always counts down to its start.
+  const countdown = teaser && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
   const stockBar = deal.show_stock_bar && deal.total_qty && (status === "live" || status === "sold_out");
   return (
     <CardRoot
@@ -32,6 +34,7 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
           <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-[var(--shop-muted)]">{deal.title.slice(0, 1)}</div>
         )}
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          {teaser ? <span className="shop-badge shop-badge-primary">{t.teaserLabel}</span> : null}
           {savings ? <span className="shop-badge shop-badge-primary">-{savings}%</span> : null}
           {deal.deal_type === "value" ? <span className="shop-badge">{t.valueVoucher}</span> : null}
           {status === "sold_out" ? <span className="shop-badge shop-badge-dark">{t.soldOut}</span> : null}
@@ -46,14 +49,18 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
         {deal.partner ? <p className="truncate text-xs font-semibold uppercase tracking-wide text-[var(--shop-muted)]">{deal.partner.name}</p> : null}
         <h3 className={`shop-heading line-clamp-2 font-bold leading-snug ${isHero ? "text-2xl md:text-3xl" : "text-lg"}`}>{deal.title}</h3>
         {deal.subtitle ? <p className={`text-sm text-[var(--shop-muted)] ${isHero ? "" : "line-clamp-2"}`}>{deal.subtitle}</p> : null}
-        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2">
-          <span className="text-xl font-bold">{formatMoney(deal.price_cents, shop.currency, shop.locale)}</span>
-          {deal.compare_at_cents ? (
-            <span className="text-sm text-[var(--shop-muted)] line-through" aria-label={`${t.insteadOf} ${formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}`}>
-              {formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}
-            </span>
-          ) : null}
-        </div>
+        {teaser ? (
+          <p className="mt-auto pt-2 text-sm font-semibold" data-testid="teaser-price">{t.teaserPrice}</p>
+        ) : (
+          <div className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-2">
+            <span className="text-xl font-bold">{formatMoney(deal.price_cents, shop.currency, shop.locale)}</span>
+            {deal.compare_at_cents ? (
+              <span className="text-sm text-[var(--shop-muted)] line-through" aria-label={`${t.insteadOf} ${formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}`}>
+                {formatMoney(deal.compare_at_cents, shop.currency, shop.locale)}
+              </span>
+            ) : null}
+          </div>
+        )}
         {stockBar ? (
           <div className="pt-1">
             <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} slim />

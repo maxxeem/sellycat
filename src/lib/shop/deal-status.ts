@@ -16,6 +16,8 @@ export type DealStock = {
   /** Pool deals sell at most as many units as there are free codes (auto-stop). */
   code_source?: "generated" | "pool";
   pool_free?: number;
+  /** Announced without price until the sales start. */
+  teaser?: boolean;
 };
 
 /** Units still for sale (null = unlimited). */
@@ -37,6 +39,9 @@ export function dealStatus(d: DealStock, now: Date = new Date()): DealStatus {
   if (left === 0) return "sold_out";
   return "live";
 }
+
+/** A teaser shows no price and cannot be bought until its sales start; then it is a normal deal. */
+export const isTeaser = (d: DealStock, now?: Date) => Boolean(d.teaser) && dealStatus(d, now) === "scheduled";
 
 /** Buyers can add it to the cart right now. */
 export const isBuyable = (d: DealStock, now?: Date) => dealStatus(d, now) === "live";

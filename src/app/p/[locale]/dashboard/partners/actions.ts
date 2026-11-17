@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { refreshShop, requireTenant, str } from "@/lib/dashboard/context";
 import { geocode } from "@/lib/geo/geocode";
+import { placeDetails, placesConfigured, searchPlaces, type PlaceDetails, type PlaceSuggestion } from "@/lib/places/google";
+import { createRateLimiter } from "@/lib/rate-limit";
+import { parseHours, type OpeningHours } from "@/lib/shop/hours";
 
 export type FormState = { error?: string; ok?: boolean } | null;
 
@@ -44,14 +47,27 @@ export async function deletePartner(id: string) {
 export async function saveLocation(_: FormState, form: FormData): Promise<FormState> {
   const { tenant, supabase } = await requireTenant("editor");
   const id = str(form, "id");
-  const address = { street: str(form, "street"), zip: str(form, "zip"), city: str(form, "city"), country: str(form, "country") ?? "CH" };
-  const coords = await geocode(address);
+  const address = { street: str(form, "street"), zip: str(form, "zip"), city: str(form, "city"), country: (str(form, "country") ?? "CH").toUpperCase().slice(0, 2) };
+  // Coordinates from the Google place when one was chosen (and the address left as Google gave it), else geocoded.
+  const lat = Number(str(form, "lat"));
+  const lng = Number(str(form, "lng"));
+  const fromPlace = str(form, "placeId") && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && str(form, "lat") !== null;
+  const coords = fromPlace ? { lat, lng } : await geocode(address);
+  let hours: OpeningHours | null = null;
+  try {
+    hours = parseHours(JSON.parse(str(form, "hours") ?? "null"));
+  } catch {
+    hours = null;
+  }
   const row = {
     tenant_id: tenant.id,
     partner_id: str(form, "partnerId") ?? "",
     name: str(form, "name") ?? "",
     ...address,
-    opening_hours: str(form, "openingHours"),
+    hours: hours as never,
+    // Structured hours replace the old free text.
+    opening_hours: null,
+    google_place_id: str(form, "placeId"),
     lat: coords?.lat ?? null,
     lng: coords?.lng ?? null,
   };
@@ -70,4 +86,28 @@ export async function deleteLocation(id: string) {
   await supabase.from("partner_locations").delete().eq("id", id).eq("tenant_id", tenant.id);
   refreshShop(tenant.id);
   revalidatePath(`/p/[locale]/dashboard/partners/[id]`, "page");
+}
+
+const placesLimit = createRateLimiter({ limit: 120, windowMs: 60_000 });
+
+/** Google business search while typing (editor and up; the key stays on the server). */
+export async function findPlaces(query: string, sessionToken: string): Promise<{ configured: boolean; results: PlaceSuggestion[] }> {
+  const { tenant, user } = await requireTenant("editor");
+  if (!placesConfigured()) return { configured: false, results: [] };
+  if (!placesLimit.check(`${tenant.id}:${user.id}`).ok) return { configured: true, results: [] };
+  const locale = (await tenantLocale(tenant.id)) ?? "de";
+  return { configured: true, results: await searchPlaces(query, sessionToken.slice(0, 80), locale) };
+}
+
+/** Address, position and opening hours of a chosen Google place. */
+export async function getPlace(placeId: string, sessionToken: string): Promise<PlaceDetails | null> {
+  const { tenant } = await requireTenant("editor");
+  if (!placesConfigured()) return null;
+  return placeDetails(placeId, sessionToken.slice(0, 80), (await tenantLocale(tenant.id)) ?? "de");
+}
+
+async function tenantLocale(tenantId: string): Promise<"de" | "en" | null> {
+  const { supabase } = await requireTenant("editor");
+  const { data } = await supabase.from("tenants").select("locale").eq("id", tenantId).single();
+  return data?.locale === "en" ? "en" : data ? "de" : null;
 }

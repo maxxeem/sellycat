@@ -14,6 +14,8 @@ export function themeAttrs(theme: ShopTheme) {
 /**
  * Component classes of the shop, written once against the --shop-* variables. Kept as a plain
  * stylesheet so the editor preview and the shop render identically.
+ * Next 16 keeps the previous page mounted but hidden (inline `display: none`), so the header
+ * rules only look at a hero that is actually visible.
  */
 export const SHOP_CSS = `
 .shop-root{background:var(--shop-bg);color:var(--shop-text);font-family:var(--shop-font-body);}
@@ -48,10 +50,10 @@ export const SHOP_CSS = `
 .shop-header[data-tone="dark"] .shop-logo-for-light{display:none;}
 .shop-header[data-tone="dark"] .shop-logo-for-dark{display:block;}
 .shop-root[data-header="integrated"] .shop-hero{background:var(--shop-header-bg);color:var(--shop-on-header);}
-.shop-root[data-header="integrated"]:has(.shop-hero) .shop-header{background:transparent;}
-.shop-root[data-header="integrated"]:has(.shop-hero-image) .shop-header{color:#fff;}
-.shop-root[data-header="integrated"]:has(.shop-hero-image) .shop-header .shop-logo-for-light{display:none;}
-.shop-root[data-header="integrated"]:has(.shop-hero-image) .shop-header .shop-logo-for-dark{display:block;}
+.shop-root[data-header="integrated"]:has(.shop-hero:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header{background:transparent;}
+.shop-root[data-header="integrated"]:has(.shop-hero-image:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header{color:#fff;}
+.shop-root[data-header="integrated"]:has(.shop-hero-image:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header .shop-logo-for-light{display:none;}
+.shop-root[data-header="integrated"]:has(.shop-hero-image:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header .shop-logo-for-dark{display:block;}
 .shop-root[data-header="integrated"] .shop-hero{margin-top:calc(-1 * var(--shop-header-h));padding-top:var(--shop-header-h);}
 .shop-hero-top-shade{display:none;}
 .shop-root[data-header="integrated"] .shop-hero-top-shade{display:block;}

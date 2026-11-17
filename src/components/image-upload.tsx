@@ -124,9 +124,12 @@ export function ImageUpload({
 
   return (
     <div className="flex min-w-0 flex-col gap-2 text-sm">
-      <div>
-        <p className="font-semibold">{label}</p>
-        {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      {/* Fixed-height heading (one-line title, two-line hint) so tiles of a grid line up. */}
+      <div className="min-h-[3.25rem]">
+        <p className="truncate font-semibold" title={label}>
+          {label}
+        </p>
+        {hint ? <p className="line-clamp-2 text-xs text-muted">{hint}</p> : null}
       </div>
       {name ? <input type="hidden" name={name} value={url} /> : null}
       <button
@@ -141,7 +144,7 @@ export function ImageUpload({
       >
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className={cover ? "h-full w-full object-cover" : "max-h-full max-w-full object-contain p-4"} />
+          <img src={url} alt="" className={cover ? "h-full w-full object-cover" : "h-full w-full object-contain p-4"} />
         ) : (
           <span className="flex flex-col items-center gap-2 px-4 text-center text-xs">
             <ImagePlus className="h-6 w-6" strokeWidth={1.5} aria-hidden />
@@ -155,16 +158,15 @@ export function ImageUpload({
           </span>
         ) : null}
       </button>
-      {url ? (
-        <div className="flex gap-1">
+      {/* The action row keeps its height when empty, so the next row of tiles stays aligned. */}
+      <div className={`flex h-7 gap-1 ${url ? "" : "invisible"}`} aria-hidden={!url}>
           <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex items-center gap-1.5 rounded-input px-2 py-1 text-xs font-semibold text-muted hover:bg-surface hover:text-ink">
             <RefreshCw className="h-3.5 w-3.5" aria-hidden /> {g.replace}
           </button>
           <button type="button" onClick={() => set("")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-input px-2 py-1 text-xs font-semibold text-muted hover:bg-danger/10 hover:text-danger">
             <Trash2 className="h-3.5 w-3.5" aria-hidden /> {g.remove}
           </button>
-        </div>
-      ) : null}
+      </div>
       <input
         ref={input}
         type="file"

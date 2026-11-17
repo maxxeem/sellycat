@@ -63,20 +63,22 @@ export async function recordRefund(charge: Pick<Stripe.Charge, "payment_intent" 
 /** Stripe account → `stripe_accounts` row (status, open requirements); refreshes the shop when "can sell" changes. */
 export async function syncAccount(account: Stripe.Account): Promise<string | null> {
   const admin = createAdminClient();
-  const { data: row } = await admin.from("stripe_accounts").select("tenant_id, charges_enabled").eq("account_id", account.id).maybeSingle();
-  if (!row) return null;
+  // One Stripe account may serve several shops: all of them get the new state.
+  const { data: rows } = await admin.from("stripe_accounts").select("tenant_id, charges_enabled").eq("account_id", account.id);
+  if (!rows?.length) return null;
   const state = accountState(account);
   await admin.from("stripe_accounts").update(state).eq("account_id", account.id);
-  if (row.charges_enabled !== state.charges_enabled) refreshShopCache(row.tenant_id);
-  return row.tenant_id;
+  for (const row of rows) if (row.charges_enabled !== state.charges_enabled) refreshShopCache(row.tenant_id);
+  return rows[0].tenant_id;
 }
 
 /** The customer revoked Sellycat's access in their Stripe dashboard. */
 export async function disconnectAccount(accountId: string): Promise<string | null> {
   const admin = createAdminClient();
-  const { data: row } = await admin.from("stripe_accounts").delete().eq("account_id", accountId).select("tenant_id").maybeSingle();
-  refreshShopCache(row?.tenant_id);
-  return row?.tenant_id ?? null;
+  // Access revoked at Stripe: every shop on this account loses it.
+  const { data: rows } = await admin.from("stripe_accounts").delete().eq("account_id", accountId).select("tenant_id");
+  for (const row of rows ?? []) refreshShopCache(row.tenant_id);
+  return rows?.[0]?.tenant_id ?? null;
 }
 
 /**

@@ -26,7 +26,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
   const { tenant, supabase } = await requireTenant("editor");
   const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }, { count: poolUsed }] = await Promise.all([
     supabase.from("deals").select("*, deal_images(url, alt, sort_order), deal_locations(location_id)").eq("id", id).eq("tenant_id", tenant.id).maybeSingle(),
-    supabase.from("partners").select("id, name, logo_url, website_url, partner_locations(id, name, street, zip, city, lat, lng, opening_hours)").eq("tenant_id", tenant.id).order("name"),
+    supabase.from("partners").select("id, name, logo_url, website_url, partner_locations(id, name, street, zip, city, lat, lng, opening_hours, hours)").eq("tenant_id", tenant.id).order("name"),
     supabase.from("categories").select("id, name, slug").eq("tenant_id", tenant.id).order("sort_order"),
     supabase.from("tenants").select("name, currency, locale").eq("id", tenant.id).single(),
     supabase.from("shop_themes").select("draft, published").eq("tenant_id", tenant.id).maybeSingle(),

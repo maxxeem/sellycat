@@ -40,9 +40,11 @@ export type DealForm = {
   showCountdown: boolean;
   showStockBar: boolean;
   featured: boolean;
+  /** Announce before the sales start: no price, no buying, countdown to the start. */
+  teaser: boolean;
 };
 
-export type DealErrorKey = "title" | "slug" | "slugTaken" | "price" | "compareAt" | "value" | "window" | "redeemUntil" | "redeemDays" | "barcode";
+export type DealErrorKey = "title" | "slug" | "slugTaken" | "price" | "compareAt" | "value" | "window" | "redeemUntil" | "redeemDays" | "barcode" | "teaserStart";
 export type DealErrors = Partial<Record<keyof DealForm, DealErrorKey>>;
 
 const cents = (v: string) => (v.trim() === "" ? null : parseMoney(v));
@@ -76,6 +78,7 @@ export function validateDeal(f: DealForm): DealErrors {
   const start = zurichLocalToIso(f.salesStart);
   const end = zurichLocalToIso(f.salesEnd);
   if (start && end && end <= start) e.salesEnd = "window";
+  if (f.teaser && !start) e.salesStart = "teaserStart";
   if (f.redeemValidity === "until_date" && !/^\d{4}-\d{2}-\d{2}$/.test(f.redeemUntil)) e.redeemUntil = "redeemUntil";
   if (f.redeemValidity === "days_after_purchase" && !(Number(f.redeemDays) >= 1)) e.redeemDays = "redeemDays";
   if (f.codeFormat === "barcode" && !BARCODE_TYPES.includes(f.barcodeType as (typeof BARCODE_TYPES)[number])) e.barcodeType = "barcode";
@@ -115,6 +118,7 @@ export function dealRow(f: DealForm) {
     show_countdown: f.showCountdown,
     show_stock_bar: f.showStockBar && f.totalQty !== "",
     featured: f.featured,
+    teaser: f.teaser && Boolean(zurichLocalToIso(f.salesStart)),
   };
 }
 
@@ -128,7 +132,7 @@ type DealRowIn = {
   max_per_order: number | null; max_per_buyer: number | null; sales_start: string | null; sales_end: string | null;
   redeem_validity: "none" | "until_date" | "days_after_purchase"; redeem_until: string | null; redeem_days: number | null;
   redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool";
-  show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean;
+  show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean; teaser?: boolean;
 };
 
 /** Deal row → form state. */
@@ -165,5 +169,6 @@ export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: strin
     showCountdown: d.show_countdown,
     showStockBar: d.show_stock_bar ?? false,
     featured: d.featured,
+    teaser: d.teaser ?? false,
   };
 }

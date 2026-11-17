@@ -43,8 +43,7 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const { data: other } = await admin.from("stripe_accounts").select("tenant_id").eq("account_id", accountId).maybeSingle();
-  if (other && other.tenant_id !== tenant.id) return done("error=in_use");
+  // The same Stripe account may serve several shops (whoever authorised it at Stripe controls it).
   const account = await stripe.accounts.retrieve(accountId);
   const { error } = await admin
     .from("stripe_accounts")

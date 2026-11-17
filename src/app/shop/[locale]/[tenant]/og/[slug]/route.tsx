@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { formatMoney, savingsPercent } from "@/lib/shop/deal-status";
+import { formatMoney, isTeaser, savingsPercent } from "@/lib/shop/deal-status";
+import { getDictionary } from "@/lib/i18n";
 import { getShopDeal, getShopProfile } from "@/lib/shop/queries";
 
 const size = { width: 1200, height: 630 };
@@ -19,7 +20,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ten
     readFile(path.join(process.cwd(), "src/app/fonts/Inter-Bold.ttf")),
   ]);
   const c = shop?.theme.colors ?? { primary: "#ff4b23", text: "#111111", background: "#ffffff" };
-  const savings = deal ? savingsPercent(deal.price_cents, deal.compare_at_cents) : null;
+  const teaser = deal ? isTeaser(deal, new Date()) : false;
+  const savings = deal && !teaser ? savingsPercent(deal.price_cents, deal.compare_at_cents) : null;
   const cover = deal?.images[0]?.url;
   return new ImageResponse(
     (
@@ -33,7 +35,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ten
           <div style={{ fontSize: cover ? 52 : 72, lineHeight: 1.1 }}>{deal?.title ?? shop?.name ?? ""}</div>
           {deal ? (
             <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 12 }}>
-              <div style={{ fontSize: 56 }}>{formatMoney(deal.price_cents, shop?.currency ?? "CHF", shop?.locale ?? "de")}</div>
+              <div style={{ fontSize: teaser ? 40 : 56 }}>{teaser ? getDictionary(shop?.locale ?? "de").shop.teaserLabel : formatMoney(deal.price_cents, shop?.currency ?? "CHF", shop?.locale ?? "de")}</div>
               {savings ? (
                 <div style={{ display: "flex", background: c.primary, color: "#111111", borderRadius: 999, padding: "8px 24px", fontSize: 36 }}>-{savings}%</div>
               ) : null}
