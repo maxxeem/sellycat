@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
   const password = process.env.STAGING_PASSWORD;
   const next = String(form.get("next") ?? "/");
   const root = siteHost().split(":")[0];
+  const requestHost = (request.headers.get("x-forwarded-host") ?? new URL(request.url).hostname).split(":")[0].toLowerCase();
   const back = new URL("/staging", request.url);
   if (!password || form.get("password") !== password) {
     back.searchParams.set("error", "1");
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
-    domain: root && root !== "localhost" ? `.${root}` : undefined,
+    domain: root && root !== "localhost" && (requestHost === root || requestHost.endsWith(`.${root}`)) ? `.${root}` : undefined,
   });
   return res;
 }

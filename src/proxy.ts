@@ -16,10 +16,11 @@ export async function proxy(request: NextRequest) {
   const host = classifyHost(rawHost);
   const root = siteHost() || DEFAULT_ROOT;
 
-  // Staging: every page behind the password gate (cookie for the whole staging domain).
+  // Staging: every page behind the password gate (cookie for the whole staging domain; a shop's
+  // own domain gets the gate on its own host, since the cookie cannot reach it).
   if (stagingGateEnabled() && !stagingExempt(pathname) && !(await stagingCookieValid(request.cookies.get(STAGING_COOKIE)?.value))) {
     const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-    const gate = new URL(STAGING_GATE_PATH, `${proto}://${root}`);
+    const gate = new URL(STAGING_GATE_PATH, `${proto}://${host.kind === "shop-domain" ? rawHost : root}`);
     gate.searchParams.set("next", `${proto}://${rawHost}${pathname}${search}`);
     return NextResponse.redirect(gate);
   }
@@ -27,8 +28,19 @@ export async function proxy(request: NextRequest) {
   let route: Route;
   if (host.kind === "apex") {
     route = apexRoute(pathname, resolveLocale(request.cookies.get(LOCALE_COOKIE)?.value, request.headers.get("accept-language")));
+  } else if (host.kind === "shop-domain" && pathname === STAGING_GATE_PATH && stagingGateEnabled()) {
+    route = apexRoute(pathname, resolveLocale(request.cookies.get(LOCALE_COOKIE)?.value, request.headers.get("accept-language")));
+  } else if (isPassThroughPath(pathname)) {
+    route = { type: "pass" };
   } else {
-    route = isPassThroughPath(pathname) ? { type: "pass" } : shopRoute(pathname, await resolveShop(host));
+    const shop = await resolveShop(host);
+    // A shop with its own live main domain is only served there: every other host redirects.
+    const target = shop?.redirectHost;
+    if (target && stripHostPort(rawHost) !== target) {
+      const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
+      return NextResponse.redirect(new URL(`${pathname}${search}`, `${proto}://${target}`), 308);
+    }
+    route = shopRoute(pathname, shop);
   }
 
   if (route.type === "pass") return NextResponse.next({ request: { headers: forwardHeaders(request) } });
@@ -56,6 +68,8 @@ export async function proxy(request: NextRequest) {
   }
   return session.apply(rewrite(request, route.path));
 }
+
+const stripHostPort = (h: string | null) => (h ?? "").toLowerCase().split(":")[0];
 
 function shopNeedsSession(pathname: string) {
   return pathname === "/redeem" || pathname.startsWith("/redeem/") || /^\/v\/[^/]+$/.test(pathname);

@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { HostKind } from "./hosts";
 import type { Database } from "@/lib/supabase/types";
 
-export type ShopRef = { id: string; slug: string; name: string; locale: string; primaryHost: string | null };
+export type ShopRef = { id: string; slug: string; name: string; locale: string; primaryHost: string | null; redirectHost: string | null };
 
 /**
  * Host → shop lookup for the proxy (anon key, definer function `resolve_shop`). A small
@@ -25,7 +25,7 @@ export async function resolveShop(kind: Extract<HostKind, { kind: "shop-slug" | 
   // A database hiccup must not be cached as "no such shop".
   if (error) return hit?.value ?? null;
   const row = data?.[0];
-  const value = row ? { id: row.tenant_id, slug: row.slug, name: row.name, locale: row.locale, primaryHost: row.primary_host } : null;
+  const value = row ? { id: row.tenant_id, slug: row.slug, name: row.name, locale: row.locale, primaryHost: row.primary_host, redirectHost: row.redirect_host } : null;
   if (cache.size > 5000) cache.clear();
   cache.set(key, { at: now, value });
   return value;

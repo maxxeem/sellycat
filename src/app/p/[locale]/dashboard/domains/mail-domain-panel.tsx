@@ -14,7 +14,7 @@ type Props = {
   domain: { domain: string; localPart: string; status: "pending" | "active" | "error"; records: DnsRecord[]; checkedAt: string | null } | null;
 };
 
-function CopyButton({ value }: { value: string }) {
+export function CopyButton({ value }: { value: string }) {
   const { t } = useI18n();
   const [done, setDone] = useState(false);
   return (

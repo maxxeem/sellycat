@@ -1252,6 +1252,7 @@ export type Database = {
       }
       tenant_domains: {
         Row: {
+          active_at: string | null
           created_at: string
           error: string | null
           hostname: string
@@ -1259,12 +1260,15 @@ export type Database = {
           is_primary: boolean
           kind: Database["public"]["Enums"]["domain_kind"]
           last_checked_at: string | null
+          provider: string | null
           status: Database["public"]["Enums"]["domain_status"]
           tenant_id: string
           updated_at: string
           verification: Json
+          www: boolean
         }
         Insert: {
+          active_at?: string | null
           created_at?: string
           error?: string | null
           hostname: string
@@ -1272,12 +1276,15 @@ export type Database = {
           is_primary?: boolean
           kind: Database["public"]["Enums"]["domain_kind"]
           last_checked_at?: string | null
+          provider?: string | null
           status?: Database["public"]["Enums"]["domain_status"]
           tenant_id: string
           updated_at?: string
           verification?: Json
+          www?: boolean
         }
         Update: {
+          active_at?: string | null
           created_at?: string
           error?: string | null
           hostname?: string
@@ -1285,10 +1292,12 @@ export type Database = {
           is_primary?: boolean
           kind?: Database["public"]["Enums"]["domain_kind"]
           last_checked_at?: string | null
+          provider?: string | null
           status?: Database["public"]["Enums"]["domain_status"]
           tenant_id?: string
           updated_at?: string
           verification?: Json
+          www?: boolean
         }
         Relationships: [
           {
@@ -1698,11 +1707,16 @@ export type Database = {
           locale: string
           name: string
           primary_host: string
+          redirect_host: string
           slug: string
           tenant_id: string
         }[]
       }
       restock_order: { Args: { p_order: string }; Returns: boolean }
+      set_primary_domain: {
+        Args: { p_hostname: string; p_tenant: string }
+        Returns: boolean
+      }
       shop_legal_complete: { Args: { p_tenant: string }; Returns: boolean }
       shop_profile: {
         Args: { p_tenant: string }

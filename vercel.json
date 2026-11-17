@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/mail",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/domains",
+      "schedule": "30 4 * * *"
     }
   ],
   "regions": [
