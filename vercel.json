@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/domains",
       "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/wallet",
+      "schedule": "0 8 * * *"
     }
   ],
   "regions": [

@@ -10,7 +10,7 @@ import { checkUrl, type BarcodeType, type CodeFormat } from "./symbol";
  * access first: a Stripe session id, a voucher token, a sign-in link or a dashboard role).
  */
 const SELECT =
-  "id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, order_id, partners(name), deals(subtitle, terms, deal_images(url, sort_order), deal_locations(partner_locations(name, street, zip, city))), orders(number, currency, gift, gift_from, gift_message)";
+  "id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, order_id, partners(name), deals(subtitle, terms, deal_images(url, sort_order), deal_locations(partner_locations(name, street, zip, city, lat, lng))), orders(number, currency, gift, gift_from, gift_message)";
 
 export type LoadedVoucher = PdfVoucher & { id: string; token: string; orderId: string };
 export type VoucherBundle = { shop: ShopProfile; host: string; design: VoucherDesign; vouchers: LoadedVoucher[]; order: { number: string; gift: { from: string | null; message: string | null } | null } | null };
@@ -32,7 +32,7 @@ type Row = {
     subtitle: string | null;
     terms: string | null;
     deal_images: Array<{ url: string; sort_order: number }> | null;
-    deal_locations: Array<{ partner_locations: { name: string; street: string | null; zip: string | null; city: string | null } | null }> | null;
+    deal_locations: Array<{ partner_locations: { name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null } | null }> | null;
   } | null;
   orders: { number: string; currency: string; gift: boolean; gift_from: string | null; gift_message: string | null } | null;
 };

@@ -10,6 +10,9 @@ import { formatMoney } from "@/lib/shop/deal-status";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { VoucherCard } from "@/components/shop/voucher-card";
+import { WalletButtons } from "@/components/shop/wallet-buttons";
+import { getDictionary } from "@/lib/i18n";
+import { walletAvailable } from "@/lib/wallet/passes";
 import { checkUrl } from "@/lib/vouchers/symbol";
 import { headers } from "next/headers";
 
@@ -59,6 +62,7 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
     ? await admin.from("vouchers").select("id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, partners(name)").eq("order_id", order.id).order("created_at")
     : { data: [] };
   const host = shop.primaryHost ?? (await headers()).get("host") ?? "";
+  const wallet = walletAvailable();
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-10 sm:py-16">
       <title>{`${fmt(t.orderNumber, { number: order.number })} · ${shop.name}`}</title>
@@ -108,8 +112,8 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
             </a>
           </div>
           {vouchers.map((v) => (
+            <div key={v.id} className="flex flex-col gap-2">
             <VoucherCard
-              key={v.id}
               t={t}
               locale={shop.locale}
               currency={order.currency}
@@ -127,6 +131,8 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
                 link: checkUrl(host, v.token),
               }}
             />
+            <WalletButtons token={v.token} t={getDictionary(shop.locale).wallet} available={wallet} status={v.status} compact />
+            </div>
           ))}
         </section>
       ) : null}

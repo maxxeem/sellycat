@@ -11,6 +11,8 @@ import { checkUrl } from "@/lib/vouchers/symbol";
 import { getSessionUser } from "@/lib/auth/session";
 import { getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
+import { WalletButtons } from "@/components/shop/wallet-buttons";
+import { walletAvailable } from "@/lib/wallet/passes";
 
 export function generateStaticParams() {
   return [{ token: "placeholder" }];
@@ -67,6 +69,7 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
               {getDictionary(shop.locale).redeem.checkButton}
             </Link>
           ) : null}
+          <WalletButtons token={token} t={getDictionary(shop.locale).wallet} available={walletAvailable()} status={v.status} />
           <a href={`/v/${token}/pdf`} target="_blank" rel="noopener" className="shop-btn w-full" data-testid="voucher-pdf">
             {t.downloadPdf}
           </a>

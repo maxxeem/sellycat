@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { Dictionary } from "@/lib/i18n";
 
-/** Shop design | voucher PDF. */
-export function DesignTabs({ active, t }: { active: "shop" | "voucher"; t: Dictionary["voucherDesign"] }) {
-  const tab = (key: "shop" | "voucher", href: string, label: string) => (
+/** Shop design | voucher PDF | wallet pass. */
+export function DesignTabs({ active, t, walletLabel }: { active: "shop" | "voucher" | "wallet"; t: Dictionary["voucherDesign"]; walletLabel: string }) {
+  const tab = (key: "shop" | "voucher" | "wallet", href: string, label: string) => (
     <Link
       href={href}
       aria-current={active === key ? "page" : undefined}
@@ -16,6 +16,7 @@ export function DesignTabs({ active, t }: { active: "shop" | "voucher"; t: Dicti
     <nav className="inline-flex gap-1 self-start rounded-button border border-line bg-surface p-1" aria-label="Design">
       {tab("shop", "/dashboard/design", t.tabShop)}
       {tab("voucher", "/dashboard/design/voucher", t.tabVoucher)}
+      {tab("wallet", "/dashboard/design/wallet", walletLabel)}
     </nav>
   );
 }

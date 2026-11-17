@@ -50,3 +50,6 @@ supabase/.temp/
 *.pem
 *.p8
 *.p12
+
+# Wallet certificates and private keys (never commit)
+/sellycat-keys/

@@ -87,7 +87,7 @@ async function Order({ t, locale, id: idPromise }: { t: Dictionary; locale: stri
                 {mails.map((m) => (
                   <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <span className="min-w-0">
-                      <span className="font-medium">{t.orders.mailKind[m.kind as "order" | "gift" | "my_link"] ?? m.kind}</span>
+                      <span className="font-medium">{t.orders.mailKind[m.kind as "order" | "gift" | "my_link" | "reminder"] ?? m.kind}</span>
                       <span className="block truncate text-muted">{m.recipient}</span>
                     </span>
                     <span className="flex items-center gap-2">

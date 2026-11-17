@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { after } from "next/server";
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { walletUpdate } from "@/lib/wallet/passes";
 import { deliverOrder } from "@/lib/mail/deliver";
 import { accountState } from "./map";
 import { getStripe } from "./stripe";
@@ -53,6 +54,9 @@ export async function recordRefund(charge: Pick<Stripe.Charge, "payment_intent" 
   if (error) throw new Error(`record_refund ${pi}: ${error.message}`);
   if (!orderId) return null;
   const { data: order } = await admin.from("orders").select("tenant_id").eq("id", orderId).maybeSingle();
+  // Refunded vouchers also change in Apple and Google Wallet.
+  const { data: vouchers } = await admin.from("vouchers").select("id").eq("order_id", orderId);
+  after(() => walletUpdate((vouchers ?? []).map((v) => v.id)));
   return order?.tenant_id ?? null;
 }
 

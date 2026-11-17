@@ -3,11 +3,12 @@ import { createHash, randomBytes } from "node:crypto";
 import { shopUrlForSlug } from "@/lib/site/hosts";
 import { getShopProfile, type ShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { walletAvailable } from "@/lib/wallet/passes";
 import { lightLogo, loadVouchers, pdfInput, pdfName, type VoucherBundle } from "@/lib/vouchers/data";
 import { renderVoucherPdf } from "@/lib/vouchers/pdf";
 import { mailConfigured, sendMail, type Attachment, type MailResult } from "./mailgun";
 import { loadSender } from "./sender-load";
-import { giftMail, myLinkMail, orderMail, type MailBrand, type MailVoucher } from "./templates";
+import { expiryMail, giftMail, myLinkMail, orderMail, type MailBrand, type MailVoucher } from "./templates";
 
 /**
  * Sending the mails of an order. Each mail is claimed in the database first (`mail_sent_at`,
@@ -30,10 +31,22 @@ export function brandOf(shop: ShopProfile): MailBrand {
   return { shopName: shop.name, locale: shop.locale, primary: shop.theme.colors.primary, logoUrl: lightLogo(shop), shopUrl: shopBase(shop) };
 }
 
-const mailVouchers = (b: VoucherBundle): MailVoucher[] =>
-  b.vouchers.map((v) => ({ title: v.title, partner: v.partner, code: v.code, valueCents: v.valueCents, currency: v.currency, validUntil: v.validUntil, link: v.link }));
+const mailVouchers = (b: VoucherBundle): MailVoucher[] => {
+  const w = walletAvailable();
+  const base = shopBase(b.shop);
+  return b.vouchers.map((v) => ({
+    title: v.title,
+    partner: v.partner,
+    code: v.code,
+    valueCents: v.valueCents,
+    currency: v.currency,
+    validUntil: v.validUntil,
+    link: v.link,
+    wallet: v.status === "valid" ? { ...(w.apple ? { apple: `${base}/v/${v.token}/pkpass` } : {}), ...(w.google ? { google: `${base}/v/${v.token}/google` } : {}) } : undefined,
+  }));
+};
 
-async function log(row: { tenant_id: string; order_id: string | null; kind: "order" | "gift" | "my_link"; recipient: string; sender: string | null; result: MailResult }) {
+async function log(row: { tenant_id: string; order_id: string | null; kind: "order" | "gift" | "my_link" | "reminder"; recipient: string; sender: string | null; result: MailResult }) {
   const { result, ...rest } = row;
   await createAdminClient()
     .from("mail_log")
@@ -202,4 +215,45 @@ export async function emailForLink(tenantId: string, token: string): Promise<str
   if (!/^[\w-]{20,64}$/.test(token)) return null;
   const { data } = await createAdminClient().from("buyer_links").select("email, expires_at").eq("tenant_id", tenantId).eq("token_hash", hashToken(token)).maybeSingle();
   return data && new Date(data.expires_at).getTime() > Date.now() ? data.email : null;
+}
+
+// ---------------------------------------------------------------- expiry reminders
+
+export const REMINDER_DAYS = 7;
+
+/**
+ * Once per voucher, about a week before it expires: a reminder to whoever holds it (the gift
+ * recipient once the gift went out, otherwise the buyer). Vouchers bought in the last day are
+ * left alone.
+ */
+export async function sendExpiryReminders(limit = 200): Promise<{ sent: number; failed: number }> {
+  const admin = createAdminClient();
+  const now = Date.now();
+  const { data } = await admin
+    .from("vouchers")
+    .select("id, tenant_id, order_id, token, valid_until, orders(email, gift, gift_email, gift_sent_at)")
+    .eq("status", "valid")
+    .is("reminder_sent_at", null)
+    .gt("valid_until", new Date(now).toISOString())
+    .lte("valid_until", new Date(now + REMINDER_DAYS * 86_400_000).toISOString())
+    .lt("created_at", new Date(now - 86_400_000).toISOString())
+    .order("valid_until")
+    .limit(limit);
+  let sent = 0;
+  let failed = 0;
+  for (const v of data ?? []) {
+    const { data: claimed } = await admin.from("vouchers").update({ reminder_sent_at: new Date().toISOString() }).eq("id", v.id).is("reminder_sent_at", null).select("id");
+    if (!claimed?.length || !v.valid_until) continue;
+    const bundle = await loadVouchers(v.tenant_id, { token: v.token }, "");
+    const o = v.orders;
+    if (!bundle || !o) continue;
+    const to = o.gift && o.gift_sent_at && o.gift_email ? o.gift_email : o.email;
+    const sender = await loadSender(v.tenant_id);
+    const mail = expiryMail({ brand: brandOf(bundle.shop), vouchers: mailVouchers(bundle), validUntil: v.valid_until, url: bundle.vouchers[0].link });
+    const result = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to, ...mail, tag: "reminder" });
+    await log({ tenant_id: v.tenant_id, order_id: v.order_id, kind: "reminder", recipient: to, sender: sender.address, result });
+    if (result.ok) sent += 1;
+    else failed += 1;
+  }
+  return { sent, failed };
 }

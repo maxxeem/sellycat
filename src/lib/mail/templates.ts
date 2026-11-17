@@ -7,7 +7,7 @@ import { formatMoney } from "@/lib/shop/deal-status";
  * table layout with inline styles for mail clients.
  */
 export type MailBrand = { shopName: string; locale: "de" | "en"; primary: string; logoUrl: string | null; shopUrl: string };
-export type MailVoucher = { title: string; partner: string | null; code: string; valueCents: number | null; currency: string; validUntil: string | null; link: string | null };
+export type MailVoucher = { title: string; partner: string | null; code: string; valueCents: number | null; currency: string; validUntil: string | null; link: string | null; wallet?: { apple?: string; google?: string } };
 export type Mail = { subject: string; html: string; text: string };
 
 export const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -52,6 +52,7 @@ ${v.partner ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;letter-sp
 <p style="margin:8px 0 0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:18px;font-weight:700;letter-spacing:.06em;">${esc(v.code)}</p>
 <p style="margin:6px 0 0;font-size:13px;color:#52525b;">${meta.map((m) => esc(m!)).join(" · ")}</p>
 ${withLinks && v.link ? `<p style="margin:10px 0 0;font-size:14px;"><a href="${esc(v.link)}" style="color:#111111;font-weight:700;">${esc(t.mail.openVoucher)} &rarr;</a></p>` : ""}
+${v.wallet?.apple || v.wallet?.google ? `<p style="margin:10px 0 0;font-size:14px;">${[v.wallet.apple ? `<a href="${esc(v.wallet.apple)}" style="display:inline-block;margin:0 6px 6px 0;padding:8px 14px;background:#000000;color:#ffffff;border-radius:10px;font-weight:700;text-decoration:none;">${esc(t.wallet.addApple)}</a>` : "", v.wallet.google ? `<a href="${esc(v.wallet.google)}" style="display:inline-block;margin:0 6px 6px 0;padding:8px 14px;background:#000000;color:#ffffff;border-radius:10px;font-weight:700;text-decoration:none;">${esc(t.wallet.addGoogle)}</a>` : ""].join("")}</p>` : ""}
 </td></tr></table>`;
     })
     .join("");
@@ -161,5 +162,26 @@ export function redeemCodeMail(i: { brand: MailBrand; code: string; minutes: num
     subject: subjectLine(fmt(r.mailSubject, { code: i.code, shop: i.brand.shopName })),
     html,
     text: [r.mailHeading, "", fmt(r.mailIntro, { shop: i.brand.shopName }), "", i.code, "", fmt(r.mailValid, { minutes: String(i.minutes) }), r.mailIgnore].join("\n"),
+  };
+}
+
+/** A few days before a voucher expires. */
+export function expiryMail(i: { brand: MailBrand; vouchers: MailVoucher[]; validUntil: string; url: string }): Mail {
+  const t = getDictionary(i.brand.locale);
+  const w = t.wallet;
+  const date = dateText(i.validUntil, i.brand.locale);
+  const intro = fmt(w.reminderIntro, { date });
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">⏳ ${esc(w.reminderHeading)}</h1>
+<p style="margin:0;">${esc(intro)}</p>
+${voucherRows(i.brand, i.vouchers, false)}
+${button(i.brand, i.url, w.reminderButton)}`,
+    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+  );
+  return {
+    subject: subjectLine(fmt(w.reminderSubject, { shop: i.brand.shopName })),
+    html,
+    text: [w.reminderHeading, "", intro, "", voucherText(i.brand, i.vouchers), "", `${w.reminderButton}: ${i.url}`, "", fmt(t.mail.footer, { shop: i.brand.shopName })].join("\n"),
   };
 }

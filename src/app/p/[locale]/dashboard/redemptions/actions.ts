@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { walletUpdate } from "@/lib/wallet/passes";
 import { requireTenant } from "@/lib/dashboard/context";
 import { asVoucherError as asError, findVoucher, redeem, type VoucherError, type VoucherInfo } from "@/lib/vouchers/redeem";
 
@@ -29,6 +31,10 @@ export async function undoRedemption(id: string): Promise<{ ok: boolean; error?:
   const { data, error } = await supabase.rpc("undo_redemption", { p_redemption: id });
   if (error || !data) return { ok: false, error: "failed" };
   const r = data as { ok: boolean; error?: string };
+  if (r.ok) {
+    const { data: red } = await supabase.from("redemptions").select("voucher_id").eq("id", id).maybeSingle();
+    if (red) after(() => walletUpdate([red.voucher_id]));
+  }
   revalidatePath("/p/[locale]/dashboard/redemptions", "page");
   revalidatePath("/p/[locale]/dashboard/vouchers", "page");
   return r.ok ? { ok: true } : { ok: false, error: asError(r.error) };
@@ -40,6 +46,7 @@ export async function voidVoucher(id: string): Promise<{ ok: boolean; error?: Vo
   const { data, error } = await supabase.rpc("void_voucher", { p_voucher: id });
   if (error || !data) return { ok: false, error: "failed" };
   const r = data as { ok: boolean; error?: string };
+  if (r.ok) after(() => walletUpdate([id]));
   revalidatePath("/p/[locale]/dashboard/vouchers", "page");
   return r.ok ? { ok: true } : { ok: false, error: asError(r.error) };
 }

@@ -12,7 +12,7 @@ export default async function VoucherDesignPage({ params }: PageProps<"/p/[local
   const { t } = await fromParams(params);
   return (
     <div className="flex flex-col gap-4">
-      <DesignTabs active="voucher" t={t.voucherDesign} />
+      <DesignTabs active="voucher" t={t.voucherDesign} walletLabel={t.wallet.tabWallet} />
       <Suspense fallback={<Skeleton className="h-[80vh]" />}>
         <Editor />
       </Suspense>

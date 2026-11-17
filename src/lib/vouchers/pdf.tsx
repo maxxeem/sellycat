@@ -31,7 +31,7 @@ export type PdfVoucher = {
   validUntil: string | null;
   terms: string | null;
   image: string | null;
-  locations: Array<{ name: string; street: string | null; zip: string | null; city: string | null }>;
+  locations: Array<{ name: string; street: string | null; zip: string | null; city: string | null; lat?: number | null; lng?: number | null }>;
 };
 export type PdfInput = {
   shopName: string;

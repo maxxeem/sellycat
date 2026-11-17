@@ -1,5 +1,7 @@
 import "server-only";
+import { after } from "next/server";
 import type { createClient } from "@/lib/supabase/server";
+import { walletUpdate } from "@/lib/wallet/passes";
 
 /**
  * Looking up and redeeming vouchers as the signed-in user (dashboard and the redemption app on
@@ -72,5 +74,6 @@ export async function redeem(
   const { data, error } = await supabase.rpc("redeem_voucher", { p_voucher: id, p_amount: cents, p_source: source });
   if (error || !data) return { ok: false, error: "failed" };
   const r = data as { ok: boolean; error?: string; remaining?: number | null };
+  if (r.ok) after(() => walletUpdate([id]));
   return r.ok ? { ok: true, remaining: r.remaining ?? null } : { ok: false, error: asVoucherError(r.error) };
 }

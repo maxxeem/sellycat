@@ -43,6 +43,7 @@ Stack: Next.js 16 App Router (Cache Components, `proxy.ts`), TypeScript strict, 
 - **Code-Pools**: `deals.pool_free` zählt freie Codes (Trigger), zählt bei `code_source = 'pool'` als Bestand (`remaining()`, `start_checkout`).
 - **PDF-Vorlagen**: `src/lib/vouchers/design.ts` (Layout classic/ticket/minimal, A4/A6), Tabelle `voucher_designs` (eine pro Shop), `pdf.tsx` rendert alle Varianten (Test `pdf.test.ts`, mit `PDF_OUT=<ordner>` lokal ansehen).
 - **Eigene Domains (Phase 6)**: `src/lib/site/custom-domain.ts` (rein, getestet: Eingabe, DNS-Einträge, Anbieter), `src/lib/site/shop-domains.ts` (Vercel, Status, Hauptadresse), Vercel-Aufrufe in `src/lib/vercel/domains.ts`. Zeilen in `tenant_domains` schreibt nur der Server. Der Proxy leitet auf `redirect_host` (aktive eigene Hauptdomain) um.
+- **Wallet (Phase 5)**: `src/lib/wallet/` – `content.ts` (rein, getestet: Felder für Apple/Google), `apple.ts` (pkpass), `apns.ts` (Push), `google.ts` (JWT/REST), `passes.ts` (Laden, `walletUpdate` nach jeder Statusänderung per `after()`), `webservice.ts` (Apple-Update-Dienst unter `/api/passkit/v1`). Schlüssel lokal aus `WALLET_KEYS_DIR` (nur Entwicklung), sonst aus Variablen. Live-Test Google: `WALLET_LIVE=1 npx vitest run src/lib/wallet/google.live.test.ts`.
 - **Supabase-Clients**: `lib/supabase/server.ts` (Cookies, RLS), `client.ts` (Browser), `proxy.ts` (Session-Refresh), `admin.ts` (Service-Role + öffentlicher Client).
 
 ## Next.js 16

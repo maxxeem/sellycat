@@ -6,6 +6,7 @@ import { importBranding, type ImportResult } from "@/lib/design/brand-import";
 import { themeSchema, type ShopTheme } from "@/lib/shop/theme";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { designToRow, parseDesign, type VoucherDesign } from "@/lib/vouchers/design";
+import { parseWalletDesign, type WalletDesign } from "@/lib/wallet/content";
 
 export async function saveTheme(theme: ShopTheme, publish: boolean): Promise<{ ok: boolean; error?: string }> {
   const { tenant, supabase } = await requireTenant("editor");
@@ -39,5 +40,16 @@ export async function saveVoucherDesign(input: VoucherDesign): Promise<{ ok: boo
   const design = parseDesign(input);
   const { error } = await supabase.from("voucher_designs").upsert({ tenant_id: tenant.id, ...designToRow(design) }, { onConflict: "tenant_id" });
   revalidatePath("/p/[locale]/dashboard/design/voucher", "page");
+  return { ok: !error };
+}
+
+/** Wallet pass design of the shop (editor and up); passes on phones update with the next change. */
+export async function saveWalletDesign(input: WalletDesign): Promise<{ ok: boolean }> {
+  const { tenant, supabase } = await requireTenant("editor");
+  const d = parseWalletDesign(input);
+  const { error } = await supabase
+    .from("wallet_designs")
+    .upsert({ tenant_id: tenant.id, background: d.background, foreground: d.foreground, label: d.label, show_image: d.showImage, show_locations: d.showLocations }, { onConflict: "tenant_id" });
+  revalidatePath("/p/[locale]/dashboard/design/wallet", "page");
   return { ok: !error };
 }

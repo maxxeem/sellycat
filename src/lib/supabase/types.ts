@@ -1515,6 +1515,7 @@ export type Database = {
           partner_id: string | null
           redeemed_at: string | null
           remaining_cents: number | null
+          reminder_sent_at: string | null
           status: Database["public"]["Enums"]["voucher_status"]
           tenant_id: string
           title: string
@@ -1535,6 +1536,7 @@ export type Database = {
           partner_id?: string | null
           redeemed_at?: string | null
           remaining_cents?: number | null
+          reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["voucher_status"]
           tenant_id: string
           title: string
@@ -1555,6 +1557,7 @@ export type Database = {
           partner_id?: string | null
           redeemed_at?: string | null
           remaining_cents?: number | null
+          reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["voucher_status"]
           tenant_id?: string
           title?: string
@@ -1597,6 +1600,147 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_designs: {
+        Row: {
+          background: string | null
+          foreground: string | null
+          label: string | null
+          show_image: boolean
+          show_locations: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          background?: string | null
+          foreground?: string | null
+          label?: string | null
+          show_image?: boolean
+          show_locations?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          background?: string | null
+          foreground?: string | null
+          label?: string | null
+          show_image?: boolean
+          show_locations?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_designs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_devices: {
+        Row: {
+          device_id: string
+          push_token: string
+          updated_at: string
+        }
+        Insert: {
+          device_id: string
+          push_token: string
+          updated_at?: string
+        }
+        Update: {
+          device_id?: string
+          push_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wallet_passes: {
+        Row: {
+          auth_token: string
+          created_at: string
+          google_object_id: string | null
+          tenant_id: string
+          updated_at: string
+          voucher_id: string
+        }
+        Insert: {
+          auth_token: string
+          created_at?: string
+          google_object_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          voucher_id: string
+        }
+        Update: {
+          auth_token?: string
+          created_at?: string
+          google_object_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_passes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_passes_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: true
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_registrations: {
+        Row: {
+          created_at: string
+          device_id: string
+          tenant_id: string
+          voucher_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          tenant_id: string
+          voucher_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          tenant_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_registrations_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_devices"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "wallet_registrations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_registrations_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_passes"
+            referencedColumns: ["voucher_id"]
           },
         ]
       }
