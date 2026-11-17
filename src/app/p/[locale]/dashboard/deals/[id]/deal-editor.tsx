@@ -2,9 +2,10 @@
 
 import { generateHTML } from "@tiptap/html";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Monitor, Plus, Smartphone, Trash2, X } from "lucide-react";
+import { Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
-import { uploadMedia } from "@/components/image-upload";
+import { acceptedFiles, uploadMedia } from "@/components/image-upload";
+import { DealImages, IMAGE_TYPES } from "./deal-images";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { DealCard } from "@/components/shop/deal-card";
 import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
@@ -20,7 +21,9 @@ import { dealStatus, parseMoney } from "@/lib/shop/deal-status";
 import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
 import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
+import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 import { deleteDeal, saveDeal, setDealState, type SaveResult } from "../actions";
+import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
 
 type Partner = { id: string; name: string; logo_url: string | null; website_url: string | null; partner_locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null }> };
 
@@ -38,6 +41,8 @@ export function DealEditor(props: {
   theme: ShopTheme;
   legalComplete: boolean;
   canDelete: boolean;
+  /** Conditions and FAQ of the shop's other deals. */
+  reuse: { terms: ReusableTerms[]; faq: ReusableFaq[] };
 }) {
   const { t, locale } = useI18n();
   const d = t.deals;
@@ -50,6 +55,7 @@ export function DealEditor(props: {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<"card" | "detail">("card");
   const [device, setDevice] = useState<PreviewDevice>("mobile");
+  const [picker, setPicker] = useState<"terms" | "faq" | null>(null);
   const fonts = useMemo(() => themeFontCss(props.theme), [props.theme]);
 
   const set = <K extends keyof DealForm>(key: K, value: DealForm[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -117,8 +123,9 @@ export function DealEditor(props: {
       result(r, d.saved);
     });
 
-  const addImages = async (files: FileList | null) => {
-    if (!files?.length) return;
+  const addImages = async (picked: FileList | File[] | null) => {
+    const files = picked ? acceptedFiles(picked, IMAGE_TYPES) : [];
+    if (!files.length) return;
     setUploading(true);
     try {
       const urls: string[] = [];
@@ -234,39 +241,31 @@ export function DealEditor(props: {
 
           <Card title={d.sections.content}>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5 text-sm">
-                <span className="font-semibold">{d.images}</span>
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                  {form.images.map((img, i) => (
-                    <div key={img.url} className="group relative aspect-square overflow-hidden rounded-input border border-line">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.url} alt={img.alt} className="h-full w-full object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 flex justify-between bg-ink/60 p-1 text-white">
-                        <button type="button" onClick={() => moveImage(i, -1)} disabled={i === 0} aria-label="←"><ArrowUp className="h-4 w-4 -rotate-90" /></button>
-                        <button type="button" onClick={() => set("images", form.images.filter((_, x) => x !== i))} aria-label={t.design.remove}><X className="h-4 w-4" /></button>
-                        <button type="button" onClick={() => moveImage(i, 1)} disabled={i === form.images.length - 1} aria-label="→"><ArrowDown className="h-4 w-4 -rotate-90" /></button>
-                      </div>
-                    </div>
-                  ))}
-                  {form.images.length < 12 ? (
-                    <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-input border-2 border-dashed border-line text-muted hover:border-ink hover:text-ink">
-                      <Plus className="h-6 w-6" aria-hidden />
-                      <span className="text-xs">{uploading ? t.common.loading : t.design.upload}</span>
-                      <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" disabled={uploading} onChange={(e) => addImages(e.target.files)} />
-                    </label>
-                  ) : null}
-                </div>
-                <span className="text-xs text-muted">{d.imagesHint}</span>
-              </div>
+              <DealImages
+                images={form.images}
+                uploading={uploading}
+                label={d.images}
+                hint={d.imagesHint}
+                onAdd={addImages}
+                onMove={moveImage}
+                onRemove={(i) => set("images", form.images.filter((_, x) => x !== i))}
+              />
               <div className="flex flex-col gap-1.5 text-sm">
                 <span className="font-semibold">{d.description}</span>
                 <RichTextEditor value={form.description} onChange={(doc) => set("description", doc)} label={d.description} />
               </div>
-              <Field label={d.terms}>
-                <textarea value={form.terms} onChange={(e) => set("terms", e.target.value)} rows={4} className={inputClass} />
-              </Field>
+              <div className="flex flex-col gap-1.5 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <label htmlFor="deal-terms" className="font-semibold">{d.terms}</label>
+                  <ReuseButton count={props.reuse.terms.length} onClick={() => setPicker("terms")} />
+                </div>
+                <textarea id="deal-terms" value={form.terms} onChange={(e) => set("terms", e.target.value)} rows={4} className={inputClass} />
+              </div>
               <div className="flex flex-col gap-2 text-sm">
-                <span className="font-semibold">{d.faq}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{d.faq}</span>
+                  <ReuseButton count={props.reuse.faq.length} onClick={() => setPicker("faq")} />
+                </div>
                 {form.faq.map((f, i) => (
                   <div key={i} className="flex gap-2 rounded-input border border-line p-2">
                     <div className="flex flex-1 flex-col gap-2">
@@ -278,6 +277,30 @@ export function DealEditor(props: {
                 ))}
                 <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => set("faq", [...form.faq, { q: "", a: "" }])}><Plus className="h-4 w-4" /> {d.addFaq}</button>
               </div>
+              {picker === "terms" ? (
+                <TermsPicker
+                  items={props.reuse.terms}
+                  current={form.terms}
+                  onClose={() => setPicker(null)}
+                  onPick={(text, mode) => {
+                    set("terms", mergeTerms(form.terms, text, mode));
+                    setPicker(null);
+                  }}
+                />
+              ) : null}
+              {picker === "faq" ? (
+                <FaqPicker
+                  items={props.reuse.faq}
+                  current={form.faq}
+                  onClose={() => setPicker(null)}
+                  onAdd={(entries) => {
+                    // Empty rows make way for the new entries.
+                    const kept = form.faq.filter((f) => f.q.trim() || f.a.trim());
+                    set("faq", [...kept, ...entries.filter((n) => !kept.some((k) => sameFaq(k, n)))]);
+                    setPicker(null);
+                  }}
+                />
+              ) : null}
             </div>
           </Card>
 

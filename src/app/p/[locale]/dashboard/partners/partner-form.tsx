@@ -31,7 +31,7 @@ export function PartnerForm({ tenantId, partner }: { tenantId: string; partner?:
       <Field label={t.partners.email}>
         <Input name="email" defaultValue={partner?.email ?? ""} type="email" />
       </Field>
-      <ImageUpload tenantId={tenantId} folder="partners" name="logo" value={partner?.logo_url ?? ""} label={t.partners.logo} removeLabel={t.partners.delete} aspect="aspect-[2/1]" />
+      <ImageUpload tenantId={tenantId} folder="partners" name="logo" value={partner?.logo_url ?? ""} label={t.partners.logo} hint={t.design.hintLogo} height="h-32" tone="light" />
       {state?.error ? <Notice tone="error">{t.common.error}</Notice> : state?.ok ? <Notice tone="success">{t.common.saved}</Notice> : null}
       <button type="submit" disabled={pending} className={buttonClass.primary}>
         {pending ? t.common.loading : t.common.save}

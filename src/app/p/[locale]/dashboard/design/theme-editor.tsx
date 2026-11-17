@@ -219,18 +219,16 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
               <Field label={g.heroSubtitle}>
                 <Input value={theme.hero.subtitle} maxLength={240} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, subtitle: e.target.value } }))} />
               </Field>
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} removeLabel={g.remove} aspect="aspect-[16/7]" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url } }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url } }))} />
             </div>
           </Card>
 
           <Card title={g.images}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoLight} label={g.logoLight} removeLabel={g.remove} onChange={(url) => update((th) => ({ ...th, logoLight: url }))} />
-              <div className="rounded-input bg-ink p-2 [&_span]:text-white">
-                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoDark} label={g.logoDark} removeLabel={g.remove} onChange={(url) => update((th) => ({ ...th, logoDark: url }))} />
-              </div>
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.favicon} label={g.favicon} removeLabel={g.remove} aspect="aspect-square max-w-[120px]" accept="image/png,image/svg+xml,image/x-icon" onChange={(url) => update((th) => ({ ...th, favicon: url }))} />
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.socialImage} label={g.socialImage} removeLabel={g.remove} aspect="aspect-[1200/630]" onChange={(url) => update((th) => ({ ...th, socialImage: url }))} />
+            <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoLight} label={g.logoLight} hint={g.hintLogo} height="h-32" tone="light" onChange={(url) => update((th) => ({ ...th, logoLight: url }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoDark} label={g.logoDark} hint={g.hintLogo} height="h-32" tone="dark" onChange={(url) => update((th) => ({ ...th, logoDark: url }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.favicon} label={g.favicon} hint={g.hintFavicon} height="h-32" accept="image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" onChange={(url) => update((th) => ({ ...th, favicon: url }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.socialImage} label={g.socialImage} hint={g.hintSocial} height="h-32" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, socialImage: url }))} />
             </div>
           </Card>
 
