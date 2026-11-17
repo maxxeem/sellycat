@@ -9,6 +9,9 @@ import { getStripe, stripeConfigured } from "@/lib/payments/stripe";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { VoucherCard } from "@/components/shop/voucher-card";
+import { checkUrl } from "@/lib/vouchers/symbol";
+import { headers } from "next/headers";
 
 export function generateStaticParams() {
   return [{ id: "00000000-0000-0000-0000-000000000000" }];
@@ -52,6 +55,10 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
   const t = shopTexts(shop.locale);
   const money = (c: number) => formatMoney(c, order.currency, shop.locale);
   const paid = order.status === "paid" || order.status === "partially_refunded";
+  const { data: vouchers } = paid
+    ? await admin.from("vouchers").select("id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, partners(name)").eq("order_id", order.id).order("created_at")
+    : { data: [] };
+  const host = shop.primaryHost ?? (await headers()).get("host") ?? "";
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-10 sm:py-16">
       <title>{`${fmt(t.orderNumber, { number: order.number })} · ${shop.name}`}</title>
@@ -81,6 +88,32 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
           {t.continueShopping}
         </Link>
       </div>
+      {vouchers?.length ? (
+        <section className="mt-8 flex flex-col gap-4">
+          <h2 className="shop-heading text-xl font-bold">{t.yourVouchers}</h2>
+          {vouchers.map((v) => (
+            <VoucherCard
+              key={v.id}
+              t={t}
+              locale={shop.locale}
+              currency={order.currency}
+              linkLabel={t.voucherOpen}
+              v={{
+                title: v.title,
+                code: v.code,
+                codeFormat: v.code_format,
+                barcodeType: v.barcode_type,
+                status: v.status,
+                validUntil: v.valid_until,
+                valueCents: v.value_cents,
+                remainingCents: v.remaining_cents,
+                partner: v.partners?.name ?? null,
+                link: checkUrl(host, v.token),
+              }}
+            />
+          ))}
+        </section>
+      ) : null}
     </div>
   );
 }

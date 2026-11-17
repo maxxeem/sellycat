@@ -251,3 +251,9 @@ Erledigt: Migration `payments` (Stripe-Konten, Käufer, Bestellungen, Positionen
 Entscheidungen: Connect per OAuth statt Account Links, weil Kunden ihr bestehendes Stripe-Konto verbinden sollen. Gebühr pro Bestellung (Prozent + fix). Bezahlt jemand nach Ablauf der Reservation und ist nichts mehr frei, gilt der Kauf trotzdem (Hinweis «überverkauft» in der Bestellung).
 
 Offen/bewusst später: Gutscheine und Mails nach dem Kauf (Phase 4); Geschenk-Option (Phase 4); Apple-Pay-Domainregistrierung für später hinzugefügte eigene Domains (Phase 6; die bestehenden Shop-Domains werden beim Verbinden registriert); Cron nur täglich (Vercel-Plan), die Freigabe läuft vorher über Webhook und nächsten Kauf.
+
+## 11. Stand Phase 4, Teil 1 (19.11.2026)
+
+Erledigt: Migration `vouchers` (Gutscheine, Code-Pools, Einlösungen; Funktionen `issue_vouchers` (in `fulfil_order`, nachträglich für alte Bestellungen), `redeem_voucher` (Zeilensperre, Einlösefenster, Teileinlösung), `undo_redemption` (Inhaber/Admin, 7 Tage), `void_voucher`, `find_voucher`, `voucher_public`; volle Rückerstattung setzt offene Gutscheine auf «erstattet»); Codes lesbar ohne 0/O/1/I/L, numerisch oder als gültiger Barcode (EAN/UPC/ITF mit Prüfziffer), getrenntes 128-Bit-Token für den Prüflink; QR/Barcodes mit bwip-js als SVG; Erfolgsseite zeigt die Gutscheine; Prüfseite `/v/<token>`; Dashboard «Ausgestellt» (Filter, Suche, Ungültig machen, CSV) und «Einlösungen» (Code eingeben, ganz oder Betrag einlösen, Log mit Rückgängig, CSV); Tests gegen Staging inkl. paralleler Doppel-Einlösung.
+
+Nächste Teile: Teil 2 PDF + Mail (Mailgun `mail.sellycat.com`), «Meine Gutscheine» per Magic-Link, Geschenk-Versand. Teil 3 Einlöse-PWA auf der Shop-Domain, CSV-Import für Code-Pools (Warnung/Auto-Stopp), PDF-Vorlagen-Editor.
