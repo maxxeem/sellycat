@@ -63,7 +63,7 @@ async function Home({ t, locale }: { t: Dictionary; locale: string }) {
       tenantName={tenant.name}
       shopUrl={shopUrlForSlug(tenant.slug)}
       brand={look.colors?.primary ?? "#ff4b23"}
-      logo={look.logoLight || look.logoDark || null}
+      logos={{ light: look.logoLight || null, dark: look.logoDark || null }}
       currency={shop?.currency ?? "CHF"}
       setup={{ design: Boolean(theme?.published_at), legal: Boolean(legal), deal: Boolean(deals?.length), payments: Boolean(shop?.payments_ready) }}
       liveDeals={(deals ?? []).filter((d) => dealStatus(d, now) === "live").length}

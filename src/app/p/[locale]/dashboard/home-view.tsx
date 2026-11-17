@@ -19,7 +19,8 @@ export type HomeData = {
   shopUrl: string;
   /** The shop's primary colour and logo (tint of the shop card). */
   brand: string;
-  logo: string | null;
+  /** Logo variants for light and dark backgrounds (either may be missing). */
+  logos: { light: string | null; dark: string | null };
   currency: string;
   setup: { design: boolean; legal: boolean; deal: boolean; payments: boolean };
   liveDeals: number;
@@ -28,7 +29,7 @@ export type HomeData = {
 };
 
 /** Dashboard start page: shop card, getting started (until done), key figures, recent orders, shortcuts. */
-export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo, currency, setup, liveDeals, stats, recent }: HomeData) {
+export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logos, currency, setup, liveDeals, stats, recent }: HomeData) {
   const h = t.dashboard.home;
   const money = (cents: number) => formatMoney(cents, currency, locale);
   const steps: Array<{ label: string; done: boolean; href: string; icon: Icon }> = [
@@ -49,16 +50,7 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
       >
         <div className="flex flex-col gap-5 p-5 sm:p-7 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
-              {logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt="" className="h-10 w-10 object-contain" />
-              ) : (
-                <span className="text-xl font-bold" style={{ color: brand }}>
-                  {tenantName.slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
+            <ShopLogo logos={logos} name={tenantName} brand={brand} />
             <div className="min-w-0">
               <p className="text-sm text-muted">{fmt(t.dashboard.welcome, { name: userName })}</p>
               <h1 className="truncate text-2xl font-bold tracking-tight">{tenantName}</h1>
@@ -198,6 +190,35 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
           </div>
         </Panel>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Shop logo that stays readable in both dashboard themes: with both variants, each shows on a
+ * matching tile; with only one, the tile takes the background that variant was made for.
+ */
+function ShopLogo({ logos, name, brand }: { logos: HomeData["logos"]; name: string; brand: string }) {
+  const tile = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-line shadow-card";
+  const img = (src: string, extra = "") => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className={`h-10 w-10 object-contain ${extra}`} />
+  );
+  if (logos.light && logos.dark) {
+    return (
+      <>
+        <div className={`${tile} bg-white dark:hidden`}>{img(logos.light)}</div>
+        <div className={`${tile} hidden bg-[#111] dark:flex`}>{img(logos.dark)}</div>
+      </>
+    );
+  }
+  if (logos.light) return <div className={`${tile} bg-white`}>{img(logos.light)}</div>;
+  if (logos.dark) return <div className={`${tile} bg-[#111]`}>{img(logos.dark)}</div>;
+  return (
+    <div className={`${tile} bg-surface`}>
+      <span className="text-xl font-bold" style={{ color: brand }}>
+        {name.slice(0, 1).toUpperCase()}
+      </span>
     </div>
   );
 }
