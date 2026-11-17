@@ -11,7 +11,7 @@ export function RichTextEditor({ value, onChange, label }: { value: JSONContent 
     extensions: RICH_TEXT_EXTENSIONS,
     content: value ?? "",
     immediatelyRender: false,
-    editorProps: { attributes: { class: "shop-prose min-h-40 px-3 py-2 outline-none", "aria-label": label } },
+    editorProps: { attributes: { class: "editor-prose min-h-40 px-3 py-2 outline-none", "aria-label": label } },
     onUpdate: ({ editor: e }) => onChange(e.getJSON()),
   });
   const state = useEditorState({

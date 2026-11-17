@@ -12,6 +12,8 @@ import sharp from "sharp";
 import { aiImportConfigured, importFromPage, type ImportError } from "@/lib/deals/import-ai";
 import { blocksToDoc } from "@/lib/deals/import-parse";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { audit, requireStaff } from "@/lib/platform/staff";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "error" };
 
@@ -63,12 +65,47 @@ export async function setDealState(id: string, state: "draft" | "published" | "e
   return { ok: true };
 }
 
-export async function deleteDeal(id: string) {
+/** Archive (owner/admin): out of the shop and the default list; a running deal is ended first. */
+export async function archiveDeal(id: string): Promise<SaveResult> {
   const { tenant, supabase } = await requireTenant("admin");
-  // Only drafts can disappear; published deals are ended instead (orders will point at them).
-  await supabase.from("deals").delete().eq("id", id).eq("tenant_id", tenant.id).eq("state", "draft");
+  const { data: deal } = await supabase.from("deals").select("state").eq("id", id).eq("tenant_id", tenant.id).maybeSingle();
+  if (!deal) return { ok: false, message: "error" };
+  const { error } = await supabase
+    .from("deals")
+    .update({ archived_at: new Date().toISOString(), featured: false, ...(deal.state === "published" ? { state: "ended" as const } : {}) })
+    .eq("id", id)
+    .eq("tenant_id", tenant.id);
+  if (error) return { ok: false, message: "error" };
   refreshShop(tenant.id);
-  redirect("/dashboard/deals");
+  revalidatePath("/p/[locale]/dashboard/deals", "layout");
+  return { ok: true };
+}
+
+/** Back from the archive; the deal stays a draft or ended until it is published again. */
+export async function restoreDeal(id: string): Promise<SaveResult> {
+  const { tenant, supabase } = await requireTenant("admin");
+  const { error } = await supabase.from("deals").update({ archived_at: null }).eq("id", id).eq("tenant_id", tenant.id);
+  if (error) return { ok: false, message: "error" };
+  revalidatePath("/p/[locale]/dashboard/deals", "layout");
+  return { ok: true };
+}
+
+/**
+ * Permanent deletion: Sellycat staff only (with authenticator code), and only archived deals.
+ * Orders and vouchers keep their own copy of title and price (deal_id becomes null).
+ */
+export async function deleteDealForever(id: string): Promise<SaveResult> {
+  const staff = await requireStaff();
+  const { tenant } = await requireTenant("editor");
+  const admin = createAdminClient();
+  const { data: deal } = await admin.from("deals").select("id, title, slug, archived_at, sold_qty").eq("id", id).eq("tenant_id", tenant.id).maybeSingle();
+  if (!deal?.archived_at) return { ok: false, message: "error" };
+  const { error } = await admin.from("deals").delete().eq("id", id).eq("tenant_id", tenant.id);
+  if (error) return { ok: false, message: "error" };
+  await audit(staff.id, "deal.delete", { tenantId: tenant.id, type: "deal", id, meta: { title: deal.title, slug: deal.slug, sold: deal.sold_qty } });
+  refreshShop(tenant.id);
+  revalidatePath("/p/[locale]/dashboard/deals", "layout");
+  redirect("/dashboard/deals?status=archived");
 }
 
 export type PoolResult = { ok: true; added?: number; skipped?: number; removed?: number } | { ok: false; error: "tooMany" | "failed" };
@@ -100,7 +137,7 @@ export async function clearPoolCodes(dealId: string): Promise<PoolResult> {
 const importLimit = createRateLimiter({ limit: 10, windowMs: 3_600_000 });
 
 export type ImportResult =
-  | { ok: true; title: string; subtitle: string; description: JSONContent; terms: string; faq: Array<{ q: string; a: string }>; images: Array<{ url: string; alt: string }>; regularPrice: number | null }
+  | { ok: true; title: string; subtitle: string; description: JSONContent; terms: string; faq: Array<{ q: string; a: string }>; images: Array<{ url: string; alt: string }>; regularPrice: number | null; basic: boolean }
   | { ok: false; error: ImportError | "limit" | "invalid" };
 
 /**
@@ -131,5 +168,5 @@ export async function importDealFromUrl(url: string): Promise<ImportResult> {
       // An image that cannot be converted is skipped.
     }
   }
-  return { ok: true, title: r.draft.title, subtitle: r.draft.subtitle, description: blocksToDoc(r.draft.blocks), terms: r.draft.terms, faq: r.draft.faq, images, regularPrice: r.draft.regularPrice };
+  return { ok: true, title: r.draft.title, subtitle: r.draft.subtitle, description: blocksToDoc(r.draft.blocks), terms: r.draft.terms, faq: r.draft.faq, images, regularPrice: r.draft.regularPrice, basic: r.draft.basic };
 }

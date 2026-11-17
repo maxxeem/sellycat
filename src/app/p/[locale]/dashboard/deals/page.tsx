@@ -36,7 +36,7 @@ async function DealList({ t, locale, searchParams }: { t: Dictionary; locale: Lo
   const [{ data: deals }, { data: info }] = await Promise.all([
     supabase
       .from("deals")
-      .select("id, title, subtitle, slug, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, teaser, price_cents, featured, created_at, updated_at, view_count, partners(name), deal_images(url, sort_order)")
+      .select("id, title, subtitle, slug, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, teaser, price_cents, featured, created_at, updated_at, view_count, archived_at, partners(name), deal_images(url, sort_order)")
       .eq("tenant_id", tenant.id)
       .limit(2000),
     supabase.from("tenants").select("currency").eq("id", tenant.id).single(),
@@ -76,8 +76,8 @@ async function DealList({ t, locale, searchParams }: { t: Dictionary; locale: Lo
                 </span>
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1">
-                <Badge tone={STATUS_TONE[status]}>{t.deals.status[status]}</Badge>
-                {isTeaser(d, now) ? <Badge tone="amber">{t.deals.teaserBadge}</Badge> : null}
+                {d.archived_at ? <Badge tone="neutral">{t.deals.archivedBadge}</Badge> : <Badge tone={STATUS_TONE[status]}>{t.deals.status[status]}</Badge>}
+                {!d.archived_at && isTeaser(d, now) ? <Badge tone="amber">{t.deals.teaserBadge}</Badge> : null}
                 {pool !== "ok" ? <Badge tone={pool === "empty" ? "red" : "amber"}>{t.deals.pool.badge[pool]}</Badge> : null}
               </span>
             </Link>

@@ -264,6 +264,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          archived_at: string | null
           barcode_type: Database["public"]["Enums"]["barcode_type"] | null
           category_id: string | null
           code_format: Database["public"]["Enums"]["code_format"]
@@ -307,6 +308,7 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          archived_at?: string | null
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
           category_id?: string | null
           code_format?: Database["public"]["Enums"]["code_format"]
@@ -350,6 +352,7 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          archived_at?: string | null
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
           category_id?: string | null
           code_format?: Database["public"]["Enums"]["code_format"]

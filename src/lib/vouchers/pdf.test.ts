@@ -44,3 +44,18 @@ describe("renderVoucherPdf", () => {
         if (process.env.PDF_OUT) writeFileSync(`${process.env.PDF_OUT}/${layout}-${size}.pdf`, pdf);
       }, 30_000);
 });
+
+describe("symbolVector", () => {
+  it("turns QR codes and barcodes into exact module rectangles with a quiet zone", async () => {
+    const { symbolVector } = await import("./symbol");
+    const qr = symbolVector({ codeFormat: "qr", barcodeType: null, code: "X", link: voucher.link })!;
+    expect(qr.width).toBe(qr.height);
+    expect(qr.rects.every(([x, y, w, h]) => Number.isInteger(x) && Number.isInteger(y) && w >= 1 && h === 1)).toBe(true);
+    // Finder pattern: the top row starts with seven dark modules after the quiet zone.
+    expect(qr.rects[0]).toEqual([2, 2, 7, 1]);
+    const ean = symbolVector({ codeFormat: "barcode", barcodeType: "ean13", code: "2001234567893", link: "" })!;
+    expect(ean.rects[0][0]).toBe(10);
+    expect(ean.width).toBe(95 + 20);
+    expect(symbolVector({ codeFormat: "barcode", barcodeType: "ean13", code: "ABC", link: "" })).toBeNull();
+  });
+});

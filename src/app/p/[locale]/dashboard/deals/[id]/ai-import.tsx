@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, Sparkles } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Notice, buttonClass, inputClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
@@ -12,16 +12,36 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
   const { t } = useI18n();
   const a = t.deals.aiImport;
   const [url, setUrl] = useState("");
-  const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const [pending, start] = useTransition();
-  const run = () =>
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!pending) return;
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [pending]);
+
+  const run = () => {
+    setSeconds(0);
     start(async () => {
       setMessage(null);
-      const r = await importDealFromUrl(url);
+      let r: ImportResult | undefined;
+      // A dropped connection is retried once; a new Sellycat version needs a reload.
+      for (let attempt = 0; attempt < 2 && !r; attempt++) {
+        try {
+          r = await importDealFromUrl(url);
+        } catch (e) {
+          const text = e instanceof Error ? e.message : "";
+          if (/Server Action|was not found|older or newer deployment/i.test(text)) return setMessage({ tone: "error", text: a.errors.outdated });
+          if (attempt === 1) return setMessage({ tone: "error", text: a.errors.connection });
+        }
+      }
+      if (!r) return setMessage({ tone: "error", text: a.errors.connection });
       if (!r.ok) return setMessage({ tone: "error", text: a.errors[r.error] });
       onDraft(r);
-      setMessage({ tone: "success", text: fmt(a.done, { images: String(r.images.length) }) });
+      setMessage(r.basic ? { tone: "info", text: fmt(a.basic, { images: String(r.images.length) }) } : { tone: "success", text: fmt(a.done, { images: String(r.images.length) }) });
     });
+  };
   return (
     <div className="flex flex-col gap-2 rounded-input border border-accent/30 bg-accent/5 p-4" data-testid="ai-import">
       <p className="flex items-center gap-2 text-sm font-semibold">
@@ -40,7 +60,7 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
           {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />} {a.start}
         </button>
       </form>
-      {pending ? <p className="text-xs text-muted">{a.working}</p> : <p className="text-xs text-muted">{a.replaceHint}</p>}
+      {pending ? <p className="text-xs text-muted" aria-live="polite">{fmt(a.working, { seconds: String(seconds) })}</p> : <p className="text-xs text-muted">{a.replaceHint}</p>}
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
     </div>
   );

@@ -4,7 +4,7 @@
  */
 import { dealStatus, isTeaser, type DealStatus, type DealStock } from "@/lib/shop/deal-status";
 
-export const LIST_STATUSES = ["all", "live", "scheduled", "teaser", "draft", "sold_out", "ended"] as const;
+export const LIST_STATUSES = ["all", "live", "scheduled", "teaser", "draft", "sold_out", "ended", "archived"] as const;
 export type ListStatus = (typeof LIST_STATUSES)[number];
 export const LIST_SORTS = ["created", "updated", "start", "ending", "sold", "views", "title", "price"] as const;
 export type ListSort = (typeof LIST_SORTS)[number];
@@ -18,13 +18,16 @@ export type ListRow = DealStock & {
   created_at: string;
   updated_at: string;
   view_count: number;
+  archived_at?: string | null;
   partners: { name: string } | null;
 };
 
 export const parseListStatus = (v: unknown): ListStatus => LIST_STATUSES.find((s) => s === v) ?? "all";
 export const parseListSort = (v: unknown): ListSort => LIST_SORTS.find((s) => s === v) ?? "created";
 
-const matches = (status: ListStatus, d: ListRow, s: DealStatus, now: Date) => status === "all" || (status === "teaser" ? isTeaser(d, now) : s === status);
+/** Archived deals only show under "Archiv"; every other chip (also "Alle") leaves them out. */
+const matches = (status: ListStatus, d: ListRow, s: DealStatus, now: Date) =>
+  d.archived_at ? status === "archived" : status === "all" || (status === "teaser" ? isTeaser(d, now) : s === status);
 
 const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
 

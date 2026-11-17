@@ -2,7 +2,7 @@
 
 import { generateHTML } from "@tiptap/html";
 import Link from "next/link";
-import { Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { acceptedFiles, uploadMedia } from "@/components/image-upload";
 import { DealImages, IMAGE_TYPES } from "./deal-images";
@@ -16,6 +16,7 @@ import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles"
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Badge, Card, Field, Input, Notice, Select, buttonClass, inputClass } from "@/components/ui";
 import { STATUS_TONE } from "@/lib/dashboard/deal-ui";
+import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { BARCODE_TYPES, slugifyTitle, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { dealStatus, parseMoney } from "@/lib/shop/deal-status";
@@ -23,7 +24,7 @@ import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
 import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
-import { deleteDeal, saveDeal, setDealState, type SaveResult } from "../actions";
+import { archiveDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 import { AiImport } from "./ai-import";
 import { PoolPanel } from "./pool-panel";
 import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
@@ -43,7 +44,10 @@ export function DealEditor(props: {
   shop: ShopInfo;
   theme: ShopTheme;
   legalComplete: boolean;
-  canDelete: boolean;
+  canArchive: boolean;
+  archived: boolean;
+  /** Sellycat staff with authenticator code: may delete archived deals for good. */
+  canDeleteForever: boolean;
   /** Conditions and FAQ of the shop's other deals. */
   reuse: { terms: ReusableTerms[]; faq: ReusableFaq[] };
 }) {
@@ -53,6 +57,7 @@ export function DealEditor(props: {
   // Rebuilds the rich-text editor when a draft replaces the description from outside.
   const [descriptionKey, setDescriptionKey] = useState(0);
   const [state, setState] = useState(props.state);
+  const [archived, setArchived] = useState(props.archived);
   const [errors, setErrors] = useState<DealErrors>({});
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [slugTouched, setSlugTouched] = useState(!props.initial.slug.startsWith("deal-"));
@@ -131,6 +136,22 @@ export function DealEditor(props: {
       result(r, d.saved);
     });
 
+  const archive = () =>
+    start(async () => {
+      const r = await archiveDeal(props.id);
+      if (r.ok) {
+        setArchived(true);
+        if (state === "published") setState("ended");
+      }
+      result(r, d.archivedBadge);
+    });
+  const restore = () =>
+    start(async () => {
+      const r = await restoreDeal(props.id);
+      if (r.ok) setArchived(false);
+      result(r, d.saved);
+    });
+
   const addImages = async (picked: FileList | File[] | null) => {
     const files = picked ? acceptedFiles(picked, IMAGE_TYPES) : [];
     if (!files.length) return;
@@ -161,27 +182,44 @@ export function DealEditor(props: {
           ← {d.title}
         </Link>
         <Badge tone={STATUS_TONE[status]}>{d.status[status]}</Badge>
+        {archived ? <Badge tone="neutral">{d.archivedBadge}</Badge> : null}
         <div className="ml-auto flex flex-wrap gap-2">
-          {props.canDelete && state === "draft" ? (
-            <button type="button" className={buttonClass.ghost} disabled={pending} onClick={() => confirm(t.partners.deleteConfirm) && start(() => deleteDeal(props.id))} aria-label={t.partners.delete}>
+          {props.canArchive && !archived ? (
+            <button type="button" className={buttonClass.ghost} disabled={pending} onClick={() => confirm(d.archiveConfirm) && archive()} title={d.archive} aria-label={d.archive} data-testid="deal-archive">
+              <Archive className="h-4 w-4" />
+            </button>
+          ) : null}
+          {archived && props.canDeleteForever ? (
+            <button
+              type="button"
+              className={`${buttonClass.ghost} text-danger`}
+              disabled={pending}
+              onClick={() => confirm(fmt(d.deleteForeverConfirm, { sold: props.stock.sold_qty })) && start(async () => void result(await deleteDealForever(props.id), ""))}
+              title={`${d.deleteForever} (${d.deleteForeverHint})`}
+              aria-label={d.deleteForever}
+              data-testid="deal-delete-forever"
+            >
               <Trash2 className="h-4 w-4" />
             </button>
           ) : null}
-          {state === "published" ? (
+          {archived ? (
+            props.canArchive ? <button type="button" className={buttonClass.secondary} disabled={pending} onClick={restore} data-testid="deal-restore"><ArchiveRestore className="h-4 w-4" /> {d.restore}</button> : null
+          ) : state === "published" ? (
             <>
               <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => changeState("draft")}>{d.unpublish}</button>
               <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => confirm(`${d.end}?`) && changeState("ended")}>{d.end}</button>
             </>
           ) : null}
-          {state === "ended" ? <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => changeState("draft")}>{d.unpublish}</button> : null}
+          {state === "ended" && !archived ? <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => changeState("draft")}>{d.unpublish}</button> : null}
           <button type="button" className={buttonClass.secondary} disabled={pending || uploading} onClick={save} data-testid="deal-save">{d.save}</button>
-          {state === "draft" ? (
+          {state === "draft" && !archived ? (
             <button type="button" className={buttonClass.primary} disabled={pending || uploading} onClick={() => changeState("published")} data-testid="deal-publish">{d.publish}</button>
           ) : null}
         </div>
       </div>
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
-      {!props.legalComplete && state === "draft" ? <Notice>{d.legalMissing}</Notice> : null}
+      {archived ? <Notice>{d.archivedNotice}</Notice> : null}
+      {!props.legalComplete && state === "draft" && !archived ? <Notice>{d.legalMissing}</Notice> : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="flex min-w-0 flex-col gap-6">

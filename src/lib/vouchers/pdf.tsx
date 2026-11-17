@@ -2,14 +2,14 @@ import "server-only";
 /* eslint-disable jsx-a11y/alt-text -- react-pdf <Image> is not an HTML img (no alt attribute) */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { Document, Font, Image, Page, Text, View } from "@react-pdf/renderer";
+import { Document, Font, Image, Page, Path, Svg, Text, View } from "@react-pdf/renderer";
 import { renderToBuffer } from "@react-pdf/renderer";
 import sharp from "sharp";
 import { mix, readableOn } from "@/lib/design/color";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { DEFAULT_DESIGN, type VoucherDesign } from "./design";
-import { voucherSymbol, type BarcodeType, type CodeFormat } from "./symbol";
+import { symbolVector, voucherSymbol, type BarcodeType, type CodeFormat, type SymbolVector } from "./symbol";
 
 /**
  * Voucher PDF, one page per voucher, in one of three layouts (classic, ticket, minimal) on A4 or
@@ -74,7 +74,8 @@ async function loadImage(url: string | null, width: number, format: "jpeg" | "pn
     const input = Buffer.from(await res.arrayBuffer());
     if (input.length > 15_000_000) return null;
     const img = sharp(input, { density: 300, limitInputPixels: 50_000_000 }).rotate().resize({ width, withoutEnlargement: true });
-    const out = format === "png" ? img.png() : img.flatten({ background: "#ffffff" }).jpeg({ quality: 82 });
+    // Always true colour: palette PNGs (8-bit colormap) are drawn wrongly by the PDF engine.
+    const out = format === "png" ? img.toColorspace("srgb").ensureAlpha().png({ palette: false }) : img.flatten({ background: "#ffffff" }).toColorspace("srgb").jpeg({ quality: 82 });
     const { data, info } = await out.toBuffer({ resolveWithObject: true });
     return { data, width: info.width, height: info.height };
   } catch {
@@ -82,11 +83,11 @@ async function loadImage(url: string | null, width: number, format: "jpeg" | "pn
   }
 }
 
-async function symbolPng(v: PdfVoucher): Promise<{ png: Buffer; kind: "qr" | "linear" | "matrix" } | null> {
+/** QR code or barcode as vector paths (sharp in print at any size). */
+function symbolOf(v: PdfVoucher): { vector: SymbolVector; kind: "qr" | "linear" | "matrix" } | null {
   const s = voucherSymbol({ codeFormat: v.codeFormat, barcodeType: v.barcodeType, code: v.code, link: v.link });
-  if (!s) return null;
-  const png = await sharp(Buffer.from(s.svg), { density: 600 }).flatten({ background: "#ffffff" }).png().toBuffer();
-  return { png, kind: s.kind };
+  const vector = s ? symbolVector({ codeFormat: v.codeFormat, barcodeType: v.barcodeType, code: v.code, link: v.link }) : null;
+  return s && vector ? { vector, kind: s.kind } : null;
 }
 
 const dateText = (iso: string, locale: "de" | "en") =>
@@ -102,7 +103,7 @@ type Metrics = (typeof METRICS)[keyof typeof METRICS];
 const MUTED = "#6b6b70";
 const SOFT = "#3f3f46";
 
-type Prepared = { v: PdfVoucher; cover: Loaded | null; symbol: Awaited<ReturnType<typeof symbolPng>> };
+type Prepared = { v: PdfVoucher; cover: Loaded | null; symbol: ReturnType<typeof symbolOf> };
 type Ctx = {
   input: PdfInput;
   design: VoucherDesign;
@@ -118,8 +119,16 @@ function logoBox(l: Loaded, m: Metrics) {
   return { width: l.width * scale, height: l.height * scale };
 }
 
-function symbolBox(kind: "qr" | "linear" | "matrix", m: Metrics) {
-  return kind === "linear" ? { width: m.linear[0], height: m.linear[1] } : { width: m.qr, height: m.qr };
+/** All module rectangles as one path (same winding, so touching modules fill as one area). */
+function symbolPath(v: SymbolVector): string {
+  return v.rects.map(([x, y, w, h]) => `M${x} ${y}L${x + w} ${y}L${x + w} ${y + h}L${x} ${y + h}Z`).join("");
+}
+
+/** Fits the symbol into its box without distorting it (QR codes stay exactly square). */
+function symbolBox(kind: "qr" | "linear" | "matrix", vector: SymbolVector, m: Metrics) {
+  const [w, h] = kind === "linear" ? m.linear : [m.qr, m.qr];
+  const scale = Math.min(w / vector.width, h / vector.height);
+  return { width: vector.width * scale, height: vector.height * scale };
 }
 
 // ------------------------------------------------------------------ shared blocks
@@ -181,7 +190,10 @@ function Symbol({ c, p }: { c: Ctx; p: Prepared }) {
   if (!p.symbol) return null;
   return (
     <View style={{ padding: c.m.gap * 0.3, backgroundColor: "#ffffff", borderRadius: c.m.radius * 0.6 }}>
-      <Image src={{ data: p.symbol.png, format: "png" }} style={symbolBox(p.symbol.kind, c.m)} />
+      <Svg viewBox={`0 0 ${p.symbol.vector.width} ${p.symbol.vector.height}`} style={symbolBox(p.symbol.kind, p.symbol.vector, c.m)}>
+        {/* One filled shape (not one per module): no hairline seams between rows in viewers. */}
+        <Path d={symbolPath(p.symbol.vector)} fill="#000000" />
+      </Svg>
     </View>
   );
 }
@@ -358,7 +370,7 @@ export async function renderVoucherPdf(input: PdfInput): Promise<Buffer> {
   const m = METRICS[design.size];
   const [logo, ...prepared] = await Promise.all([
     loadImage(input.logoUrl, 600, "png"),
-    ...input.vouchers.map(async (v) => ({ v, cover: design.showImage ? await loadImage(v.image, design.size === "a6" ? 800 : 1400, "jpeg") : null, symbol: await symbolPng(v) })),
+    ...input.vouchers.map(async (v) => ({ v, cover: design.showImage ? await loadImage(v.image, design.size === "a6" ? 800 : 1400, "jpeg") : null, symbol: symbolOf(v) })),
   ]);
   const accentRaw = design.accent ?? input.primary;
   const ctx: Ctx = {

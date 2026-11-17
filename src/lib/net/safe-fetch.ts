@@ -37,11 +37,11 @@ export async function assertPublic(url: URL) {
 export class BlockedError extends Error {}
 const BLOCK_PAGE = /Attention Required! \| Cloudflare|cf-chl-|challenge-platform|Just a moment\.\.\.|captcha-delivery|px-captcha/i;
 
-export async function fetchText(start: string, accept: string, maxBytes = MAX_BYTES): Promise<{ url: URL; text: string } | null> {
+export async function fetchText(start: string, accept: string, maxBytes = MAX_BYTES, timeoutMs = TIMEOUT_MS): Promise<{ url: URL; text: string } | null> {
   let url = new URL(start);
   for (let hop = 0; hop < MAX_HOPS; hop++) {
     await assertPublic(url);
-    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept, "user-agent": USER_AGENT } });
+    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(timeoutMs), headers: { accept, "user-agent": USER_AGENT } });
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
       url = new URL(res.headers.get("location")!, url);
       continue;
@@ -70,7 +70,7 @@ export async function fetchText(start: string, accept: string, maxBytes = MAX_BY
 
 
 /** An image (only image/* responses, at most `maxBytes`), with the same guards. */
-export async function fetchImage(start: string, maxBytes = 10_000_000): Promise<{ data: Buffer; type: string } | null> {
+export async function fetchImage(start: string, maxBytes = 10_000_000, timeoutMs = TIMEOUT_MS): Promise<{ data: Buffer; type: string } | null> {
   let url: URL;
   try {
     url = new URL(start);
@@ -83,7 +83,7 @@ export async function fetchImage(start: string, maxBytes = 10_000_000): Promise<
     } catch {
       return null;
     }
-    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept: "image/*", "user-agent": USER_AGENT } }).catch(() => null);
+    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(timeoutMs), headers: { accept: "image/*", "user-agent": USER_AGENT } }).catch(() => null);
     if (!res) return null;
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
       url = new URL(res.headers.get("location")!, url);

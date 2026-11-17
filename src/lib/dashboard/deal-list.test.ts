@@ -27,6 +27,7 @@ const rows = [
   row("Spa Tag", { state: "draft", created_at: "2026-11-20T00:00:00Z", price_cents: 18900 }),
   row("Kino Teaser", { teaser: true, sales_start: "2026-12-05T00:00:00Z", created_at: "2026-11-15T00:00:00Z", price_cents: 1500 }),
   row("Alt", { state: "ended", created_at: "2026-10-01T00:00:00Z" }),
+  row("Archiviert", { state: "ended", archived_at: "2026-11-20T00:00:00Z", created_at: "2026-09-01T00:00:00Z" }),
 ];
 const ids = (l: ListRow[]) => l.map((r) => r.title);
 
@@ -38,7 +39,7 @@ describe("dashboard deal list", () => {
   it("filters by status, teasers included", () => {
     expect(ids(filterAndSort(rows, { q: "", status: "live", sort: "created" }, now))).toEqual(["Brunch für zwei", "Pizza Abend"]);
     expect(ids(filterAndSort(rows, { q: "", status: "teaser", sort: "created" }, now))).toEqual(["Kino Teaser"]);
-    expect(listCounts(rows, "", now)).toMatchObject({ all: 5, live: 2, scheduled: 1, teaser: 1, draft: 1, ended: 1, sold_out: 0 });
+    expect(listCounts(rows, "", now)).toMatchObject({ all: 5, live: 2, scheduled: 1, teaser: 1, draft: 1, ended: 1, sold_out: 0, archived: 1 });
   });
   it("sorts by the chosen value", () => {
     expect(ids(filterAndSort(rows, { q: "", status: "all", sort: "created" }, now))[0]).toBe("Spa Tag");
@@ -47,6 +48,11 @@ describe("dashboard deal list", () => {
     expect(ids(filterAndSort(rows, { q: "", status: "live", sort: "ending" }, now))).toEqual(["Brunch für zwei", "Pizza Abend"]);
     expect(ids(filterAndSort(rows, { q: "", status: "all", sort: "price" }, now))[0]).toBe("Alt");
     expect(ids(filterAndSort(rows, { q: "", status: "all", sort: "title" }, now))[0]).toBe("Alt");
+  });
+  it("keeps archived deals out of every list but the archive", () => {
+    expect(ids(filterAndSort(rows, { q: "", status: "all", sort: "created" }, now))).not.toContain("Archiviert");
+    expect(ids(filterAndSort(rows, { q: "", status: "ended", sort: "created" }, now))).toEqual(["Alt"]);
+    expect(ids(filterAndSort(rows, { q: "", status: "archived", sort: "created" }, now))).toEqual(["Archiviert"]);
   });
   it("falls back to sensible defaults for unknown URL values", () => {
     expect(parseListStatus("x")).toBe("all");
