@@ -11,7 +11,7 @@ const html = `<!doctype html><html><head>
 </head><body><header>Menu</header>
 <h1>Wellness-Tag</h1><p>Ein ganzer Tag im Spa.</p><ul><li>Sauna</li><li>Pool</li></ul>
 <img src="/logo.png" width="120"><img src="https://cdn.spa.ch/a.jpg"><img srcset="/s-400.jpg 400w, /s-1200.jpg 1200w" src="/s-400.jpg">
-<img src="/icons/star.svg"><footer>Impressum</footer></body></html>`;
+<img src="/icons/star.svg"><img class=x src="https://cdn.spa.ch/c.jpg?width=100&amp;format=webp"><footer>Impressum</footer></body></html>`;
 
 describe("parseProductPage", () => {
   const f = parseProductPage(html, "https://www.spa.ch/angebote/wellness");
@@ -21,7 +21,7 @@ describe("parseProductPage", () => {
     expect(f.product).toEqual({ name: "Wellness-Tag", description: "Sauna, Pool & Massage", price: "189", currency: "CHF" });
   });
   it("collects absolute product images, best srcset entry, without logos and icons", () => {
-    expect(f.images).toEqual(["https://cdn.spa.ch/a.jpg", "https://cdn.spa.ch/b.jpg", "https://www.spa.ch/img/spa-hero.jpg", "https://www.spa.ch/s-1200.jpg"]);
+    expect(f.images).toEqual(["https://cdn.spa.ch/a.jpg", "https://cdn.spa.ch/b.jpg", "https://www.spa.ch/img/spa-hero.jpg", "https://www.spa.ch/s-1200.jpg", "https://cdn.spa.ch/c.jpg?width=100&format=webp"]);
   });
   it("keeps readable text, drops scripts, styles, header and footer", () => {
     expect(f.text).toContain("Ein ganzer Tag im Spa.");

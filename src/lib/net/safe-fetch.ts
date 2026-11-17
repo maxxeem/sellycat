@@ -5,8 +5,10 @@ import { isIP } from "node:net";
 /**
  * Fetching pages and images that customers point us to (branding import, AI deal import) without
  * letting them reach our own network (SSRF): http(s) only, standard ports, every hop's address
- * must be public, size and time limits, at most three redirects.
+ * must be public, size and time limits, at most five redirects.
  */
+/** The first request plus up to five redirects (shops often chain domain → www → language → page). */
+const MAX_HOPS = 6;
 const USER_AGENT = "Mozilla/5.0 (compatible; SellycatBot/1.0; +https://sellycat.com)";
 const MAX_BYTES = 1_500_000;
 const TIMEOUT_MS = 8000;
@@ -37,7 +39,7 @@ const BLOCK_PAGE = /Attention Required! \| Cloudflare|cf-chl-|challenge-platform
 
 export async function fetchText(start: string, accept: string, maxBytes = MAX_BYTES): Promise<{ url: URL; text: string } | null> {
   let url = new URL(start);
-  for (let hop = 0; hop < 4; hop++) {
+  for (let hop = 0; hop < MAX_HOPS; hop++) {
     await assertPublic(url);
     const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept, "user-agent": USER_AGENT } });
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
@@ -75,7 +77,7 @@ export async function fetchImage(start: string, maxBytes = 10_000_000): Promise<
   } catch {
     return null;
   }
-  for (let hop = 0; hop < 4; hop++) {
+  for (let hop = 0; hop < MAX_HOPS; hop++) {
     try {
       await assertPublic(url);
     } catch {

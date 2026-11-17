@@ -91,7 +91,8 @@ export function parseProductPage(html: string, pageUrl: string): PageFacts {
   add(meta(html, "twitter:image"));
   for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
     const tag = m[0];
-    const w = Number(tag.match(/\bwidth=["']?(\d+)/i)?.[1] ?? 0);
+    // The width attribute only (not "?width=" inside an image address).
+    const w = Number(tag.match(/\swidth=["']?(\d+)/i)?.[1] ?? 0);
     if (w && w < 200) continue;
     const srcset = tag.match(/\bsrcset=["']([^"']+)["']/i)?.[1];
     const best = srcset?.split(",").map((s) => s.trim().split(/\s+/)[0]).pop();
