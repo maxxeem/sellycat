@@ -38,6 +38,15 @@ function button(brand: MailBrand, href: string, label: string) {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0;"><tr><td style="border-radius:999px;background:${brand.primary};"><a href="${esc(href)}" style="display:inline-block;padding:13px 26px;font-weight:700;font-size:16px;color:${readableOn(brand.primary)};text-decoration:none;border-radius:999px;">${esc(label)}</a></td></tr></table>`;
 }
 
+/** Apple / Google Wallet side by side, one line each, with a PNG icon (mail clients show no SVG). */
+function walletRow(brand: MailBrand, v: MailVoucher) {
+  if (!v.wallet?.apple && !v.wallet?.google) return "";
+  const t = getDictionary(brand.locale);
+  const cell = (href: string, icon: string, label: string) =>
+    `<td style="padding:0 8px 8px 0;"><a href="${esc(href)}" style="display:inline-block;padding:9px 14px;background:#000000;color:#ffffff;border-radius:10px;font-weight:700;font-size:14px;line-height:20px;text-decoration:none;white-space:nowrap;"><img src="${esc(`${brand.shopUrl}/mail/${icon}.png`)}" width="20" height="20" alt="" style="display:inline-block;vertical-align:middle;border:0;margin:-2px 8px 0 0;">${esc(label)}</a></td>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0 0;"><tr>${v.wallet.apple ? cell(v.wallet.apple, "apple-wallet", "Apple Wallet") : ""}${v.wallet.google ? cell(v.wallet.google, "google-wallet", "Google Wallet") : ""}</tr></table>${t.wallet.mailHint ? `<p style="margin:2px 0 0;font-size:12px;color:#71717a;">${esc(t.wallet.mailHint)}</p>` : ""}`;
+}
+
 function voucherRows(brand: MailBrand, vouchers: MailVoucher[], withLinks: boolean) {
   const t = getDictionary(brand.locale);
   return vouchers
@@ -52,7 +61,7 @@ ${v.partner ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;letter-sp
 <p style="margin:8px 0 0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:18px;font-weight:700;letter-spacing:.06em;">${esc(v.code)}</p>
 <p style="margin:6px 0 0;font-size:13px;color:#52525b;">${meta.map((m) => esc(m!)).join(" · ")}</p>
 ${withLinks && v.link ? `<p style="margin:10px 0 0;font-size:14px;"><a href="${esc(v.link)}" style="color:#111111;font-weight:700;">${esc(t.mail.openVoucher)} &rarr;</a></p>` : ""}
-${v.wallet?.apple || v.wallet?.google ? `<p style="margin:10px 0 0;font-size:14px;">${[v.wallet.apple ? `<a href="${esc(v.wallet.apple)}" style="display:inline-block;margin:0 6px 6px 0;padding:8px 14px;background:#000000;color:#ffffff;border-radius:10px;font-weight:700;text-decoration:none;">${esc(t.wallet.addApple)}</a>` : "", v.wallet.google ? `<a href="${esc(v.wallet.google)}" style="display:inline-block;margin:0 6px 6px 0;padding:8px 14px;background:#000000;color:#ffffff;border-radius:10px;font-weight:700;text-decoration:none;">${esc(t.wallet.addGoogle)}</a>` : ""].join("")}</p>` : ""}
+${walletRow(brand, v)}
 </td></tr></table>`;
     })
     .join("");
@@ -183,5 +192,27 @@ ${button(i.brand, i.url, w.reminderButton)}`,
     subject: subjectLine(fmt(w.reminderSubject, { shop: i.brand.shopName })),
     html,
     text: [w.reminderHeading, "", intro, "", voucherText(i.brand, i.vouchers), "", `${w.reminderButton}: ${i.url}`, "", fmt(t.mail.footer, { shop: i.brand.shopName })].join("\n"),
+  };
+}
+
+/** Invitation for an authorised scanner of a partner (sign-in by code on the shop's /scan). */
+export function scannerInviteMail(i: { brand: MailBrand; name: string; partner: string; url: string }): Mail {
+  const t = getDictionary(i.brand.locale);
+  const s = t.scanners;
+  const hello = fmt(s.mailHello, { name: i.name });
+  const intro = fmt(s.mailIntro, { shop: i.brand.shopName, partner: i.partner });
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(s.mailHeading)}</h1>
+<p style="margin:0 0 8px;">${esc(hello)}</p>
+<p style="margin:0;">${esc(intro)}</p>
+${button(i.brand, i.url, s.mailButton)}
+<p style="margin:0;font-size:14px;color:#52525b;">${esc(s.mailHow)}</p>`,
+    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+  );
+  return {
+    subject: subjectLine(fmt(s.mailSubject, { shop: i.brand.shopName })),
+    html,
+    text: [s.mailHeading, "", hello, intro, "", `${s.mailButton}: ${i.url}`, "", s.mailHow].join("\n"),
   };
 }

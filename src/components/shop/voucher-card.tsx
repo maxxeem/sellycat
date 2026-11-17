@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { fmt } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { voucherSymbol, type BarcodeType, type CodeFormat } from "@/lib/vouchers/symbol";
@@ -24,7 +25,7 @@ const dateText = (iso: string, locale: string) =>
  * One voucher as the buyer sees it: scannable symbol on white (scanners need contrast), the code
  * to type, status, validity and remaining value. Used and invalid vouchers are greyed out.
  */
-export function VoucherCard({ v, t, locale, currency, linkLabel }: { v: VoucherView; t: ShopTexts; locale: string; currency: string; linkLabel?: string }) {
+export function VoucherCard({ v, t, locale, currency, linkLabel, actions }: { v: VoucherView; t: ShopTexts; locale: string; currency: string; linkLabel?: string; actions?: ReactNode }) {
   const symbol = voucherSymbol({ codeFormat: v.codeFormat, barcodeType: v.barcodeType, code: v.code, link: v.link });
   const usable = v.status === "valid";
   const money = (c: number) => formatMoney(c, currency, locale);
@@ -63,6 +64,7 @@ export function VoucherCard({ v, t, locale, currency, linkLabel }: { v: VoucherV
           </a>
         ) : null}
       </div>
+      {actions ? <div className="border-t border-[var(--shop-line)] p-3">{actions}</div> : null}
     </div>
   );
 }

@@ -11,7 +11,9 @@ import { checkUrl } from "@/lib/vouchers/symbol";
 import { getSessionUser } from "@/lib/auth/session";
 import { getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
-import { WalletButtons } from "@/components/shop/wallet-buttons";
+import { VoucherActions } from "@/components/shop/wallet-buttons";
+import { findVoucher } from "@/lib/vouchers/redeem";
+import { ScannerRedeem } from "./scanner-redeem";
 import { walletAvailable } from "@/lib/wallet/passes";
 
 export function generateStaticParams() {
@@ -37,16 +39,23 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
   const { data } = /^[A-Za-z0-9_-]{20,64}$/.test(token) ? await createPublicClient().rpc("voucher_public", { p_token: token }) : { data: null };
   const v = data?.[0];
   const found = v && v.tenant_id === tenant;
-  // The shop's team (signed in on this host) gets a redeem button right here.
-  const canRedeem = found && (await getSessionUser()) ? (await (await createClient()).rpc("can_use_redeem", { p_tenant: tenant })).data === true : false;
+  // A signed-in partner or team member of this shop sees "slide to redeem" instead of the buyer view.
+  const user = found ? await getSessionUser() : null;
+  const supabase = user ? await createClient() : null;
+  const scanner = user && supabase ? (await supabase.rpc("can_use_redeem", { p_tenant: tenant })).data === true : false;
+  const forScanner = scanner && supabase ? await findVoucher(supabase, tenant, { token }) : null;
+  const d = getDictionary(shop.locale);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
       <title>{`${t.voucherCheckTitle} · ${shop.name}`}</title>
       <meta name="robots" content="noindex, nofollow" />
       <meta name="referrer" content="no-referrer" />
-      {found ? (
+      {found && forScanner && user ? (
+        <ScannerRedeem voucher={forScanner} locale={shop.locale} email={user.email} />
+      ) : found ? (
         <div className="flex flex-col gap-4">
+          {scanner ? <p className="rounded-[var(--shop-radius)] bg-[var(--shop-surface)] p-3 text-sm font-semibold">{d.redeem.notYours}</p> : null}
           <VoucherCard
             t={t}
             locale={shop.locale}
@@ -63,19 +72,16 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
               partner: v.partner_name,
               link: checkUrl(shop.primaryHost ?? (await headers()).get("host") ?? "", token),
             }}
+            actions={<VoucherActions token={token} t={d.wallet} available={walletAvailable()} status={v.status} />}
           />
-          {canRedeem && v.status === "valid" ? (
-            <Link href={`/redeem?t=${token}`} className="shop-btn min-h-[3.5rem] w-full text-lg" data-testid="voucher-redeem">
-              {getDictionary(shop.locale).redeem.checkButton}
-            </Link>
-          ) : null}
-          <WalletButtons token={token} t={getDictionary(shop.locale).wallet} available={walletAvailable()} status={v.status} />
-          <a href={`/v/${token}/pdf`} target="_blank" rel="noopener" className="shop-btn w-full" data-testid="voucher-pdf">
-            {t.downloadPdf}
-          </a>
           {v.deal_slug ? (
             <Link href={`/d/${v.deal_slug}`} className="text-center text-sm font-semibold underline underline-offset-2">
               {t.toDeal}
+            </Link>
+          ) : null}
+          {!scanner ? (
+            <Link href={`/scan?next=/v/${token}`} className="mt-6 text-center text-xs text-[var(--shop-muted)] underline underline-offset-2" data-testid="partner-login">
+              {d.wallet.partnerHint}
             </Link>
           ) : null}
         </div>

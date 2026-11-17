@@ -7,6 +7,7 @@ import { geocode } from "@/lib/geo/geocode";
 import { placeDetails, placesConfigured, searchPlaces, type PlaceDetails, type PlaceSuggestion } from "@/lib/places/google";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { parseHours, type OpeningHours } from "@/lib/shop/hours";
+import { inviteScanner, removeScanner, type ScannerError } from "@/lib/vouchers/scanners";
 
 export type FormState = { error?: string; ok?: boolean } | null;
 
@@ -110,4 +111,21 @@ async function tenantLocale(tenantId: string): Promise<"de" | "en" | null> {
   const { supabase } = await requireTenant("editor");
   const { data } = await supabase.from("tenants").select("locale").eq("id", tenantId).single();
   return data?.locale === "en" ? "en" : data ? "de" : null;
+}
+
+export type ScannerResult = { ok: true; mailed?: boolean } | { ok: false; error: ScannerError };
+
+/** Owner/admin invites an authorised scanner for this partner (name + email). */
+export async function addScanner(partnerId: string, name: string, email: string): Promise<ScannerResult> {
+  const { tenant } = await requireTenant("admin");
+  const r = await inviteScanner(tenant.id, partnerId, name, email);
+  revalidatePath(`/p/[locale]/dashboard/partners/[id]`, "page");
+  return r;
+}
+
+export async function deleteScanner(partnerId: string, userId: string): Promise<ScannerResult> {
+  const { tenant } = await requireTenant("admin");
+  const ok = await removeScanner(tenant.id, partnerId, userId);
+  revalidatePath(`/p/[locale]/dashboard/partners/[id]`, "page");
+  return ok ? { ok: true } : { ok: false, error: "failed" };
 }

@@ -30,19 +30,6 @@ async function allowed(shopId: string) {
   return { supabase, ok: data === true };
 }
 
-export async function passwordLogin(email: string, password: string): Promise<{ ok: true } | { ok: false; error: LoginError }> {
-  const shop = await hostShop();
-  if (!shop) return { ok: false, error: "failed" };
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) return { ok: false, error: "login" };
-  if (!(await allowed(shop.id)).ok) {
-    await supabase.auth.signOut({ scope: "local" });
-    return { ok: false, error: "noAccess" };
-  }
-  return { ok: true };
-}
-
 /** Always the same answer (no hint whether the address has access). */
 export async function requestCode(email: string): Promise<{ ok: true }> {
   const shop = await hostShop();

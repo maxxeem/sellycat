@@ -8,6 +8,10 @@ import { LOCALES } from "@/lib/i18n/locales";
 import { requireTenant } from "@/lib/dashboard/context";
 import { PartnerForm } from "../partner-form";
 import { DeletePartner, LocationList } from "./locations";
+import { Scanners } from "./scanners";
+import { shopBase } from "@/lib/mail/deliver";
+import { getShopProfile } from "@/lib/shop/queries";
+import { listScanners } from "@/lib/vouchers/scanners";
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale, id: "00000000-0000-0000-0000-000000000000" }));
@@ -33,6 +37,8 @@ async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string
     .eq("tenant_id", tenant.id)
     .maybeSingle();
   if (!partner) notFound();
+  const [scanners, shop] = await Promise.all([listScanners(tenant.id, partner.id), getShopProfile(tenant.id)]);
+  const scanUrl = `${shop ? shopBase(shop) : ""}/scan`;
   return (
     <>
       <Link href="/dashboard/partners" className="mb-3 inline-block text-sm text-muted hover:text-ink">
@@ -45,6 +51,9 @@ async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string
         </Card>
         <Card title={t.partners.locations}>
           <LocationList partnerId={partner.id} locations={partner.partner_locations ?? []} />
+        </Card>
+        <Card title={t.scanners.title} className="lg:col-span-2">
+          <Scanners partnerId={partner.id} partnerName={partner.name} scanUrl={scanUrl} scanners={scanners} canManage={tenant.role === "owner" || tenant.role === "admin"} />
         </Card>
       </div>
     </>

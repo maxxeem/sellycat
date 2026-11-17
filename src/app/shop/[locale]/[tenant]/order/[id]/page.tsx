@@ -10,7 +10,7 @@ import { formatMoney } from "@/lib/shop/deal-status";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { VoucherCard } from "@/components/shop/voucher-card";
-import { WalletButtons } from "@/components/shop/wallet-buttons";
+import { VoucherActions } from "@/components/shop/wallet-buttons";
 import { getDictionary } from "@/lib/i18n";
 import { walletAvailable } from "@/lib/wallet/passes";
 import { checkUrl } from "@/lib/vouchers/symbol";
@@ -107,17 +107,18 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
         <section className="mt-8 flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="shop-heading text-xl font-bold">{t.yourVouchers}</h2>
-            <a href={`/order/${order.id}/pdf?session_id=${encodeURIComponent(sessionId)}`} target="_blank" rel="noopener" className="inline-flex min-h-10 items-center rounded-[var(--shop-radius-button)] border border-[var(--shop-line)] px-4 text-sm font-semibold hover:border-[var(--shop-primary)]" data-testid="order-pdf">
-              {t.downloadPdf}
-            </a>
+            {vouchers.length > 1 ? (
+              <a href={`/order/${order.id}/pdf?session_id=${encodeURIComponent(sessionId)}`} target="_blank" rel="noopener" className="text-sm font-semibold underline underline-offset-2" data-testid="order-pdf">
+                {getDictionary(shop.locale).wallet.allPdf}
+              </a>
+            ) : null}
           </div>
           {vouchers.map((v) => (
-            <div key={v.id} className="flex flex-col gap-2">
             <VoucherCard
+              key={v.id}
               t={t}
               locale={shop.locale}
               currency={order.currency}
-              linkLabel={t.voucherOpen}
               v={{
                 title: v.title,
                 code: v.code,
@@ -130,9 +131,8 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
                 partner: v.partners?.name ?? null,
                 link: checkUrl(host, v.token),
               }}
+              actions={<VoucherActions token={v.token} t={getDictionary(shop.locale).wallet} available={wallet} status={v.status} />}
             />
-            <WalletButtons token={v.token} t={getDictionary(shop.locale).wallet} available={wallet} status={v.status} compact />
-            </div>
           ))}
         </section>
       ) : null}

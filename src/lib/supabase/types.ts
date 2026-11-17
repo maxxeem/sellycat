@@ -1762,6 +1762,7 @@ export type Database = {
         Args: { p_amount: number; p_tenant: string }
         Returns: number
       }
+      auth_user_id: { Args: { p_email: string }; Returns: string }
       can_edit: { Args: { p_tenant: string }; Returns: boolean }
       can_manage: { Args: { p_tenant: string }; Returns: boolean }
       can_redeem: {

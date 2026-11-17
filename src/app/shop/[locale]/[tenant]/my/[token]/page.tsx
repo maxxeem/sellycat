@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { VoucherCard } from "@/components/shop/voucher-card";
-import { WalletButtons } from "@/components/shop/wallet-buttons";
+import { VoucherActions } from "@/components/shop/wallet-buttons";
 import { getDictionary } from "@/lib/i18n";
 import { walletAvailable } from "@/lib/wallet/passes";
 import { fmt } from "@/lib/i18n";
@@ -72,19 +72,14 @@ async function MyVouchers({ params }: Pick<PageProps<"/shop/[locale]/[tenant]/my
       {vouchers.length ? (
         <div className="mt-6 flex flex-col gap-4">
           {vouchers.map((v) => (
-            <div key={v.id} className="flex flex-col gap-2">
-              <VoucherCard
-                t={t}
-                locale={shop.locale}
-                currency={v.currency}
-                linkLabel={t.voucherOpen}
-                v={{ title: v.title, code: v.code, codeFormat: v.codeFormat, barcodeType: v.barcodeType, status: v.status, validUntil: v.validUntil, valueCents: v.valueCents, remainingCents: v.remainingCents, partner: v.partner, link: v.link }}
-              />
-              <WalletButtons token={v.token} t={getDictionary(shop.locale).wallet} available={walletAvailable()} status={v.status} compact />
-              <a href={`/v/${v.token}/pdf`} target="_blank" rel="noopener" className="self-end text-sm font-semibold underline underline-offset-2">
-                {t.downloadPdf}
-              </a>
-            </div>
+            <VoucherCard
+              key={v.id}
+              t={t}
+              locale={shop.locale}
+              currency={v.currency}
+              v={{ title: v.title, code: v.code, codeFormat: v.codeFormat, barcodeType: v.barcodeType, status: v.status, validUntil: v.validUntil, valueCents: v.valueCents, remainingCents: v.remainingCents, partner: v.partner, link: v.link }}
+              actions={<VoucherActions token={v.token} t={getDictionary(shop.locale).wallet} available={walletAvailable()} status={v.status} />}
+            />
           ))}
         </div>
       ) : (

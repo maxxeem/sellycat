@@ -72,7 +72,7 @@ export async function proxy(request: NextRequest) {
 const stripHostPort = (h: string | null) => (h ?? "").toLowerCase().split(":")[0];
 
 function shopNeedsSession(pathname: string) {
-  return pathname === "/redeem" || pathname.startsWith("/redeem/") || /^\/v\/[^/]+$/.test(pathname);
+  return pathname === "/scan" || pathname.startsWith("/scan/") || pathname === "/redeem" || /^\/v\/[^/]+$/.test(pathname);
 }
 
 function isPassThroughPath(pathname: string) {

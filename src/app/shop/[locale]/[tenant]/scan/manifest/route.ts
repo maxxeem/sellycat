@@ -5,8 +5,8 @@ export function generateStaticParams() {
   return [{ tenant: "00000000-0000-0000-0000-000000000000" }];
 }
 
-/** Web app manifest of the redemption app (installable per shop, opens on /redeem). */
-export async function GET(_: Request, { params }: RouteContext<"/shop/[locale]/[tenant]/redeem/manifest">) {
+/** Web app manifest of the redemption app (installable per shop, opens on /scan). */
+export async function GET(_: Request, { params }: RouteContext<"/shop/[locale]/[tenant]/scan/manifest">) {
   const shop = await getShopProfile((await params).tenant);
   if (!shop) return new Response("Not found", { status: 404 });
   const t = getDictionary(shop.locale);
@@ -16,12 +16,12 @@ export async function GET(_: Request, { params }: RouteContext<"/shop/[locale]/[
     { src: "/android-chrome-512.png", sizes: "512x512", type: "image/png" },
   ];
   const manifest = {
-    id: "/redeem",
+    id: "/scan",
     name: `${t.redeem.title} · ${shop.name}`,
     short_name: t.redeem.title,
     lang: shop.locale,
-    start_url: "/redeem",
-    scope: "/redeem",
+    start_url: "/scan",
+    scope: "/scan",
     display: "standalone",
     orientation: "portrait",
     background_color: shop.theme.colors.background,
