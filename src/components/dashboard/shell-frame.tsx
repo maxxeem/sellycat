@@ -4,18 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { LogOut, Menu, X } from "lucide-react";
+import { DashboardMenu } from "./menu";
 import { Logo } from "@/components/brand";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useI18n } from "@/lib/i18n/context";
-import type { SectionKey } from "@/lib/dashboard/nav";
 import { logout, switchTenant } from "@/app/p/[locale]/dashboard/actions";
 
 type Props = {
   user: { name: string; email: string };
   tenants: Array<{ id: string; name: string }>;
   current: { id: string; name: string; slug: string } | null;
-  sections: SectionKey[];
   children: ReactNode;
   /** Staff admin reuses the frame with its own menu. */
   nav?: Array<{ href: string; label: string }>;
@@ -23,11 +22,10 @@ type Props = {
 };
 
 /** Sidebar layout (drawer on phones), modelled on SwypeCast's admin shell. */
-export function ShellFrame({ user, tenants, current, sections, children, nav, homeHref = "/dashboard" }: Props) {
+export function ShellFrame({ user, tenants, current, children, nav, homeHref = "/dashboard" }: Props) {
   const { t } = useI18n();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const items = nav ?? [{ href: "/dashboard", label: t.dashboard.nav.overview }, ...sections.map((s) => ({ href: `/dashboard/${s}`, label: t.dashboard.nav[s] }))];
   const active = (href: string) => (href === homeHref ? pathname === href : pathname === href || pathname.startsWith(`${href}/`));
 
   const sidebar = (
@@ -51,18 +49,22 @@ export function ShellFrame({ user, tenants, current, sections, children, nav, ho
       ) : current ? (
         <p className="mb-3 truncate px-2 text-sm font-semibold">{current.name}</p>
       ) : null}
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          prefetch={false}
-          onClick={() => setOpen(false)}
-          aria-current={active(item.href) ? "page" : undefined}
-          className={`rounded-input px-3 py-2 text-sm font-semibold transition ${active(item.href) ? "bg-accent text-on-accent" : "text-muted hover:bg-surface hover:text-ink"}`}
-        >
-          {item.label}
-        </Link>
-      ))}
+      {nav ? (
+        nav.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            prefetch={false}
+            onClick={() => setOpen(false)}
+            aria-current={active(item.href) ? "page" : undefined}
+            className={`rounded-input px-3 py-2 text-sm font-semibold transition ${active(item.href) ? "bg-accent text-on-accent" : "text-muted hover:bg-surface hover:text-ink"}`}
+          >
+            {item.label}
+          </Link>
+        ))
+      ) : (
+        <DashboardMenu isActive={active} onNavigate={() => setOpen(false)} />
+      )}
       <div className="mt-auto flex flex-col gap-3 border-t border-line pt-4">
         <div className="px-2 text-sm">
           <p className="truncate font-semibold">{user.name}</p>

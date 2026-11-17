@@ -1,74 +1,74 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { CheckCircle2, Circle, ExternalLink } from "lucide-react";
-import { Card, EmptyState, PageHeader, Skeleton, buttonClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { EmptyState, Skeleton } from "@/components/ui";
+import type { Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { getSessionUser } from "@/lib/auth/session";
 import { getCurrentTenant } from "@/lib/auth/tenants";
+import { summarise } from "@/lib/dashboard/overview";
+import { dealStatus } from "@/lib/shop/deal-status";
 import { shopUrlForSlug } from "@/lib/site/hosts";
 import { createClient } from "@/lib/supabase/server";
+import { HomeView } from "./home-view";
 
 export const metadata = { title: "Dashboard" };
 
+const DAY = 86_400_000;
+
 export default async function DashboardHome({ params }: PageProps<"/p/[locale]/dashboard">) {
-  const { t } = await fromParams(params);
+  const { t, locale } = await fromParams(params);
   return (
-    <Suspense fallback={<Skeleton className="h-48" />}>
-      <Overview t={t} />
+    <Suspense fallback={<HomeSkeleton />}>
+      <Home t={t} locale={locale} />
     </Suspense>
   );
 }
 
-async function Overview({ t }: { t: Awaited<ReturnType<typeof fromParams>>["t"] }) {
+function HomeSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <Skeleton className="h-36" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28" />
+        ))}
+      </div>
+      <Skeleton className="h-64" />
+    </div>
+  );
+}
+
+async function Home({ t, locale }: { t: Dictionary; locale: string }) {
   const [user, tenant] = await Promise.all([getSessionUser(), getCurrentTenant()]);
   if (!tenant) return <EmptyState title={t.dashboard.noTenant} />;
-  const shopUrl = shopUrlForSlug(tenant.slug);
   const supabase = await createClient();
-  const [{ data: theme }, { data: legal }, { count: deals }, { data: profile }] = await Promise.all([
-    supabase.from("shop_themes").select("published_at").eq("tenant_id", tenant.id).maybeSingle(),
+  const now = new Date();
+  // Two spans of 30 days: the current one and the one before for the trend.
+  const since = new Date(now.getTime() - 60 * DAY).toISOString();
+  const [{ data: theme }, { data: legal }, { data: deals }, { data: profile }, { data: paid }, { data: recent }] = await Promise.all([
+    supabase.from("shop_themes").select("published_at, published, draft").eq("tenant_id", tenant.id).maybeSingle(),
     supabase.rpc("shop_legal_complete", { p_tenant: tenant.id }),
-    supabase.from("deals").select("id", { count: "exact", head: true }).eq("tenant_id", tenant.id).eq("state", "published"),
+    supabase.from("deals").select("state, sales_start, sales_end, total_qty, sold_qty, reserved_qty").eq("tenant_id", tenant.id).eq("state", "published"),
     supabase.rpc("shop_profile", { p_tenant: tenant.id }),
+    supabase.from("orders").select("paid_at, amount_cents, refunded_cents, order_items(title, qty, deal_id)").eq("tenant_id", tenant.id).gte("paid_at", since).limit(5000),
+    supabase.from("orders").select("id, number, status, email, currency, amount_cents, created_at").eq("tenant_id", tenant.id).neq("status", "expired").order("created_at", { ascending: false }).limit(5),
   ]);
-  const steps: Array<{ label: string; done: boolean; href: string }> = [
-    { label: t.dashboard.setup.design, done: Boolean(theme?.published_at), href: "/dashboard/design" },
-    { label: t.dashboard.setup.legal, done: Boolean(legal), href: "/dashboard/settings" },
-    { label: t.dashboard.setup.deal, done: Boolean(deals), href: "/dashboard/deals" },
-    { label: t.dashboard.setup.payments, done: Boolean(profile?.[0]?.payments_ready), href: "/dashboard/payments" },
-  ];
+  const shop = profile?.[0];
+  const look = ((theme?.published_at ? theme.published : theme?.draft) ?? {}) as { colors?: { primary?: string }; logoLight?: string; logoDark?: string };
+
   return (
-    <>
-      <PageHeader
-        title={fmt(t.dashboard.welcome, { name: user?.name ?? "" })}
-        description={tenant.name}
-        actions={
-          <a href={shopUrl} target="_blank" rel="noreferrer" className={buttonClass.secondary}>
-            {t.dashboard.openShop} <ExternalLink className="h-4 w-4" aria-hidden />
-          </a>
-        }
-      />
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card title={t.dashboard.setup.title}>
-          <ul className="flex flex-col gap-3">
-            {steps.map((s) => (
-              <li key={s.label}>
-                <Link href={s.href} className="flex items-center gap-3 text-sm hover:underline">
-                  {s.done ? <CheckCircle2 className="h-5 w-5 text-success" aria-hidden /> : <Circle className="h-5 w-5 text-muted" aria-hidden />}
-                  <span className={s.done ? "text-muted line-through" : ""}>{s.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <Card title={t.dashboard.yourShop}>
-          <p className="break-all text-sm">
-            <a href={shopUrl} target="_blank" rel="noreferrer" className="font-semibold text-accent-text hover:underline">
-              {shopUrl.replace(/^https?:\/\//, "")}
-            </a>
-          </p>
-        </Card>
-      </div>
-    </>
+    <HomeView
+      t={t}
+      locale={locale}
+      userName={user?.name ?? ""}
+      tenantName={tenant.name}
+      shopUrl={shopUrlForSlug(tenant.slug)}
+      brand={look.colors?.primary ?? "#ff4b23"}
+      logo={look.logoLight || look.logoDark || null}
+      currency={shop?.currency ?? "CHF"}
+      setup={{ design: Boolean(theme?.published_at), legal: Boolean(legal), deal: Boolean(deals?.length), payments: Boolean(shop?.payments_ready) }}
+      liveDeals={(deals ?? []).filter((d) => dealStatus(d, now) === "live").length}
+      stats={summarise(paid ?? [], now)}
+      recent={recent ?? []}
+    />
   );
 }

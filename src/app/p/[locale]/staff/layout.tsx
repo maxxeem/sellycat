@@ -26,7 +26,7 @@ async function StaffShell({ t, children }: { t: Dictionary; children: ReactNode 
     { href: "/admin/audit", label: t.staff.audit },
   ];
   return (
-    <ShellFrame user={{ name: staff.name, email: staff.email }} tenants={[]} current={null} sections={[]} nav={nav} homeHref="/admin">
+    <ShellFrame user={{ name: staff.name, email: staff.email }} tenants={[]} current={null} nav={nav} homeHref="/admin">
       {children}
     </ShellFrame>
   );
