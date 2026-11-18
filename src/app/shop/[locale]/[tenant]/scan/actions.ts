@@ -8,6 +8,8 @@ import { sendRedeemCode, verifyRedeemCode } from "@/lib/vouchers/redeem-login";
 import { parseScan } from "@/lib/vouchers/scan";
 import { resolveShop } from "@/lib/site/resolve-shop";
 import { classifyHost } from "@/lib/site/hosts";
+import { createRateLimiter } from "@/lib/rate-limit";
+import { readCodesFromPhoto, readCodeConfigured } from "@/lib/vouchers/read-code-ai";
 
 /**
  * Redemption app on the shop domain. Every action works for the shop of the current host only
@@ -48,7 +50,7 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut({ scope: "local" });
 }
 
-export type ScanResult = { ok: true; voucher: VoucherInfo } | { ok: false; error: VoucherError };
+export type ScanResult = { ok: true; voucher: VoucherInfo } | { ok: false; error: VoucherError } | { ok: false; error: "other_partner"; partner: string };
 
 /** A scanned QR code (check link), barcode or typed code → the voucher. */
 export async function lookup(input: string): Promise<ScanResult> {
@@ -62,7 +64,43 @@ export async function lookup(input: string): Promise<ScanResult> {
     scan.kind === "token"
       ? ((await findVoucher(supabase, shop.id, { token: scan.token })) ?? (await findVoucher(supabase, shop.id, { code: scan.token })))
       : await findVoucher(supabase, shop.id, { code: scan.code });
-  return voucher ? { ok: true, voucher } : { ok: false, error: "not_found" };
+  if (voucher) return { ok: true, voucher };
+  // A voucher of this shop that belongs to another partner: say so instead of "not found".
+  const { data: partner } = await supabase.rpc("voucher_partner_hint", {
+    p_tenant: shop.id,
+    p_code: scan.kind === "token" ? scan.token : scan.code,
+    p_token: scan.kind === "token" ? scan.token : "",
+  });
+  return typeof partner === "string" ? { ok: false, error: "other_partner", partner } : { ok: false, error: "not_found" };
+}
+
+const photoLimit = createRateLimiter({ limit: 30, windowMs: 600_000 });
+
+export type PhotoResult = ScanResult | { ok: false; error: "unreadable" | "unavailable" | "limit" };
+
+/**
+ * «Code abfotografieren»: the AI reads the codes in a camera still, each candidate is looked up
+ * like a typed code. The first voucher found wins; else the most helpful error.
+ */
+export async function lookupPhoto(jpegBase64: string): Promise<PhotoResult> {
+  const shop = await hostShop();
+  if (!shop) return { ok: false, error: "not_found" };
+  const { supabase, ok } = await allowed(shop.id);
+  if (!ok) return { ok: false, error: "forbidden" };
+  if (!readCodeConfigured()) return { ok: false, error: "unavailable" };
+  if (typeof jpegBase64 !== "string" || jpegBase64.length > 3_000_000 || !/^[A-Za-z0-9+/=]+$/.test(jpegBase64)) return { ok: false, error: "unreadable" };
+  const { data: user } = await supabase.auth.getUser();
+  if (!photoLimit.check(user.user?.id ?? shop.id).ok) return { ok: false, error: "limit" };
+  const codes = await readCodesFromPhoto(jpegBase64);
+  if (codes === null) return { ok: false, error: "unavailable" };
+  if (!codes.length) return { ok: false, error: "unreadable" };
+  let best: ScanResult | null = null;
+  for (const code of codes) {
+    const r = await lookup(code);
+    if (r.ok) return r;
+    if (!best || (best.error === "not_found" && r.error === "other_partner")) best = r;
+  }
+  return best ?? { ok: false, error: "not_found" };
 }
 
 export async function redeemNow(id: string, amount: string | null): Promise<{ ok: true; remaining: number | null } | { ok: false; error: VoucherError }> {

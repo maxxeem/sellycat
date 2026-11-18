@@ -1925,6 +1925,10 @@ export type Database = {
       undo_redemption: { Args: { p_redemption: string }; Returns: Json }
       void_voucher: { Args: { p_voucher: string }; Returns: Json }
       voucher_code_text: { Args: { p_groups?: number }; Returns: string }
+      voucher_partner_hint: {
+        Args: { p_code: string; p_tenant: string; p_token: string }
+        Returns: string
+      }
       voucher_public: {
         Args: { p_token: string }
         Returns: {

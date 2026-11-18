@@ -65,6 +65,16 @@ describe.skipIf(!rlsEnabled)("RLS scanners", () => {
     expect((await scanner.rpc("find_voucher_by_token", { p_tenant: a.tenantId, p_token: vouchers.otherShop.token })).data).toBeNull();
   });
 
+  it("names the partner of another partner's voucher, nothing for its own, other shops or strangers", async () => {
+    const hint = (c: DB, tenant: string, code: string, token = "") => c.rpc("voucher_partner_hint", { p_tenant: tenant, p_code: code, p_token: token }).then((r) => r.data);
+    expect(await hint(scanner, a.tenantId, vouchers.otherPartner.code)).toBe("Partner Zwei");
+    expect(await hint(scanner, a.tenantId, "", vouchers.otherPartner.token)).toBe("Partner Zwei");
+    expect(await hint(scanner, a.tenantId, vouchers.mine.code)).toBeNull();
+    expect(await hint(scanner, a.tenantId, vouchers.otherShop.code)).toBeNull();
+    expect(await hint(scanner, b.tenantId, vouchers.otherShop.code)).toBeNull();
+    expect((await anon().rpc("voucher_partner_hint", { p_tenant: a.tenantId, p_code: vouchers.otherPartner.code, p_token: "" })).data ?? null).toBeNull();
+  });
+
   it("redeems its partner's voucher once, others never", async () => {
     expect((await scanner.rpc("redeem_voucher", { p_voucher: vouchers.otherPartner.id, p_source: "pwa" })).data).toMatchObject({ ok: false, error: "forbidden" });
     expect((await scanner.rpc("redeem_voucher", { p_voucher: vouchers.otherShop.id, p_source: "pwa" })).data).toMatchObject({ ok: false, error: "forbidden" });

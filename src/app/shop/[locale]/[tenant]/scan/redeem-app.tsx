@@ -1,12 +1,13 @@
 "use client";
 
 import type { IScannerControls } from "@zxing/browser";
+import type { DecodeHintType as HintType } from "@zxing/library";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
 import type { VoucherError, VoucherInfo } from "@/lib/vouchers/redeem";
-import { lookup, redeemNow } from "./actions";
+import { lookup, lookupPhoto, redeemNow, type PhotoResult } from "./actions";
 
 export type RecentRedemption = { id: string; at: string; amountCents: number | null; undone: boolean; code: string; title: string; currency: string };
 
@@ -34,6 +35,11 @@ export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "
   const money = (c: number, cur: string) => formatMoney(c, cur, locale);
   const fail = (e: VoucherError) => setResult({ tone: "error", text: v.errors[e] });
   const dateTag = locale === "de" ? "de-CH" : "en-CH";
+  const [reading, setReading] = useState(false);
+
+  /** Error text of a lookup (camera, typed code or photo). */
+  const errorText = (r: Exclude<PhotoResult, { ok: true }>) =>
+    r.error === "other_partner" ? fmt(t.otherPartner, { partner: r.partner || "?" }) : r.error === "unreadable" || r.error === "unavailable" || r.error === "limit" ? t.photoErrors[r.error] : v.errors[r.error];
 
   const find = (input: string) =>
     start(async () => {
@@ -42,7 +48,7 @@ export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "
       setAmount("");
       const r = await lookup(input);
       if (r.ok) setVoucher(r.voucher);
-      else setResult({ tone: "error", text: v.errors[r.error] });
+      else setResult({ tone: "error", text: errorText(r) });
     });
 
   const stopScan = useCallback(() => {
@@ -57,10 +63,17 @@ export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "
     setVoucher(null);
     setScanning(true);
     try {
-      const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      const reader = new BrowserMultiFormatReader(undefined, { delayBetweenScanAttempts: 150 });
+      const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
+      // Every symbol a voucher can carry, and "try harder": barcodes (EAN, Code 128 …) need it,
+      // especially from a phone screen. A sharper picture helps thin bars the most.
+      const hints = new Map<HintType, unknown>([
+        [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE, BarcodeFormat.EAN_13, BarcodeFormat.EAN_8, BarcodeFormat.UPC_A, BarcodeFormat.UPC_E, BarcodeFormat.CODE_128, BarcodeFormat.CODE_39, BarcodeFormat.ITF, BarcodeFormat.DATA_MATRIX, BarcodeFormat.PDF_417, BarcodeFormat.AZTEC]],
+        [DecodeHintType.TRY_HARDER, true],
+      ]);
+      const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 120 });
       if (!video.current) return;
-      controls.current = await reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" } } }, video.current, (res, _err, c) => {
+      const constraints: MediaStreamConstraints = { video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } };
+      controls.current = await reader.decodeFromConstraints(constraints, video.current, (res, _err, c) => {
         if (!res) return;
         c.stop();
         controls.current = null;
@@ -75,6 +88,33 @@ export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "
   };
 
   useEffect(() => stopScan, [stopScan]);
+
+  /** «Code abfotografieren»: a still of the camera picture, read by the AI (printed codes, code words). */
+  const photo = () => {
+    const el = video.current;
+    if (!el || !el.videoWidth) return;
+    const scale = Math.min(1, 1600 / Math.max(el.videoWidth, el.videoHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(el.videoWidth * scale);
+    canvas.height = Math.round(el.videoHeight * scale);
+    canvas.getContext("2d")?.drawImage(el, 0, 0, canvas.width, canvas.height);
+    const jpeg = canvas.toDataURL("image/jpeg", 0.85).split(",")[1] ?? "";
+    stopScan();
+    setReading(true);
+    start(async () => {
+      try {
+        const r = await lookupPhoto(jpeg);
+        if (r.ok) {
+          navigator.vibrate?.(60);
+          setVoucher(r.voucher);
+        } else setResult({ tone: "error", text: errorText(r) });
+      } catch {
+        setResult({ tone: "error", text: v.errors.failed });
+      } finally {
+        setReading(false);
+      }
+    });
+  };
 
   const redeem = () =>
     start(async () => {
@@ -121,9 +161,15 @@ export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "
             <p className="p-3 text-center text-sm text-white">{t.cameraHint}</p>
           </div>
           {scanning ? (
-            <button type="button" onClick={stopScan} className="shop-btn w-full">
-              {t.stopScan}
-            </button>
+            <div className="flex flex-col gap-2">
+              <button type="button" onClick={photo} className="shop-btn min-h-[3.5rem] w-full" data-testid="redeem-photo">
+                {t.photo}
+              </button>
+              <p className="text-center text-xs text-[var(--shop-muted)]">{t.photoHint}</p>
+              <button type="button" onClick={stopScan} className="w-full rounded-[var(--shop-radius)] border border-[var(--shop-line)] px-4 py-3 font-semibold">
+                {t.stopScan}
+              </button>
+            </div>
           ) : (
             <button type="button" onClick={startScan} className="shop-btn min-h-[4rem] w-full text-lg" data-testid="redeem-scan">
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -135,6 +181,11 @@ export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "
           {cameraError ? (
             <p role="alert" className="text-sm font-semibold text-[var(--shop-warning)]">
               {t.cameraDenied}
+            </p>
+          ) : null}
+          {reading ? (
+            <p role="status" className="text-center text-sm font-semibold" data-testid="redeem-reading">
+              {t.photoReading}
             </p>
           ) : null}
 
