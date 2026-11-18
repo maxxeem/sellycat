@@ -20,7 +20,7 @@ export type ShopProfile = {
   locale: "de" | "en";
   currency: string;
   theme: ShopTheme;
-  settings: { contact_email: string | null; contact_phone: string | null; ga4_id: string | null; meta_pixel_id: string | null; seo_description: string | null; deal_order?: string | null };
+  settings: { contact_email: string | null; contact_phone: string | null; ga4_id: string | null; meta_pixel_id: string | null; seo_description: string | null; deal_order?: string | null; branding?: boolean };
   legalComplete: boolean;
   primaryHost: string | null;
   /** The shop's Stripe account can take payments (else the buy button stays disabled). */

@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          status: string
+          tenant_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id: string
+          payload?: Json
+          status: string
+          tenant_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+          tenant_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       buyer_links: {
         Row: {
           created_at: string
@@ -167,6 +205,53 @@ export type Database = {
             columns: ["voucher_id"]
             isOneToOne: false
             referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_requests: {
+        Row: {
+          company: string | null
+          country: string | null
+          created_at: string
+          email: string
+          handled_at: string | null
+          id: string
+          locale: string | null
+          message: string
+          name: string
+          plan_id: string | null
+        }
+        Insert: {
+          company?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          handled_at?: string | null
+          id?: string
+          locale?: string | null
+          message: string
+          name: string
+          plan_id?: string | null
+        }
+        Update: {
+          company?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          handled_at?: string | null
+          id?: string
+          locale?: string | null
+          message?: string
+          name?: string
+          plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
             referencedColumns: ["id"]
           },
         ]
@@ -835,10 +920,12 @@ export type Database = {
         Row: {
           application_fee_bps: number
           application_fee_fixed: number
+          contact_only: boolean
           created_at: string
           id: string
           is_public: boolean
           limits: Json
+          marketing: Json
           name: string
           prices: Json
           sort_order: number
@@ -849,10 +936,12 @@ export type Database = {
         Insert: {
           application_fee_bps?: number
           application_fee_fixed?: number
+          contact_only?: boolean
           created_at?: string
           id: string
           is_public?: boolean
           limits?: Json
+          marketing?: Json
           name: string
           prices?: Json
           sort_order?: number
@@ -863,10 +952,12 @@ export type Database = {
         Update: {
           application_fee_bps?: number
           application_fee_fixed?: number
+          contact_only?: boolean
           created_at?: string
           id?: string
           is_public?: boolean
           limits?: Json
+          marketing?: Json
           name?: string
           prices?: Json
           sort_order?: number
@@ -919,18 +1010,21 @@ export type Database = {
       }
       platform_settings: {
         Row: {
+          billing: Json
           id: boolean
           signup_mode: Database["public"]["Enums"]["signup_mode"]
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          billing?: Json
           id?: boolean
           signup_mode?: Database["public"]["Enums"]["signup_mode"]
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          billing?: Json
           id?: boolean
           signup_mode?: Database["public"]["Enums"]["signup_mode"]
           updated_at?: string
@@ -1407,62 +1501,99 @@ export type Database = {
       tenants: {
         Row: {
           billing: Json
+          billing_interval: string | null
+          billing_status: string
+          cancel_at_period_end: boolean
           created_at: string
           created_by: string | null
           currency: string
+          current_period_end: string | null
           fee_override_bps: number | null
           fee_override_fixed: number | null
           id: string
           locale: string
           mail_from_name: string | null
           name: string
+          pending_at: string | null
+          pending_interval: string | null
+          pending_plan_id: string | null
           plan_id: string
           reply_to: string | null
           shop_settings: Json
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
+          stripe_customer_id: string | null
+          stripe_schedule_id: string | null
+          stripe_subscription_id: string | null
           timezone: string
           updated_at: string
         }
         Insert: {
           billing?: Json
+          billing_interval?: string | null
+          billing_status?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           created_by?: string | null
           currency?: string
+          current_period_end?: string | null
           fee_override_bps?: number | null
           fee_override_fixed?: number | null
           id?: string
           locale?: string
           mail_from_name?: string | null
           name: string
+          pending_at?: string | null
+          pending_interval?: string | null
+          pending_plan_id?: string | null
           plan_id?: string
           reply_to?: string | null
           shop_settings?: Json
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
+          stripe_customer_id?: string | null
+          stripe_schedule_id?: string | null
+          stripe_subscription_id?: string | null
           timezone?: string
           updated_at?: string
         }
         Update: {
           billing?: Json
+          billing_interval?: string | null
+          billing_status?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           created_by?: string | null
           currency?: string
+          current_period_end?: string | null
           fee_override_bps?: number | null
           fee_override_fixed?: number | null
           id?: string
           locale?: string
           mail_from_name?: string | null
           name?: string
+          pending_at?: string | null
+          pending_interval?: string | null
+          pending_plan_id?: string | null
           plan_id?: string
           reply_to?: string | null
           shop_settings?: Json
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
+          stripe_customer_id?: string | null
+          stripe_schedule_id?: string | null
+          stripe_subscription_id?: string | null
           timezone?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tenants_pending_plan_id_fkey"
+            columns: ["pending_plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tenants_plan_id_fkey"
             columns: ["plan_id"]
@@ -1841,6 +1972,7 @@ export type Database = {
         Args: { p_feature: string; p_tenant: string }
         Returns: boolean
       }
+      plan_limit: { Args: { p_key: string; p_tenant: string }; Returns: number }
       random_digits: { Args: { n: number }; Returns: string }
       record_refund: {
         Args: { p_payment_intent: string; p_refunded: number }

@@ -15,7 +15,7 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "hasSales" | "error" };
+export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "hasSales" | "planLimit" | "error" };
 
 export async function createDeal(title: string) {
   const { tenant, supabase } = await requireTenant("editor");
@@ -59,7 +59,7 @@ export async function setDealState(id: string, state: "draft" | "published" | "e
     if (!saved.ok) return saved;
   }
   const { error } = await supabase.from("deals").update({ state }).eq("id", id).eq("tenant_id", tenant.id);
-  if (error) return { ok: false, message: error.message.includes("legal pages missing") ? "legalMissing" : "error" };
+  if (error) return { ok: false, message: error.message.includes("legal pages missing") ? "legalMissing" : error.message.includes("plan limit deals_live") ? "planLimit" : "error" };
   refreshShop(tenant.id);
   revalidatePath("/p/[locale]/dashboard/deals", "layout");
   return { ok: true };

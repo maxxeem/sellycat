@@ -22,6 +22,8 @@ async function StaffShell({ t, children }: { t: Dictionary; children: ReactNode 
   const nav = [
     { href: "/admin", label: t.staff.overview },
     { href: "/admin/tenants", label: t.staff.tenants },
+    { href: "/admin/plans", label: t.staff.plansNav },
+    { href: "/admin/requests", label: t.staff.requestsNav },
     { href: "/admin/settings", label: t.staff.settings },
     { href: "/admin/audit", label: t.staff.audit },
   ];

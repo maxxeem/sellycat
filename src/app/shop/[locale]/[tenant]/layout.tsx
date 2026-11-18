@@ -48,7 +48,7 @@ async function Shell({ tenant, children }: { tenant: Promise<string>; children: 
         <link key={href} rel="stylesheet" href={href} precedence="default" />
       ))}
       <style>{SHOP_CSS + fonts.faces}</style>
-      <ShopFrame name={shop.name} theme={shop.theme} t={t} contact={{ email: shop.settings.contact_email, phone: shop.settings.contact_phone }}>
+      <ShopFrame name={shop.name} theme={shop.theme} t={t} contact={{ email: shop.settings.contact_email, phone: shop.settings.contact_phone }} branding={shop.settings.branding === true}>
         {children}
       </ShopFrame>
       {shop.settings.ga4_id || shop.settings.meta_pixel_id ? <ConsentBanner ga4={shop.settings.ga4_id} metaPixel={shop.settings.meta_pixel_id} t={t} /> : null}

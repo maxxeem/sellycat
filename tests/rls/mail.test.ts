@@ -48,7 +48,9 @@ describe.skipIf(!rlsEnabled)("RLS mail", () => {
     expect(insert.error).not.toBeNull();
   });
 
-  it("plan features: own sender domain is open on Starter for now", async () => {
+  it("plan features: own sender domain from Pro on, not on Free", async () => {
+    expect((await a.client.rpc("plan_allows", { p_tenant: a.tenantId, p_feature: "custom_mail_domain" })).data).toBe(false);
+    await admin().from("tenants").update({ plan_id: "pro" }).eq("id", a.tenantId);
     expect((await a.client.rpc("plan_allows", { p_tenant: a.tenantId, p_feature: "custom_mail_domain" })).data).toBe(true);
     expect((await a.client.rpc("plan_allows", { p_tenant: a.tenantId, p_feature: "does_not_exist" })).data).toBe(false);
   });

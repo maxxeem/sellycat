@@ -14,6 +14,7 @@ export function ShopFrame({
   children,
   contact,
   inert = false,
+  branding = false,
 }: {
   name: string;
   theme: ShopTheme;
@@ -21,6 +22,8 @@ export function ShopFrame({
   children: ReactNode;
   contact?: { email?: string | null; phone?: string | null };
   inert?: boolean;
+  /** Free plan: a visible "Powered by Sellycat" badge; paid plans show no Sellycat branding. */
+  branding?: boolean;
 }) {
   // Two logo variants: the stylesheet shows the one that fits the header's background.
   const forLight = theme.logoLight || theme.logoDark;
@@ -62,9 +65,21 @@ export function ShopFrame({
           <div className="flex flex-col gap-1 sm:items-end">
             {contact?.email ? <a {...a(`mailto:${contact.email}`)} className="hover:text-[var(--shop-text)]">{contact.email}</a> : null}
             {contact?.phone ? <a {...a(`tel:${contact.phone.replace(/\s/g, "")}`)} className="hover:text-[var(--shop-text)]">{contact.phone}</a> : null}
-            <a href="https://sellycat.com" className="text-xs opacity-70 hover:opacity-100" tabIndex={inert ? -1 : undefined}>{t.poweredBy}</a>
           </div>
         </div>
+        {branding ? (
+          <div className="flex justify-center pb-8">
+            <a
+              href="https://sellycat.com/?ref=shop"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--shop-line)] bg-[var(--shop-surface)] px-4 py-2 text-xs font-semibold text-[var(--shop-text)] shadow-sm hover:border-[var(--shop-text)]"
+              tabIndex={inert ? -1 : undefined}
+              data-testid="sellycat-branding"
+            >
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#FF4B23]" aria-hidden />
+              {t.poweredBy}
+            </a>
+          </div>
+        ) : null}
       </footer>
     </div>
   );

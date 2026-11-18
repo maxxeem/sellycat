@@ -41,6 +41,8 @@ describe.skipIf(!rlsEnabled)("RLS vouchers", () => {
     db = admin();
     a = await makeTenant(db, `${run}-a`);
     b = await makeTenant(db, `${run}-b`);
+    // Many live deals below: a plan without a live-deal limit.
+    await db.from("tenants").update({ plan_id: "business" }).in("id", [a.tenantId, b.tenantId]);
     await db.from("legal_pages").insert((["imprint", "terms", "privacy"] as const).map((kind) => ({ tenant_id: a.tenantId, kind, content: LEGAL })));
     // Zurich weekday (1 = Monday) and a window of one minute just after midnight two days later.
     const weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(new Date().toLocaleString("en-US", { timeZone: "Europe/Zurich", weekday: "short" })) + 1;

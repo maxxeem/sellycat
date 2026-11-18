@@ -123,7 +123,7 @@ export function DealEditor(props: {
   const result = (r: SaveResult, okText: string) => {
     setErrors(r.errors ?? {});
     if (r.ok) setMessage({ tone: "success", text: okText });
-    else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.message === "hasSales" ? d.deleteHasSales : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
+    else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.message === "hasSales" ? d.deleteHasSales : r.message === "planLimit" ? d.planLimit : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
   };
   const save = () =>
     start(async () => {

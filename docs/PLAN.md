@@ -334,3 +334,22 @@ Offen: Google «Publishing access» beantragen (erst dann für alle Kunden); off
 - Kamera liest Barcodes zuverlässiger: höhere Auflösung (bis 1920×1080), alle Gutschein-Symbole ausdrücklich (QR, EAN-13/8, UPC, Code 128/39, ITF, Data Matrix, PDF417, Aztec) und «Try harder».
 - **«Code abfotografieren»** während die Kamera läuft: Standbild → Claude Haiku liest sichtbare Codes (Zahlen, Buchstaben, Codewörter) → jeder Kandidat wird wie ein eingetippter Code gesucht (`src/lib/vouchers/read-code-ai.ts`, `lookupPhoto`, 30 Fotos pro 10 Min. und Person).
 - Gehört ein Gutschein zu einem anderen Partner desselben Shops, sagt die App das mit Namen statt «nicht gefunden» (`voucher_partner_hint`, nur für Personen mit Einlöse-Recht im Shop, getestet in `tests/rls/scanners.test.ts`). Ursache der Meldung von Jan: Scanner von Santa Lucia, Barcode-Gutschein von Aare Adventure Park.
+
+## 23. Phase 7, Teil 1: Pläne, Preise, Abos (28.11.2026)
+
+Vorbild SwypeCast (Preise, Währung nach Ort, Stripe Billing, Upgrade/Downgrade). Entscheid Jan: gleiche Basispreise wie SwypeCast, Gebühr 10 % / 5 % / 2.5 %, Business «Kontakt aufnehmen», Free mit Branding und 30 %; Preise in CHF, EUR, USD gleich hoch, Währung nach Zugriffsort (CH/LI → CHF, Europa → EUR, Rest → USD); alles im Staff-Dashboard änderbar.
+
+| Plan | Monatlich | Jährlich | Gebühr | Live-Deals | Team | Eigene Domain / Absender | Branding | Test |
+|---|---|---|---|---|---|---|---|---|
+| Free | 0 | 0 | 30 % | 3 | 1 | – | ja | – |
+| Starter | 49 | 468 (= 39/Mt.) | 10 % | 15 | 3 | – | nein | 7 Tage |
+| Pro | 149 | 1428 (= 119/Mt.) | 5 % | 100 | 10 | ja | nein | 7 Tage |
+| Business | auf Anfrage | auf Anfrage | 2.5 % | unbegrenzt | 50 | ja | nein | – |
+
+- **Staff → Pläne & Preise** (`/admin/plans`, nur Superadmin speichert): Name, Sichtbarkeit, «Kontakt statt Preis», Testphase, Gebühr in %, Limits, Preise (monatlich/jährlich × CHF/EUR/USD), Texte für die Preisseite (DE/EN). Speichern gleicht Stripe an (`syncPlan`: Produkt pro Plan, Preis in CHF mit EUR/USD als `currency_options`, geänderter Betrag = neuer Preis, alter archiviert; Ids pro Modus test/live in `plans.stripe`). Audit `plan.update`. **Staff → Anfragen**: Business-Anfragen von der Preisseite (`contact_requests`, optional Mail an `SALES_EMAIL`).
+- **Preisseite** `sellycat.com/pricing`: Pläne aus der DB, Währung aus `x-vercel-ip-country` (umschaltbar, `?currency=EUR`), Monat/Jahr mit berechnetem Rabatt, Business mit Kontaktformular (Honeypot, Rate-Limit).
+- **Dashboard → Einstellungen → Abo** (`/dashboard/billing`, nur Inhaber/Admin ändern): aktueller Plan mit Status, Gebühr, Live-Deals-Nutzung, Testphase/Verlängerung/Ende; Planwahl: ohne Abo Stripe Checkout (Testphase nur beim ersten Abo), Upgrade sofort anteilig, Downgrade zum Periodenende (Subscription Schedule, «Behalten» hebt auf); Stripe-Kundenportal für Rechnungen, Zahlungsmittel, Kündigung zum Periodenende. Währung: von Stripe gesperrt → Rechnungsland → Standort.
+- **Webhook** `/api/stripe/billing` (Plattform-Konto, eigenes Secret `STRIPE_BILLING_WEBHOOK_SECRET`, idempotent über `billing_events`): Abo → Shop (`applySubscription`); beendet oder unbezahlt → Free. Stripe Tax nur mit `STRIPE_TAX=1`.
+- **Durchgesetzt**: Kunden ändern Plan/Abo-Felder nie selbst (`tenants_guard`); Live-Deals-Limit beim Veröffentlichen (Trigger `deals_plan_limit`, Meldung im Editor); eigene Domain/Absender über `plan_allows`; Free zeigt im Shop ein «Erstellt mit Sellycat»-Abzeichen, bezahlte Pläne kein Sellycat-Branding (`shop_profile.settings.branding`). Neue Shops starten auf Free. Getestet in `tests/rls/billing.test.ts`, `src/lib/billing/billing.test.ts`.
+- **Noch einzurichten (mit Jans OK)**: Stripe-Webhook für Billing (Test-Modus, Staging), Produkte/Preise in Stripe anlegen (Speichern pro Plan im Staff-Dashboard oder einmalig für alle), optional Stripe Tax und Sales-Mail.
+- **Später in Phase 7**: Team/Rollen mit Sitz-Limit, Analytics, Support/Knowledge Base, Partner-Abrechnung, API/Webhooks, Performance, Sicherheits-Review, Launch.
