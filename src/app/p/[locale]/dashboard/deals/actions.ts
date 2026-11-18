@@ -15,7 +15,7 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "error" };
+export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "hasSales" | "error" };
 
 export async function createDeal(title: string) {
   const { tenant, supabase } = await requireTenant("editor");
@@ -63,6 +63,21 @@ export async function setDealState(id: string, state: "draft" | "published" | "e
   refreshShop(tenant.id);
   revalidatePath("/p/[locale]/dashboard/deals", "layout");
   return { ok: true };
+}
+
+/**
+ * Delete a deal that never sold anything (owner/admin). The database decides (policy with
+ * `deal_has_sales`); a deal with sales can only be archived.
+ */
+export async function deleteDeal(id: string): Promise<SaveResult> {
+  const { tenant, supabase } = await requireTenant("admin");
+  const { data: sold } = await supabase.rpc("deal_has_sales", { p_deal: id });
+  if (sold !== false) return { ok: false, message: "hasSales" };
+  const { data, error } = await supabase.from("deals").delete().eq("id", id).eq("tenant_id", tenant.id).select("id");
+  if (error || !data?.length) return { ok: false, message: "hasSales" };
+  refreshShop(tenant.id);
+  revalidatePath("/p/[locale]/dashboard/deals", "layout");
+  redirect("/dashboard/deals");
 }
 
 /** Archive (owner/admin): out of the shop and the default list; a running deal is ended first. */

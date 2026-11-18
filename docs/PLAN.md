@@ -316,3 +316,9 @@ Offen: Google «Publishing access» beantragen (erst dann für alle Kunden); off
 - **KI-Übernahme zuverlässiger**: Seitenabruf mit 20 s statt 8 s und bis zu drei Versuchen (langsame Seiten antworteten beim ersten Aufruf zu spät), Bilder 15 s; Claude mit Wiederholung und zweitem Versuch ohne Bilder; scheitert die KI ganz, werden Titel, Beschreibung und Bilder direkt von der Seite übernommen (Hinweis an den Nutzer). `maxDuration = 300` auf der Editor-Seite. Im Browser: Fehler der Server Action werden abgefangen (Verbindungsabbruch → ein automatischer zweiter Versuch; neue Sellycat-Version → «Seite neu laden»), Sekundenanzeige während der Übernahme.
 - **Text-Editor im Dashboard**: eigene Stile `.editor-prose` (Aufzählungen, Nummerierung, Einzüge, Überschriften, Zitate) – vorher fehlten sie, weil `.shop-prose` nur im Shop geladen wird. Im Shop engere Abstände in Listen.
 - **Druck-PDF**: QR-Codes und Barcodes werden als Vektoren aus der Modulmatrix (`bwip-js raw`, `symbolVector`) gezeichnet, mit Ruhezone und ohne Verzerrung (vorher Rasterbild, das beim Drucken verschwamm). Logos werden immer als Echtfarben-PNG eingebettet (Paletten-PNGs wurden falsch dargestellt).
+
+## 20. Löschen ohne Verkäufe (27.11.2026)
+
+- Deals, bei denen **noch nichts verkauft** wurde, können Inhaber und Admins des Shops löschen (Papierkorb im Deal-Editor, auch aus dem Archiv). Editoren nicht.
+- «Verkauft» bestimmt die Datenbank (`deal_has_sales`): Verkaufszähler oder Reservation über 0, ein Gutschein, eine laufende Reservation oder eine offene, bezahlte oder erstattete Bestellung. Abgelaufene Checkouts zählen nicht.
+- Danach nur noch archivieren; endgültig löschen dann nur Sellycat-Staff aus dem Archiv. Umgesetzt als Policy `deals_delete_unsold` (Migration `deal_delete_unsold`), getestet in `tests/rls/deal-archive.test.ts`.

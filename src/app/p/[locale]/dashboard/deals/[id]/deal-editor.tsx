@@ -24,7 +24,7 @@ import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
 import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
-import { archiveDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
+import { archiveDeal, deleteDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 import { AiImport } from "./ai-import";
 import { PoolPanel } from "./pool-panel";
 import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
@@ -46,6 +46,8 @@ export function DealEditor(props: {
   legalComplete: boolean;
   canArchive: boolean;
   archived: boolean;
+  /** Something was sold (or a checkout runs): no deleting, only archiving. */
+  hasSales: boolean;
   /** Sellycat staff with authenticator code: may delete archived deals for good. */
   canDeleteForever: boolean;
   /** Conditions and FAQ of the shop's other deals. */
@@ -121,7 +123,7 @@ export function DealEditor(props: {
   const result = (r: SaveResult, okText: string) => {
     setErrors(r.errors ?? {});
     if (r.ok) setMessage({ tone: "success", text: okText });
-    else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
+    else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.message === "hasSales" ? d.deleteHasSales : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
   };
   const save = () =>
     start(async () => {
@@ -184,12 +186,17 @@ export function DealEditor(props: {
         <Badge tone={STATUS_TONE[status]}>{d.status[status]}</Badge>
         {archived ? <Badge tone="neutral">{d.archivedBadge}</Badge> : null}
         <div className="ml-auto flex flex-wrap gap-2">
+          {props.canArchive && !props.hasSales ? (
+            <button type="button" className={`${buttonClass.ghost} text-danger`} disabled={pending} onClick={() => confirm(d.deleteConfirm) && start(async () => void result(await deleteDeal(props.id), ""))} title={d.delete} aria-label={d.delete} data-testid="deal-delete">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          ) : null}
           {props.canArchive && !archived ? (
-            <button type="button" className={buttonClass.ghost} disabled={pending} onClick={() => confirm(d.archiveConfirm) && archive()} title={d.archive} aria-label={d.archive} data-testid="deal-archive">
+            <button type="button" className={buttonClass.ghost} disabled={pending} onClick={() => confirm(d.archiveConfirm) && archive()} title={props.hasSales ? `${d.archive} – ${d.archiveOnlyHint}` : d.archive} aria-label={d.archive} data-testid="deal-archive">
               <Archive className="h-4 w-4" />
             </button>
           ) : null}
-          {archived && props.canDeleteForever ? (
+          {archived && props.hasSales && props.canDeleteForever ? (
             <button
               type="button"
               className={`${buttonClass.ghost} text-danger`}

@@ -1,6 +1,7 @@
 /**
- * Archive and delete against staging: owners/admins archive, editors cannot; an archived deal is
- * never public and cannot be published; nobody but the service role deletes a deal.
+ * Archive and delete against staging: owners/admins archive and delete unsold deals, editors
+ * cannot; once a deal sold, only the service role (staff) deletes it; an archived deal is never
+ * public and cannot be published.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { admin, anon, dropTenant, makeTenant, rlsEnabled, type DB, type TestTenant } from "./helpers";
@@ -26,10 +27,24 @@ describe.skipIf(!rlsEnabled)("RLS deal archive", () => {
 
   afterAll(async () => dropTenant(db, a));
 
-  it("nobody but the service role deletes a deal, not even the owner", async () => {
-    await a.client.from("deals").delete().eq("id", draft);
-    await anon().from("deals").delete().eq("id", draft);
-    expect(await row(draft)).not.toBeNull();
+  it("unsold deals: owners/admins delete them, editors and strangers do not", async () => {
+    const extra = (await db.from("deals").insert({ tenant_id: a.tenantId, slug: "extra", title: "Extra", price_cents: 100 }).select("id").single()).data!.id;
+    await anon().from("deals").delete().eq("id", extra);
+    await setRole("editor");
+    await a.client.from("deals").delete().eq("id", extra);
+    expect(await row(extra)).not.toBeNull();
+    await setRole("owner");
+    expect((await a.client.rpc("deal_has_sales", { p_deal: extra })).data).toBe(false);
+    await a.client.from("deals").delete().eq("id", extra);
+    expect(await row(extra)).toBeNull();
+  });
+
+  it("once something sold, not even the owner deletes (only archive)", async () => {
+    const sold = (await db.from("deals").insert({ tenant_id: a.tenantId, slug: "sold", title: "Sold", price_cents: 100 }).select("id").single()).data!.id;
+    await db.from("deals").update({ sold_qty: 1 }).eq("id", sold);
+    expect((await a.client.rpc("deal_has_sales", { p_deal: sold })).data).toBe(true);
+    await a.client.from("deals").delete().eq("id", sold);
+    expect(await row(sold)).not.toBeNull();
   });
 
   it("editors cannot archive", async () => {

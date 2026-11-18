@@ -1787,6 +1787,7 @@ export type Database = {
         }
         Returns: string
       }
+      deal_has_sales: { Args: { p_deal: string }; Returns: boolean }
       find_voucher: {
         Args: { p_code: string; p_tenant: string }
         Returns: string

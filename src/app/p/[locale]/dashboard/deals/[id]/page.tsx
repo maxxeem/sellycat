@@ -41,7 +41,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
     supabase.from("code_pool").select("id", { count: "exact", head: true }).eq("deal_id", id).not("voucher_id", "is", null),
   ]);
   if (!deal) notFound();
-  const staff = await getStaffUser();
+  const [staff, { data: hasSales }] = await Promise.all([getStaffUser(), supabase.rpc("deal_has_sales", { p_deal: deal.id })]);
   const images = [...(deal.deal_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   const form = dealToForm(deal, images, (deal.deal_locations ?? []).map((l) => l.location_id));
   return (
@@ -59,6 +59,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
       reuse={reusableTexts(others ?? [])}
       canArchive={tenant.role === "owner" || tenant.role === "admin"}
       archived={Boolean(deal.archived_at)}
+      hasSales={hasSales !== false}
       canDeleteForever={Boolean(staff && (staff.aal === "aal2" || serverEnv.staffMfaOptional))}
     />
   );
