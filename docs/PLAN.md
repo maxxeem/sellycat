@@ -322,3 +322,9 @@ Offen: Google «Publishing access» beantragen (erst dann für alle Kunden); off
 - Deals, bei denen **noch nichts verkauft** wurde, können Inhaber und Admins des Shops löschen (Papierkorb im Deal-Editor, auch aus dem Archiv). Editoren nicht.
 - «Verkauft» bestimmt die Datenbank (`deal_has_sales`): Verkaufszähler oder Reservation über 0, ein Gutschein, eine laufende Reservation oder eine offene, bezahlte oder erstattete Bestellung. Abgelaufene Checkouts zählen nicht.
 - Danach nur noch archivieren; endgültig löschen dann nur Sellycat-Staff aus dem Archiv. Umgesetzt als Policy `deals_delete_unsold` (Migration `deal_delete_unsold`), getestet in `tests/rls/deal-archive.test.ts`.
+
+## 21. Wallet: Barcode bleibt Barcode (27.11.2026)
+
+- Pässe zeigen je nach Codeformat des Deals: **QR** → QR-Code zur Prüfseite; **Zahlen-/Buchstabencode** → kein Symbol, der Code gross als Text (Apple: Feld auf der Vorderseite; Google: Textmodul); **Barcode** → immer ein Barcode mit dem Code selbst, nie ein QR-Code.
+- Google zeigt jeden Typ exakt. Apple kennt nur QR, PDF417, Aztec und Code 128: EAN, UPC, ITF und Code 39 werden dort als Code 128 mit denselben Zeichen gezeigt (Kassenscanner lesen denselben Code), Data Matrix als Aztec (`appleBarcode`/`googleBarcode` in `src/lib/wallet/content.ts`, getestet).
+- Bereits gespeicherte Pässe bekommen die neue Darstellung bei der nächsten Aktualisierung (Statuswechsel).

@@ -852,7 +852,7 @@ export const de: Dictionary = {
     notConfigured: "Wallet ist auf diesem Server noch nicht eingerichtet.",
     saved: "Gespeichert. Neue und aktualisierte Pässe verwenden dieses Design.",
     failed: "Speichern hat nicht geklappt.",
-    barcodeNote: "Apple Wallet kann nur QR, PDF417, Aztec und Code 128 anzeigen. Bei anderen Barcodes zeigt der Apple-Pass einen QR-Code zur Prüfseite und den Code als Text.",
+    barcodeNote: "Google Wallet zeigt jeden Barcode-Typ. Apple Wallet kennt nur QR, PDF417, Aztec und Code 128: EAN, UPC, ITF und Code 39 erscheinen dort als Code-128-Strichcode mit denselben Ziffern, Data Matrix als Aztec-Code. Nie als QR-Code.",
     reminderSubject: "Dein Gutschein von {shop} läuft bald ab",
     reminderHeading: "Bald ist es so weit",
     reminderIntro: "Dein Gutschein ist nur noch bis {date} gültig. Löse ihn vorher ein, damit er nicht verfällt.",

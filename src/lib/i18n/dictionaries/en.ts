@@ -850,7 +850,7 @@ export const en = {
     notConfigured: "Wallet is not set up on this server yet.",
     saved: "Saved. New and updated passes use this design.",
     failed: "Saving did not work.",
-    barcodeNote: "Apple Wallet only shows QR, PDF417, Aztec and Code 128. For other barcodes the Apple pass shows a QR code to the check page and the code as text.",
+    barcodeNote: "Google Wallet shows every barcode type. Apple Wallet only knows QR, PDF417, Aztec and Code 128: EAN, UPC, ITF and Code 39 appear there as a Code 128 barcode with the same digits, Data Matrix as an Aztec code. Never as a QR code.",
     reminderSubject: "Your voucher from {shop} expires soon",
     reminderHeading: "Not long now",
     reminderIntro: "Your voucher is only valid until {date}. Redeem it before then so it does not expire.",

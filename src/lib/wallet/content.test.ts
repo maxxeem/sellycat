@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appleBarcode, applePassJson, googleClassId, googleObject, googleObjectId, parseWalletDesign, walletColors, type WalletShop, type WalletVoucher } from "./content";
+import { appleBarcode, applePassJson, googleBarcode, googleClassId, googleObject, googleObjectId, parseWalletDesign, walletColors, type WalletShop, type WalletVoucher } from "./content";
 
 const shop: WalletShop = { id: "11111111-2222-3333-4444-555555555555", name: "City Deals", locale: "de", host: "city-deals.sellycat.com", primary: "#ff4b23", logo: null };
 const v: WalletVoucher = {
@@ -33,7 +33,17 @@ describe("Apple pass", () => {
   it("shows Apple-readable barcodes and a QR of the check link otherwise", () => {
     expect(appleBarcode(v)).toMatchObject({ format: "PKBarcodeFormatQR", message: v.link, altText: v.code });
     expect(appleBarcode({ ...v, codeFormat: "barcode", barcodeType: "code128", code: "ABC 123" })).toMatchObject({ format: "PKBarcodeFormatCode128", message: "ABC123" });
-    expect(appleBarcode({ ...v, codeFormat: "barcode", barcodeType: "ean13", code: "2001234567893" })).toMatchObject({ format: "PKBarcodeFormatQR", altText: "2001234567893" });
+    // A barcode stays a barcode (same characters), never a QR code; plain codes have no symbol.
+    for (const type of ["ean13", "ean8", "upca", "code39", "itf14"] as const)
+      expect(appleBarcode({ ...v, codeFormat: "barcode", barcodeType: type, code: "2001234567893" })).toMatchObject({ format: "PKBarcodeFormatCode128", message: "2001234567893" });
+    expect(appleBarcode({ ...v, codeFormat: "barcode", barcodeType: "datamatrix", code: "AB12" })).toMatchObject({ format: "PKBarcodeFormatAztec", message: "AB12" });
+    expect(appleBarcode({ ...v, codeFormat: "barcode", barcodeType: "pdf417", code: "AB12" })).toMatchObject({ format: "PKBarcodeFormatPDF417" });
+    expect(appleBarcode({ ...v, codeFormat: "numeric", code: "4821 0937 5512" })).toBeNull();
+    expect(googleBarcode({ ...v, codeFormat: "barcode", barcodeType: "ean13", code: "2001234567893" })).toMatchObject({ type: "EAN_13", value: "2001234567893" });
+    expect(googleBarcode({ ...v, codeFormat: "numeric", code: "4821 0937 5512" })).toBeNull();
+    const plain = applePassJson({ ...v, codeFormat: "numeric", code: "4821 0937 5512" }, shop, parseWalletDesign({}), { passTypeIdentifier: "pass.x", teamIdentifier: "T" });
+    expect(plain).not.toHaveProperty("barcodes");
+    expect(plain.coupon.auxiliaryFields[0]).toMatchObject({ value: "4821 0937 5512" });
   });
 
   it("builds a coupon with remaining value, validity, locations with coordinates and the update service", () => {

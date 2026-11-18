@@ -39,7 +39,8 @@ function FakeCode({ linear }: { linear: boolean }) {
 function ApplePreview({ v, shop, design, logo }: { v: WalletVoucher; shop: WalletShop; design: WalletDesign; logo: string | null }) {
   const rows = passRows(v, shop);
   const c = walletColors(design, shop.primary);
-  const linear = appleBarcode(v).format === "PKBarcodeFormatCode128";
+  const barcode = appleBarcode(v);
+  const linear = barcode?.format === "PKBarcodeFormatCode128";
   return (
     <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[14px] shadow-lg" style={{ background: c.background, color: c.foreground }} data-testid="wallet-preview-apple">
       <div className="flex items-center justify-between gap-2 px-4 pt-3">
@@ -80,8 +81,8 @@ function ApplePreview({ v, shop, design, logo }: { v: WalletVoucher; shop: Walle
       </div>
       <div className="flex justify-center px-4 pb-4">
         <div className="flex flex-col items-center rounded-lg bg-white px-3 py-2 text-[#111]">
-          <FakeCode linear={linear} />
-          <span className="font-mono text-xs">{v.code}</span>
+          {barcode ? <FakeCode linear={linear} /> : null}
+          <span className={barcode ? "font-mono text-xs" : "font-mono text-lg font-bold tracking-wider"}>{v.code}</span>
         </div>
       </div>
     </div>
@@ -119,8 +120,8 @@ function GooglePreview({ v, shop, design }: { v: WalletVoucher; shop: WalletShop
       </div>
       <div className="flex justify-center pb-4">
         <div className="flex flex-col items-center rounded-xl bg-white px-3 py-2 text-[#111]">
-          <FakeCode linear={v.codeFormat === "barcode" && !["datamatrix", "pdf417"].includes(v.barcodeType ?? "")} />
-          <span className="font-mono text-xs">{v.code}</span>
+          {v.codeFormat !== "numeric" ? <FakeCode linear={v.codeFormat === "barcode" && !["datamatrix", "pdf417"].includes(v.barcodeType ?? "")} /> : null}
+          <span className={v.codeFormat !== "numeric" ? "font-mono text-xs" : "font-mono text-lg font-bold tracking-wider"}>{v.code}</span>
         </div>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}

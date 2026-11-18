@@ -87,14 +87,30 @@ export function passRows(v: WalletVoucher, shop: WalletShop) {
 type AppleBarcode = { format: "PKBarcodeFormatQR" | "PKBarcodeFormatCode128" | "PKBarcodeFormatPDF417" | "PKBarcodeFormatAztec"; message: string; messageEncoding: "iso-8859-1"; altText?: string };
 
 /**
- * Apple only reads QR, PDF417, Aztec and Code 128. Every other barcode type gets the QR code of
- * the check link, with the code as text below it.
+ * What the pass shows, by the deal's code format:
+ * - QR deals: the QR code of the check link.
+ * - Number/letter codes: no symbol at all, the code as text (typed in at the till or online).
+ * - Barcode deals: always a barcode with the code itself, never a QR code. Apple only draws QR,
+ *   PDF417, Aztec and Code 128, so linear types it lacks (EAN, UPC, ITF, Code 39) become a Code 128
+ *   with the same characters (till scanners read it as the same code), Data Matrix becomes Aztec.
  */
-export function appleBarcode(v: Pick<WalletVoucher, "codeFormat" | "barcodeType" | "code" | "link">): AppleBarcode {
+export function appleBarcode(v: Pick<WalletVoucher, "codeFormat" | "barcodeType" | "code" | "link">): AppleBarcode | null {
   const code = v.code.replace(/\s/g, "");
-  if (v.codeFormat === "barcode" && v.barcodeType === "code128" && /^[\x20-\x7e]+$/.test(code)) return { format: "PKBarcodeFormatCode128", message: code, messageEncoding: "iso-8859-1", altText: v.code };
-  if (v.codeFormat === "barcode" && v.barcodeType === "pdf417") return { format: "PKBarcodeFormatPDF417", message: code, messageEncoding: "iso-8859-1", altText: v.code };
+  if (v.codeFormat === "numeric") return null;
+  if (v.codeFormat === "barcode" && v.barcodeType) {
+    if (v.barcodeType === "pdf417") return { format: "PKBarcodeFormatPDF417", message: code, messageEncoding: "iso-8859-1", altText: v.code };
+    if (v.barcodeType === "datamatrix") return { format: "PKBarcodeFormatAztec", message: code, messageEncoding: "iso-8859-1", altText: v.code };
+    if (/^[\x20-\x7e]+$/.test(code)) return { format: "PKBarcodeFormatCode128", message: code, messageEncoding: "iso-8859-1", altText: v.code };
+    return null;
+  }
   return { format: "PKBarcodeFormatQR", message: v.link, messageEncoding: "iso-8859-1", altText: v.code };
+}
+
+/** Google draws every type we offer: same rule, exact barcode type, no symbol for plain codes. */
+export function googleBarcode(v: Pick<WalletVoucher, "codeFormat" | "barcodeType" | "code" | "link">) {
+  if (v.codeFormat === "numeric") return null;
+  if (v.codeFormat === "barcode" && v.barcodeType) return { type: GOOGLE_BARCODE[v.barcodeType], value: v.code.replace(/\s/g, ""), alternateText: v.code };
+  return { type: "QR_CODE", value: v.link, alternateText: v.code };
 }
 
 type Field = { key: string; label?: string; value: string; textAlignment?: string; dataDetectorTypes?: string[] };
@@ -137,8 +153,7 @@ export function applePassJson(
     ...(v.validUntil ? { expirationDate: new Date(v.validUntil).toISOString() } : {}),
     ...(v.status !== "valid" ? { voided: true } : {}),
     ...(locations.length ? { locations } : {}),
-    barcodes: [barcode],
-    barcode,
+    ...(barcode ? { barcodes: [barcode], barcode } : {}),
     coupon: {
       headerFields: rows.header ? [{ key: "header", label: rows.header.label, value: rows.header.value, textAlignment: "PKTextAlignmentRight" }] : [],
       primaryFields: [{ key: "offer", value: v.title }],
@@ -146,7 +161,8 @@ export function applePassJson(
         ...(v.partner ? [{ key: "partner", label: getDictionary(shop.locale).wallet.partner, value: v.partner }] : []),
         { key: "validity", label: rows.validity.label, value: rows.validity.value, ...(v.partner ? { textAlignment: "PKTextAlignmentRight" } : {}) },
       ],
-      auxiliaryFields: [],
+      // Without a symbol the code itself is the important part: on the front, large enough to type.
+      auxiliaryFields: barcode ? [] : [{ key: "codeFront", label: rows.code.label, value: v.code }],
       backFields: back,
     },
   };
@@ -179,10 +195,7 @@ export function googleObject(v: WalletVoucher, shop: WalletShop, design: WalletD
   const colors = walletColors(design, shop.primary);
   const lang = shop.locale === "de" ? "de" : "en";
   const text = (value: string) => ({ defaultValue: { language: lang, value } });
-  const barcode =
-    v.codeFormat === "barcode" && v.barcodeType
-      ? { type: GOOGLE_BARCODE[v.barcodeType], value: v.code.replace(/\s/g, ""), alternateText: v.code }
-      : { type: "QR_CODE", value: v.link, alternateText: v.code };
+  const barcode = googleBarcode(v);
   const modules = [
     rows.header ? { id: "header", header: rows.header.label, body: rows.header.value } : null,
     { id: "validity", header: rows.validity.label, body: rows.validity.value },
@@ -202,7 +215,7 @@ export function googleObject(v: WalletVoucher, shop: WalletShop, design: WalletD
     ...(logo ? { logo } : {}),
     ...(hero ? { heroImage: hero } : {}),
     hexBackgroundColor: colors.background,
-    barcode,
+    ...(barcode ? { barcode } : {}),
     textModulesData: modules,
     linksModuleData: { uris: [{ id: "check", uri: v.link, description: rows.checkLink.label }, { id: "shop", uri: rows.shopLink.value, description: rows.shopLink.label }] },
     ...(v.validUntil ? { validTimeInterval: { end: { date: new Date(v.validUntil).toISOString() } } } : {}),
