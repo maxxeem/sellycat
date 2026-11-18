@@ -33,12 +33,12 @@ describe("renderVoucherPdf", () => {
           host: "city-deals.sellycat.com",
           orderNumber: "AB12-CD34",
           gift: { from: "Anna", message: "Alles Gute!" },
-          vouchers: [voucher, { ...voucher, codeFormat: "barcode", barcodeType: "ean13", code: "2001234567893", status: "redeemed" }],
+          vouchers: [voucher, { ...voucher, codeFormat: "barcode", barcodeType: "ean13", code: "2001234567893", status: "redeemed" }, { ...voucher, codeFormat: "numeric", code: "4821 0937 5512" }],
           design: parseDesign({ layout, size, note: "Bitte bei der Reservation den Code angeben." }),
         });
         expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
         const text = pdf.toString("latin1");
-        expect(text.match(/\/Type \/Page\b/g)?.length).toBe(2);
+        expect(text.match(/\/Type \/Page\b/g)?.length).toBe(3);
         expect(text).toContain(size === "a6" ? "297.6" : "595.2");
         // Local look at the result: PDF_OUT=/some/dir npx vitest run src/lib/vouchers/pdf.test.ts
         if (process.env.PDF_OUT) writeFileSync(`${process.env.PDF_OUT}/${layout}-${size}.pdf`, pdf);
@@ -57,5 +57,7 @@ describe("symbolVector", () => {
     expect(ean.rects[0][0]).toBe(10);
     expect(ean.width).toBe(95 + 20);
     expect(symbolVector({ codeFormat: "barcode", barcodeType: "ean13", code: "ABC", link: "" })).toBeNull();
+    // Plain number/letter codes are typed in: no QR code anywhere.
+    expect(symbolVector({ codeFormat: "numeric", barcodeType: null, code: "4821 0937 5512", link: voucher.link })).toBeNull();
   });
 });

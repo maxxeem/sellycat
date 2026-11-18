@@ -884,6 +884,7 @@ export const en = {
       redeemAt: "Redeemable at",
       terms: "Terms",
       scan: "Show or have this code scanned when redeeming.",
+      typeIn: "Give or enter this code when redeeming.",
       order: "Order {number}",
     },
   },

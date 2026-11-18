@@ -50,7 +50,7 @@ export function VoucherCard({ v, t, locale, currency, linkLabel, actions }: { v:
             dangerouslySetInnerHTML={{ __html: symbol.svg }}
           />
         ) : null}
-        <p className="select-all text-center font-mono text-xl font-bold tracking-wider">{v.code}</p>
+        <p className={`select-all text-center font-mono font-bold tracking-wider ${symbol ? "text-xl" : "py-3 text-3xl"}`} data-testid="voucher-code">{v.code}</p>
         {usable ? <p className="text-center text-xs text-[var(--shop-muted)]">{t.voucherShow}</p> : null}
       </div>
       <div className="flex flex-col gap-1 border-t border-[var(--shop-line)] px-5 py-3 text-sm text-[var(--shop-muted)]">

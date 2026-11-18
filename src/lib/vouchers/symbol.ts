@@ -11,10 +11,12 @@ const TWO_D = new Set<BarcodeType>(["datamatrix", "pdf417"]);
 
 /**
  * The scannable symbol of a voucher as SVG markup (paths only, no text from the code): a barcode
- * of the code for barcode deals, otherwise a QR code of the check link. Returns null if the code
- * cannot be drawn in that barcode type (e.g. a pool code with letters for EAN).
+ * of the code for barcode deals, a QR code of the check link for QR deals and nothing for plain
+ * number/letter codes (they are typed in). Returns null if the code cannot be drawn in that
+ * barcode type (e.g. a pool code with letters for EAN).
  */
 export function voucherSymbol(v: { codeFormat: CodeFormat; barcodeType: BarcodeType | null; code: string; link: string }): { kind: "qr" | "linear" | "matrix"; svg: string } | null {
+  if (v.codeFormat === "numeric") return null;
   try {
     if (v.codeFormat === "barcode" && v.barcodeType) {
       const text = v.code.replace(/\s/g, "");
@@ -39,6 +41,7 @@ type RawLinear = { sbs: number[] };
  * resampled by printers, and path parsing can bend edges). Includes the quiet zone.
  */
 export function symbolVector(v: { codeFormat: CodeFormat; barcodeType: BarcodeType | null; code: string; link: string }): SymbolVector | null {
+  if (v.codeFormat === "numeric") return null;
   try {
     const linear = v.codeFormat === "barcode" && v.barcodeType && !TWO_D.has(v.barcodeType);
     const bcid = v.codeFormat === "barcode" && v.barcodeType ? BCID[v.barcodeType] : "qrcode";

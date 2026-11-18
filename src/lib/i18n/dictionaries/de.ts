@@ -886,6 +886,7 @@ export const de: Dictionary = {
       redeemAt: "Einlösbar bei",
       terms: "Bedingungen",
       scan: "Beim Einlösen den Code vorzeigen oder scannen lassen.",
+      typeIn: "Beim Einlösen den Code angeben oder eingeben.",
       order: "Bestellung {number}",
     },
   },

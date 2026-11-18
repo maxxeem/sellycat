@@ -168,7 +168,8 @@ function CodeFacts({ c, v, align = "left" }: { c: Ctx; v: PdfVoucher; align?: "l
   return (
     <View>
       <Text style={{ fontSize: c.m.label, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: MUTED, textAlign: align }}>{p.code}</Text>
-      <Text style={{ fontFamily: "Courier-Bold", fontSize: c.m.code, letterSpacing: 1, marginTop: 2, textAlign: align }}>{v.code}</Text>
+      {/* Plain number/letter codes have no symbol: the code itself is what gets typed in, so larger. */}
+      <Text style={{ fontFamily: "Courier-Bold", fontSize: v.codeFormat === "numeric" ? c.m.code * 1.35 : c.m.code, letterSpacing: 1, marginTop: 2, textAlign: align }}>{v.code}</Text>
       {v.valueCents ? (
         <Text style={{ marginTop: c.m.gap * 0.5, fontSize: c.m.body * 1.2, fontWeight: 600, textAlign: align }}>
           {p.value}: {c.money(v.valueCents, v.currency)}
@@ -176,7 +177,7 @@ function CodeFacts({ c, v, align = "left" }: { c: Ctx; v: PdfVoucher; align?: "l
         </Text>
       ) : null}
       <Text style={{ marginTop: 3, textAlign: align }}>{v.validUntil ? fmt(c.t.shop.voucherValidUntil, { date: dateText(v.validUntil, c.input.locale) }) : c.t.shop.voucherNoExpiry}</Text>
-      <Text style={{ fontSize: c.m.small, lineHeight: 1.45, color: SOFT, marginTop: c.m.gap * 0.4, textAlign: align }}>{p.scan}</Text>
+      <Text style={{ fontSize: c.m.small, lineHeight: 1.45, color: SOFT, marginTop: c.m.gap * 0.4, textAlign: align }}>{v.codeFormat === "numeric" ? p.typeIn : p.scan}</Text>
       {v.status !== "valid" ? (
         <Text style={{ marginTop: 6, alignSelf: align === "center" ? "center" : "flex-start", fontSize: c.m.small + 0.5, fontWeight: 700, paddingVertical: 2, paddingHorizontal: 7, borderRadius: 5, backgroundColor: "#fee2e2", color: "#991b1b" }}>
           {c.t.shop.voucherStatus[v.status]}
