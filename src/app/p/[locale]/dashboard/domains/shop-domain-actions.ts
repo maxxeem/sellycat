@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
-import { addShopDomain, checkShopDomain, removeShopDomain, setPrimaryDomain, type DomainActionError, type DomainState } from "@/lib/site/shop-domains";
+import { addShopDomain, checkShopDomain, removeShopDomain, setPrimaryDomain, type DomainFailure, type DomainState } from "@/lib/site/shop-domains";
 
 /** The shop's own web domains (owner/admin; plan feature `custom_domain`). */
-export type ShopDomainResult = { ok: true; status?: DomainState } | { ok: false; error: DomainActionError };
+export type ShopDomainResult = { ok: true; status?: DomainState } | DomainFailure;
 
 const done = (tenantId: string) => {
   refreshShop(tenantId);

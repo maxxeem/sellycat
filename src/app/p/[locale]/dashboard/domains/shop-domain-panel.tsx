@@ -152,11 +152,13 @@ export function ShopDomainPanel({ root, sellycatHost, sellycatPrimary, planAllow
   const parsed = draft.trim() ? parseCustomDomain(draft, root) : null;
   const apex = parsed?.ok && !parsed.domain.sub ? parsed.domain.host : null;
 
+  const errorText = (r: Extract<ShopDomainResult, { ok: false }>) => (r.detail ? fmt(g.errors[r.error], { detail: r.detail }) : g.errors[r.error]);
+
   const run = (fn: () => Promise<ShopDomainResult>) =>
     start(async () => {
       setError(null);
       const r = await fn();
-      if (!r.ok) setError(g.errors[r.error]);
+      if (!r.ok) setError(errorText(r));
       router.refresh();
     });
 
@@ -209,11 +211,21 @@ export function ShopDomainPanel({ root, sellycatHost, sellycatPrimary, planAllow
               setError(null);
               const r = await addDomain(draft, www);
               if (r.ok) setDraft("");
-              else setError(g.errors[r.error]);
+              else setError(errorText(r));
               router.refresh();
             });
           }}
         >
+          {domains.length === 0 ? (
+            <div className="rounded-input bg-surface p-4 text-sm">
+              <p className="mb-2 font-semibold">{g.processTitle}</p>
+              <ol className="flex list-decimal flex-col gap-1.5 pl-5">
+                {g.process.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold">{g.domain}</span>
             <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={g.placeholder} className={`${inputClass} font-mono`} autoCapitalize="none" spellCheck={false} data-testid="shop-domain-input" />

@@ -11,7 +11,19 @@ import { dnsRows, parseCustomDomain, providerFromNs, type DnsProvider, type DnsR
  */
 export const MAX_CUSTOM_DOMAINS = 3;
 
-export type DomainActionError = "invalid" | "platform" | "plan" | "limit" | "taken" | "in_use" | "not_configured" | "not_found" | "failed";
+export type DomainActionError = "invalid" | "platform" | "plan" | "limit" | "taken" | "in_use" | "not_configured" | "not_found" | "rejected" | "failed";
+/** `detail` carries Vercel's own message when Vercel refused the domain (shown next to our text). */
+export type DomainFailure = { ok: false; error: DomainActionError; detail?: string };
+
+/** Maps a failed Vercel call to our error and logs it (the message is the only clue to the cause). */
+function vercelFailure(step: string, host: string, r: { status: number; code: string; message: string }): DomainFailure {
+  console.error(`[domains] ${step} ${host}: ${r.status} ${r.code} ${r.message}`);
+  if (r.code === "not_configured") return { ok: false, error: "not_configured" };
+  if (r.code === "in_use") return { ok: false, error: "in_use" };
+  // 4xx: Vercel refused this domain for a reason the customer can act on; 5xx/network: try again.
+  if (r.status >= 400 && r.status < 500) return { ok: false, error: "rejected", detail: r.message };
+  return { ok: false, error: "failed" };
+}
 export type DomainState = "pending" | "dns_ok" | "active" | "error";
 
 const root = () => (siteHost() || DEFAULT_ROOT).split(":")[0];
@@ -21,7 +33,7 @@ function parsed(hostname: string): ParsedDomain {
   return p.ok ? p.domain : { host: hostname, apex: hostname, sub: null };
 }
 
-export async function addShopDomain(tenantId: string, input: string, www: boolean): Promise<{ ok: true; hostname: string } | { ok: false; error: DomainActionError }> {
+export async function addShopDomain(tenantId: string, input: string, www: boolean): Promise<{ ok: true; hostname: string } | DomainFailure> {
   const p = parseCustomDomain(input, root());
   if (!p.ok) return { ok: false, error: p.error };
   const d = p.domain;
@@ -37,13 +49,14 @@ export async function addShopDomain(tenantId: string, input: string, www: boolea
   const withWww = www && !d.sub;
 
   const added = await addProjectDomain(d.host);
-  if (!added.ok) return { ok: false, error: added.code === "not_configured" ? "not_configured" : added.code === "in_use" ? "in_use" : "failed" };
+  if (!added.ok) return vercelFailure("add", d.host, added);
   if (withWww) {
     const w = await addProjectDomain(`www.${d.host}`, d.host);
     if (!w.ok && w.code !== "in_use") console.warn("[domains] www:", w.message);
   }
   const { error } = await db.from("tenant_domains").insert({ tenant_id: tenantId, hostname: d.host, kind: "custom", status: "pending", is_primary: false, www: withWww });
   if (error) {
+    console.error(`[domains] insert ${d.host}:`, error.message);
     await removeProjectDomain(d.host);
     if (withWww) await removeProjectDomain(`www.${d.host}`);
     return { ok: false, error: error.code === "23505" ? "in_use" : "failed" };
@@ -84,7 +97,7 @@ async function fallbackPrimary(tenantId: string) {
 }
 
 /** Checks one domain with Vercel and over HTTPS, stores the status and the DNS records to set. */
-export async function checkShopDomain(tenantId: string, hostname: string): Promise<{ ok: true; status: DomainState } | { ok: false; error: DomainActionError }> {
+export async function checkShopDomain(tenantId: string, hostname: string): Promise<{ ok: true; status: DomainState } | DomainFailure> {
   const db = createAdminClient();
   const { data: row } = await db.from("tenant_domains").select("hostname, status, is_primary, www, active_at").eq("tenant_id", tenantId).eq("hostname", hostname).eq("kind", "custom").maybeSingle();
   if (!row) return { ok: false, error: "not_found" };
@@ -96,9 +109,9 @@ export async function checkShopDomain(tenantId: string, hostname: string): Promi
   }
   const config = await domainConfig(row.hostname);
   if (!project.ok || !config.ok) {
-    const code = !project.ok ? project.code : !config.ok ? config.code : "";
-    await db.from("tenant_domains").update({ error: code === "in_use" ? "in_use" : "vercel", last_checked_at: new Date().toISOString() }).eq("hostname", row.hostname);
-    return { ok: false, error: code === "not_configured" ? "not_configured" : code === "in_use" ? "in_use" : "failed" };
+    const failure = !project.ok ? vercelFailure("project", row.hostname, project) : vercelFailure("config", row.hostname, config as Extract<typeof config, { ok: false }>);
+    await db.from("tenant_domains").update({ error: failure.error === "in_use" ? "in_use" : "vercel", last_checked_at: new Date().toISOString() }).eq("hostname", row.hostname);
+    return failure;
   }
 
   const verification = project.value.verified ? [] : project.value.verification;
