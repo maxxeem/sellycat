@@ -12,7 +12,7 @@ const field =
 
 /**
  * What a phone shows after scanning a voucher's QR code (before anything about the voucher is
- * revealed): staff and partners sign in to redeem, the owner confirms with a code by email.
+ * revealed): the owner confirms with a code by email (first), staff and partners sign in to redeem.
  */
 export function VoucherGate({ token, title, shopName, locale, ownerEmail, notYours }: { token: string; title: string; shopName: string; locale: "de" | "en"; ownerEmail: string; notYours: string | null }) {
   const t = getDictionary(locale).voucherAccess;
@@ -64,8 +64,8 @@ export function VoucherGate({ token, title, shopName, locale, ownerEmail, notYou
         <p className="mt-3 text-[var(--shop-muted)]">{t.menuTitle}</p>
       </div>
       {notYours ? <p className="rounded-[var(--shop-radius)] bg-[var(--shop-surface)] p-3 text-sm font-semibold">{notYours}</p> : null}
-      {option("scan", ScanLine, t.scanTitle, t.scanHint)}
       {option("show", Eye, t.showTitle, t.showHint)}
+      {option("scan", ScanLine, t.scanTitle, t.scanHint)}
     </div>
   );
 }
