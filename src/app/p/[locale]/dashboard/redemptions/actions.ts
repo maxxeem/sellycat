@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { walletUpdate } from "@/lib/wallet/passes";
+import { kickWebhooks } from "@/lib/developers/webhooks";
 import { requireTenant } from "@/lib/dashboard/context";
 import { asVoucherError as asError, findVoucher, redeem, type VoucherError, type VoucherInfo } from "@/lib/vouchers/redeem";
 
@@ -27,13 +28,14 @@ export async function redeemVoucher(id: string, amount: string | null): Promise<
 
 /** Undoes a redemption (owner/admin, 7 days). */
 export async function undoRedemption(id: string): Promise<{ ok: boolean; error?: VoucherError }> {
-  const { supabase } = await requireTenant("admin");
+  const { tenant, supabase } = await requireTenant("admin");
   const { data, error } = await supabase.rpc("undo_redemption", { p_redemption: id });
   if (error || !data) return { ok: false, error: "failed" };
   const r = data as { ok: boolean; error?: string };
   if (r.ok) {
     const { data: red } = await supabase.from("redemptions").select("voucher_id").eq("id", id).maybeSingle();
     if (red) after(() => walletUpdate([red.voucher_id]));
+    kickWebhooks(tenant.id);
   }
   revalidatePath("/p/[locale]/dashboard/redemptions", "page");
   revalidatePath("/p/[locale]/dashboard/vouchers", "page");
@@ -42,11 +44,14 @@ export async function undoRedemption(id: string): Promise<{ ok: boolean; error?:
 
 /** Takes an unused voucher out of circulation (owner/admin). */
 export async function voidVoucher(id: string): Promise<{ ok: boolean; error?: VoucherError }> {
-  const { supabase } = await requireTenant("admin");
+  const { tenant, supabase } = await requireTenant("admin");
   const { data, error } = await supabase.rpc("void_voucher", { p_voucher: id });
   if (error || !data) return { ok: false, error: "failed" };
   const r = data as { ok: boolean; error?: string };
-  if (r.ok) after(() => walletUpdate([id]));
+  if (r.ok) {
+    after(() => walletUpdate([id]));
+    kickWebhooks(tenant.id);
+  }
   revalidatePath("/p/[locale]/dashboard/vouchers", "page");
   return r.ok ? { ok: true } : { ok: false, error: asError(r.error) };
 }

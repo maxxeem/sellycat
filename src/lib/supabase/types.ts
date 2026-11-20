@@ -53,6 +53,53 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          key_hash: string
+          last_used_at: string | null
+          name: string
+          prefix: string
+          revoked_at: string | null
+          scopes: string[]
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_hash: string
+          last_used_at?: string | null
+          name: string
+          prefix: string
+          revoked_at?: string | null
+          scopes?: string[]
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_hash?: string
+          last_used_at?: string | null
+          name?: string
+          prefix?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_events: {
         Row: {
           created_at: string
@@ -1530,6 +1577,7 @@ export type Database = {
       redemptions: {
         Row: {
           amount_cents: number | null
+          api_key_id: string | null
           created_at: string
           id: string
           location_id: string | null
@@ -1544,6 +1592,7 @@ export type Database = {
         }
         Insert: {
           amount_cents?: number | null
+          api_key_id?: string | null
           created_at?: string
           id?: string
           location_id?: string | null
@@ -1558,6 +1607,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number | null
+          api_key_id?: string | null
           created_at?: string
           id?: string
           location_id?: string | null
@@ -1571,6 +1621,13 @@ export type Database = {
           voucher_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "redemptions_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "redemptions_location_id_fkey"
             columns: ["location_id"]
@@ -2403,12 +2460,175 @@ export type Database = {
           },
         ]
       }
+      webhook_deliveries: {
+        Row: {
+          attempts: number
+          created_at: string
+          endpoint_id: string
+          event_id: string
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          last_status: number | null
+          next_attempt_at: string
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          endpoint_id: string
+          event_id: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          last_status?: number | null
+          next_attempt_at?: string
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          endpoint_id?: string
+          event_id?: string
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          last_status?: number | null
+          next_attempt_at?: string
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_endpoints: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enabled: boolean
+          events: string[]
+          id: string
+          secret: string
+          tenant_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          events: string[]
+          id?: string
+          secret: string
+          tenant_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          events?: string[]
+          id?: string
+          secret?: string
+          tenant_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_events: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          tenant_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          tenant_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          tenant_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      api_find_voucher: {
+        Args: { p_code: string; p_tenant: string }
+        Returns: string
+      }
+      api_key_auth: {
+        Args: { p_hash: string }
+        Returns: {
+          key_id: string
+          scopes: string[]
+          tenant_id: string
+        }[]
+      }
+      api_redeem_voucher: {
+        Args: {
+          p_amount?: number
+          p_code: string
+          p_key: string
+          p_location?: string
+          p_note?: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       application_fee: {
         Args: { p_amount: number; p_tenant: string }
         Returns: number
@@ -2547,6 +2767,18 @@ export type Database = {
       record_refund: {
         Args: { p_payment_intent: string; p_refunded: number }
         Returns: string
+      }
+      redeem_apply: {
+        Args: {
+          p_amount: number
+          p_api_key: string
+          p_api_tenant: string
+          p_location: string
+          p_note: string
+          p_source: Database["public"]["Enums"]["redemption_source"]
+          p_voucher: string
+        }
+        Returns: Json
       }
       redeem_user_id: {
         Args: { p_email: string; p_tenant: string }
@@ -2703,6 +2935,36 @@ export type Database = {
         }
         Returns: string
       }
+      webhook_claim: {
+        Args: { p_limit?: number; p_tenant?: string }
+        Returns: {
+          attempts: number
+          created_at: string
+          endpoint_id: string
+          event_id: string
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          last_status: number | null
+          next_attempt_at: string
+          status: string
+          tenant_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "webhook_deliveries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      webhook_enqueue: {
+        Args: { p_data: Json; p_tenant: string; p_type: string }
+        Returns: string
+      }
+      webhook_order: { Args: { p_order: string }; Returns: Json }
+      webhook_prune: { Args: never; Returns: number }
+      webhook_redemption: { Args: { p_redemption: string }; Returns: Json }
+      webhook_voucher: { Args: { p_voucher: string }; Returns: Json }
     }
     Enums: {
       barcode_type:

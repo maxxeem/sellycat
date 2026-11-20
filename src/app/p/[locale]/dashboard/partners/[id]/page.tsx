@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Card, PageHeader, Skeleton } from "@/components/ui";
-import type { Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { LOCALES } from "@/lib/i18n/locales";
 import { requireTenant } from "@/lib/dashboard/context";
@@ -19,17 +18,17 @@ export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale, id: "00000000-0000-0000-0000-000000000000" }));
 }
 
-export default async function PartnerPage({ params }: PageProps<"/p/[locale]/dashboard/partners/[id]">) {
-  const { t } = await fromParams(params);
+export default function PartnerPage({ params }: PageProps<"/p/[locale]/dashboard/partners/[id]">) {
+  // Locale and id are read inside Suspense (the id is URL data, so the shell stays instant).
   return (
     <Suspense fallback={<Skeleton className="h-96" />}>
-      <Partner t={t} id={params.then((p) => p.id)} />
+      <Partner params={params} />
     </Suspense>
   );
 }
 
-async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string> }) {
-  const id = await idPromise;
+async function Partner({ params }: { params: PageProps<"/p/[locale]/dashboard/partners/[id]">["params"] }) {
+  const [{ t }, { id }] = await Promise.all([fromParams(params), params]);
   const { tenant, supabase } = await requireTenant("editor");
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { data: partner } = await supabase

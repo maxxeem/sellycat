@@ -96,8 +96,8 @@ async function PartnerList({
                     className="flex items-center gap-4 rounded-card border border-line bg-surface-2 p-4 shadow-card transition hover:border-ink"
                   >
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-input bg-surface">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       {p.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={p.logo_url}
                           alt=""

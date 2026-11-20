@@ -20,6 +20,12 @@ describe("help markdown", () => {
     expect(html).toContain('target="_blank" rel="noopener"');
   });
 
+  it("renders fenced code blocks escaped and verbatim", () => {
+    const { html } = renderHelpMarkdown("Text\n\n```bash\ncurl -H \"x: <y>\" **not bold**\n  indented\n```\n\nMore");
+    expect(html).toContain("<pre><code>curl -H &quot;x: &lt;y&gt;&quot; **not bold**\n  indented</code></pre>");
+    expect(html).toContain("<p>More</p>");
+  });
+
   it("escapes HTML and refuses unsafe links and images", () => {
     const { html } = renderHelpMarkdown('<script>alert(1)</script>\n\n[x](javascript:alert(1))\n\n![a](http://insecure.ch/a.png)\n\n![b](https://ok.ch/b.png)');
     expect(html).not.toContain("<script>");

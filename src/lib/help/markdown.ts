@@ -1,7 +1,7 @@
 /**
  * Markdown → HTML for help articles (no dependency, pure, unit-tested): ## / ### with ids for the
  * table of contents, paragraphs, numbered and bullet lists, **bold**, `code`, links, images on their
- * own line and callouts (`> Hinweis …`). Everything else is escaped.
+ * own line, callouts (`> Hinweis …`) and fenced code blocks (```). Everything else is escaped.
  */
 export type TocEntry = { id: string; text: string; level: 2 | 3 };
 
@@ -59,7 +59,20 @@ export function renderHelpMarkdown(source: string): { html: string; toc: TocEntr
     flushList();
     flushQuote();
   };
+  let code: string[] | null = null;
   for (const raw of lines) {
+    if (code) {
+      if (/^```\s*$/.test(raw.trim())) {
+        html.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
+        code = null;
+      } else code.push(raw);
+      continue;
+    }
+    if (/^```[\w-]*\s*$/.test(raw.trim())) {
+      flushAll();
+      code = [];
+      continue;
+    }
     const line = raw.trimEnd();
     const heading = /^(#{2,3})\s+(.*)$/.exec(line);
     const ordered = /^\d+[.)]\s+(.*)$/.exec(line);
@@ -102,6 +115,7 @@ export function renderHelpMarkdown(source: string): { html: string; toc: TocEntr
       paragraph.push(line.trim());
     }
   }
+  if (code) html.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
   flushAll();
   return { html: html.join("\n"), toc };
 }

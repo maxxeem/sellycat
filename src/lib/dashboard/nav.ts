@@ -24,9 +24,6 @@ export const DASHBOARD_SECTIONS = [
 export type SectionKey = (typeof DASHBOARD_SECTIONS)[number]["key"];
 export const isSection = (v: string): v is SectionKey => DASHBOARD_SECTIONS.some((s) => s.key === v);
 
-/** Sections that already have their own page (the placeholder route skips them). */
-export const BUILT_SECTIONS = new Set<SectionKey>(["settlements", "support", "help", "deals", "partners", "orders", "vouchers", "redemptions", "design", "arrangement", "payments", "domains", "analytics", "billing", "team", "settings"]);
-
 /**
  * Lowest role that sees a section in the menu (the page itself checks the same or more).
  * Redeemers and scanners only see what redemption needs.

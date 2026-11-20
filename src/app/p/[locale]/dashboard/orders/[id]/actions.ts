@@ -6,6 +6,7 @@ import { deliverGift, deliverOrder } from "@/lib/mail/deliver";
 import { refundable } from "@/lib/payments/map";
 import { getStripe, stripeConfigured } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { kickWebhooks } from "@/lib/developers/webhooks";
 
 export type RefundState = { ok?: boolean; error?: "invalid" | "stripe"; message?: string } | null;
 
@@ -33,6 +34,7 @@ export async function refundOrder(orderId: string, _: RefundState, form: FormDat
   await admin.rpc("record_refund", { p_payment_intent: order.stripe_payment_intent, p_refunded: order.refunded_cents + amount });
   if (amount === max && form.get("restock") === "on") await admin.rpc("restock_order", { p_order: order.id });
   refreshShop(tenant.id);
+  kickWebhooks(tenant.id);
   revalidatePath("/p/[locale]/dashboard/orders", "layout");
   return { ok: true };
 }

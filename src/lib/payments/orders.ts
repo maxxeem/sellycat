@@ -5,6 +5,7 @@ import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { walletUpdate } from "@/lib/wallet/passes";
 import { deliverOrder } from "@/lib/mail/deliver";
+import { kickWebhooks } from "@/lib/developers/webhooks";
 import { accountState } from "./map";
 import { getStripe } from "./stripe";
 
@@ -31,6 +32,7 @@ export async function completeSession(session: Pick<Stripe.Checkout.Session, "id
   if (refresh) refreshShopCache(order?.tenant_id);
   // Voucher mail with PDF (and the gift mail when due) after the response; claimed, so never twice.
   after(() => deliverOrder(orderId).catch((e) => console.error(`[mail] order ${orderId}:`, e instanceof Error ? e.message : e)));
+  kickWebhooks(order?.tenant_id);
   return order?.tenant_id ?? null;
 }
 
@@ -57,6 +59,7 @@ export async function recordRefund(charge: Pick<Stripe.Charge, "payment_intent" 
   // Refunded vouchers also change in Apple and Google Wallet.
   const { data: vouchers } = await admin.from("vouchers").select("id").eq("order_id", orderId);
   after(() => walletUpdate((vouchers ?? []).map((v) => v.id)));
+  kickWebhooks(order?.tenant_id);
   return order?.tenant_id ?? null;
 }
 

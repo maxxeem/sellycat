@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/wallet",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/webhooks",
+      "schedule": "45 5 * * *"
     }
   ],
   "regions": [

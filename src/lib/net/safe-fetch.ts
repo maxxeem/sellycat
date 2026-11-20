@@ -108,3 +108,29 @@ export async function fetchImage(start: string, maxBytes = 10_000_000, timeoutMs
   }
   return null;
 }
+
+/**
+ * POST to a customer's endpoint (webhooks) with the same address checks; redirects are not
+ * followed (they count as failure), the answer is read up to 2 KB for the delivery log.
+ */
+export async function postPublic(target: string, body: string, headers: Record<string, string>, timeoutMs = 10_000): Promise<{ status: number; text: string }> {
+  const url = new URL(target);
+  if (url.protocol !== "https:") throw new Error("protocol");
+  await assertPublic(url);
+  const res = await fetch(url, { method: "POST", body, redirect: "manual", signal: AbortSignal.timeout(timeoutMs), headers: { "user-agent": USER_AGENT, "content-type": "application/json", ...headers } });
+  let text = "";
+  if (res.body) {
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (size < 2048) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      size += value.length;
+    }
+    await reader.cancel().catch(() => {});
+    text = new TextDecoder().decode(Buffer.concat(chunks)).slice(0, 2048);
+  }
+  return { status: res.status, text };
+}
