@@ -255,6 +255,19 @@ export const de: Dictionary = {
     },
   },
   partners: {
+    list: {
+      search: "Partner suchen (Name, Ort, Deal)",
+      filters: { all: "Alle", live: "Mit Live-Deals", no_deals: "Ohne Deals", no_locations: "Ohne Einlöseort" },
+      city: "Ort",
+      allCities: "Alle Orte",
+      sortLabel: "Sortieren",
+      sorts: { name: "Name A–Z", created: "Neueste zuerst", live: "Meiste Live-Deals", sold: "Meistverkauft" },
+      noResults: "Keine Partner gefunden.",
+      reset: "Filter zurücksetzen",
+      liveDeals: "{count} live",
+      deals: "{count} Deals",
+      sold: "{count} verkauft",
+    },
     billing: {
       title: "Abrechnungsangaben",
       intro: "Erscheinen auf den Partner-Abrechnungen. Die IBAN brauchst du für die Überweisung.",

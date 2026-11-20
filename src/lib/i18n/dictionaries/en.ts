@@ -253,6 +253,19 @@ export const en = {
     },
   },
   partners: {
+    list: {
+      search: "Search partners (name, place, deal)",
+      filters: { all: "All", live: "With live deals", no_deals: "Without deals", no_locations: "Without location" },
+      city: "City",
+      allCities: "All cities",
+      sortLabel: "Sort",
+      sorts: { name: "Name A–Z", created: "Newest first", live: "Most live deals", sold: "Best selling" },
+      noResults: "No partners found.",
+      reset: "Reset filters",
+      liveDeals: "{count} live",
+      deals: "{count} deals",
+      sold: "{count} sold",
+    },
     billing: {
       title: "Billing details",
       intro: "Shown on partner statements. You need the IBAN for the transfer.",
