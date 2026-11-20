@@ -380,5 +380,7 @@ Entscheid Jan: Abrechnung pro Deal ein- oder ausschaltbar; Grundlage pro Deal (n
 
 Erledigt: Deal-Editor → «Partner-Abrechnung» mit Beispielrechnung; Partner → «Abrechnungsangaben» (Firma, Adresse, MWST-Nr., IBAN mit Prüfziffer); Verkauf → Abrechnungen (nur Inhaber/Admin): offene Beträge pro Partner bis zu einem Datum (Standard: Ende Vormonat), Entwürfe pro Partner, Abschliessen (fortlaufende Nummer, danach unveränderlich), PDF (A4, Beträge mit Rappen, Bankverbindung), CSV, Versand per Mail an den Partner (Absender des Shops, PDF im Anhang), als bezahlt markieren. Nichts wird doppelt abgerechnet; Rückerstattungen und rückgängig gemachte Einlösungen nach dem Abschluss erscheinen als Korrektur auf der nächsten Abrechnung. Hilfe-Artikel «Partner-Abrechnungen». Tests: `tests/rls/settlements.test.ts`, `src/lib/settlements/*.test.ts`.
 
-Offen: Gebührenübersicht Sellycat ↔ Kunde (Beleg der Verkaufsgebühren pro Monat), falls gewünscht. Swiss-QR-Zahlteil auf der Abrechnung (nicht nötig, da der Betreiber zahlt).
+Zusätzlich (Wunsch Jan): **Gebührenübersicht Sellycat ↔ Kunde** unter Abo: Monate der letzten 12 Monate mit Bestellungen, Umsatz und Netto-Gebühr (nach anteiliger Rückerstattung), je Monat PDF (Sellycat an Kunde, «Übersicht, keine Rechnung») und CSV.
+
+Offen: Swiss-QR-Zahlteil auf der Abrechnung (nicht nötig, da der Betreiber zahlt).
 

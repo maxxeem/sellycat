@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Badge, Card, Notice, PageHeader, Skeleton } from "@/components/ui";
+import { Badge, Card, Notice, PageHeader, Skeleton, Table, tdClass, thClass } from "@/components/ui";
 import { roleAtLeast } from "@/lib/auth/tenants";
 import { currencyForCountry, type Currency } from "@/lib/billing/currency";
 import { currencyFromRequest } from "@/lib/billing/currency-server";
@@ -9,6 +9,7 @@ import { requireTenant } from "@/lib/dashboard/context";
 import { fmt, type Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { feeMonths } from "@/lib/billing/fees";
 import { BillingPanel } from "./billing-panel";
 
 export const metadata = { title: "Abo" };
@@ -84,6 +85,56 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
         locale={locale}
         canManage={canManage && stripeConfigured()}
       />
+
+      {canManage ? <FeeOverview tenantId={tenant.id} t={t} locale={locale} /> : null}
     </div>
+  );
+}
+
+/** Sellycat fees per month (kept by Stripe with each payment) with PDF/CSV for the accounting. */
+async function FeeOverview({ tenantId, t, locale }: { tenantId: string; t: Dictionary; locale: "de" | "en" }) {
+  const f = t.subscription.fees;
+  const months = await feeMonths(tenantId);
+  const tag = locale === "de" ? "de-CH" : "en-GB";
+  const money = (c: number, cur: string) => new Intl.NumberFormat(tag, { style: "currency", currency: cur, minimumFractionDigits: 2 }).format(c / 100);
+  const name = (m: string) => new Date(`${m.slice(0, 7)}-01T00:00:00Z`).toLocaleDateString(tag, { month: "long", year: "numeric", timeZone: "UTC" });
+  return (
+    <Card title={f.title} description={f.intro}>
+      {months.length ? (
+        <div className="-mx-5 -mb-5 overflow-x-auto">
+          <Table>
+            <thead>
+              <tr>
+                <th className={thClass}>{f.month}</th>
+                <th className={`${thClass} text-right`}>{f.orders}</th>
+                <th className={`${thClass} hidden text-right sm:table-cell`}>{f.amount}</th>
+                <th className={`${thClass} text-right`}>{f.net}</th>
+                <th className={thClass} />
+              </tr>
+            </thead>
+            <tbody>
+              {months.map((m) => {
+                const key = m.month.slice(0, 7);
+                return (
+                  <tr key={`${key}-${m.currency}`}>
+                    <td className={`${tdClass} font-medium`}>{name(m.month)}</td>
+                    <td className={`${tdClass} text-right tabular-nums`}>{m.orders}</td>
+                    <td className={`${tdClass} hidden text-right tabular-nums sm:table-cell`}>{money(m.amount_cents - m.refunded_cents, m.currency)}</td>
+                    <td className={`${tdClass} text-right font-semibold tabular-nums`}>{money(m.fee_cents, m.currency)}</td>
+                    <td className={`${tdClass} whitespace-nowrap text-right text-sm`}>
+                      <a href={`/api/dashboard/fees/${key}/pdf`} target="_blank" rel="noopener" className="font-medium text-accent-text hover:underline">PDF</a>
+                      <span className="px-1.5 text-muted">·</span>
+                      <a href={`/api/dashboard/fees/${key}/csv`} className="font-medium text-accent-text hover:underline">CSV</a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </div>
+      ) : (
+        <p className="text-sm text-muted">{f.none}</p>
+      )}
+    </Card>
   );
 }

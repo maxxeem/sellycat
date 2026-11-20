@@ -2442,6 +2442,29 @@ export type Database = {
         Returns: string
       }
       deal_has_sales: { Args: { p_deal: string }; Returns: boolean }
+      fee_lines: {
+        Args: { p_month: string; p_tenant: string }
+        Returns: {
+          amount_cents: number
+          currency: string
+          fee_cents: number
+          net_fee_cents: number
+          number: string
+          paid_at: string
+          refunded_cents: number
+        }[]
+      }
+      fee_months: {
+        Args: { p_months?: number; p_tenant: string }
+        Returns: {
+          amount_cents: number
+          currency: string
+          fee_cents: number
+          month: string
+          orders: number
+          refunded_cents: number
+        }[]
+      }
       find_voucher: {
         Args: { p_code: string; p_tenant: string }
         Returns: string

@@ -87,4 +87,16 @@ describe.skipIf(!rlsEnabled)("RLS partner settlements", () => {
     await a.client.rpc("settlement_set_status", { p_settlement: id!, p_status: "final" });
     expect((await a.client.rpc("settlement_open", { p_tenant: a.tenantId, p_until: until() })).data).toHaveLength(0);
   });
+
+  it("fee overview: net fee after refunds, only for the own shop", async () => {
+    await db.from("orders").update({ fee_cents: 1000, refunded_cents: 2500, status: "partially_refunded" }).eq("tenant_id", a.tenantId);
+    const { data, error } = await a.client.rpc("fee_months", { p_tenant: a.tenantId, p_months: 12 });
+    expect(error).toBeNull();
+    expect(data?.[0]).toMatchObject({ orders: 1, amount_cents: 10000, refunded_cents: 2500, fee_cents: 750 });
+    const month = data![0].month.slice(0, 7);
+    const lines = (await a.client.rpc("fee_lines", { p_tenant: a.tenantId, p_month: `${month}-01` })).data ?? [];
+    expect(lines[0]).toMatchObject({ fee_cents: 1000, net_fee_cents: 750 });
+    expect((await b.client.rpc("fee_months", { p_tenant: a.tenantId, p_months: 12 })).error).not.toBeNull();
+    expect((await b.client.rpc("fee_lines", { p_tenant: a.tenantId, p_month: `${month}-01` })).error).not.toBeNull();
+  });
 });
