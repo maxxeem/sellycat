@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { inputClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { PARTNER_FILTERS, PARTNER_SORTS, type PartnerFilter, type PartnerSort } from "@/lib/dashboard/partner-list";
+import { Select } from "@/components/select";
 
 /** Search, filter chips with counts, city and sorting; everything lives in the URL (like deals). */
 export function PartnerFilters({ q, filter, city, sort, counts, cities }: { q: string; filter: PartnerFilter; city: string; sort: PartnerSort; counts: Record<PartnerFilter, number>; cities: string[] }) {
@@ -42,18 +43,18 @@ export function PartnerFilters({ q, filter, city, sort, counts, cities }: { q: s
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder={l.search} aria-label={l.search} className={`${inputClass} pl-9`} data-testid="partner-search" />
         </label>
         {cities.length > 1 ? (
-          <select value={city} onChange={(e) => go({ city: e.target.value })} aria-label={l.city} className={`${inputClass} sm:w-40`}>
+          <Select value={city} onChange={(e) => go({ city: e.target.value })} aria-label={l.city} className="w-full sm:w-40">
             <option value="">{l.allCities}</option>
             {cities.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
-          </select>
+          </Select>
         ) : null}
-        <select value={sort} onChange={(e) => go({ sort: e.target.value })} aria-label={l.sortLabel} className={`${inputClass} sm:w-48`}>
+        <Select value={sort} onChange={(e) => go({ sort: e.target.value })} aria-label={l.sortLabel} className="w-full sm:w-48">
           {PARTNER_SORTS.map((s) => (
             <option key={s} value={s}>{l.sorts[s]}</option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label={l.sortLabel}>
         {PARTNER_FILTERS.map((s) => (

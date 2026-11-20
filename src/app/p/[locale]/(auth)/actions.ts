@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getSignupMode } from "@/lib/platform/settings";
 import { registerDomain } from "@/lib/vercel/domains";
+import { LEGAL_VERSION } from "@/lib/legal/docs";
 
 /** Error/notice keys map to the `auth` dictionary on the client. */
 export type AuthState = { error?: string; notice?: string; field?: string } | null;
@@ -47,6 +48,7 @@ const signupSchema = z.object({
   email: z.email(),
   password: z.string().min(10),
   locale: z.enum(["de", "en"]),
+  accept: z.literal("on"),
 });
 
 export async function signupAction(_: AuthState, form: FormData): Promise<AuthState> {
@@ -54,7 +56,7 @@ export async function signupAction(_: AuthState, form: FormData): Promise<AuthSt
   const parsed = signupSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) {
     const field = String(parsed.error.issues[0]?.path[0] ?? "");
-    return { error: field === "password" ? "passwordTooShort" : "linkInvalid", field };
+    return { error: field === "password" ? "passwordTooShort" : field === "accept" ? "acceptRequired" : "linkInvalid", field };
   }
   const { shopName, slug, email, password, locale } = parsed.data;
   const check = validateSlug(slug);
@@ -69,7 +71,8 @@ export async function signupAction(_: AuthState, form: FormData): Promise<AuthSt
     options: {
       emailRedirectTo: `${apexUrl()}/auth/continue?next=/dashboard`,
       // Read back after email confirmation to create the shop (provisionFromSignup).
-      data: { shop_name: shopName, shop_slug: slug, locale },
+      // Which terms were accepted, and when (evidence for the contract; see /legal).
+      data: { shop_name: shopName, shop_slug: slug, locale, terms_version: LEGAL_VERSION, terms_accepted_at: new Date().toISOString() },
     },
   });
   if (error) return { error: "linkInvalid" };

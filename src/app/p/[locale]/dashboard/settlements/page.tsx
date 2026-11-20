@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/shop/deal-status";
 import { isDay, lastMonthEnd, periodText } from "@/lib/settlements/period";
 import { listSettlements, openAmounts } from "@/lib/settlements/settlements";
 import { CreateButton } from "./controls";
+import { DateTimePicker } from "@/components/date-time-picker";
 
 export const metadata = { title: "Abrechnungen" };
 
@@ -44,8 +45,8 @@ async function Settlements({ t, locale, searchParams }: { t: Dictionary; locale:
         description={fmt(s.openIntro, { date: dateText })}
         actions={
           <form method="get" className="flex items-center gap-2">
-            <label className="text-sm text-muted" htmlFor="until">{s.until}</label>
-            <input id="until" type="date" name="until" defaultValue={until} max={today} className="rounded-input border border-line bg-surface-2 px-2 py-1 text-sm" />
+            <label className="whitespace-nowrap text-sm text-muted" htmlFor="until">{s.until}</label>
+            <DateTimePicker id="until" mode="date" size="sm" name="until" defaultValue={until} max={today} className="w-44" clearable={false} aria-label={s.until} />
             <button type="submit" className={buttonGhost}>OK</button>
           </form>
         }

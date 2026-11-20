@@ -4,6 +4,7 @@ import { Logo } from "@/components/brand";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { buttonClass } from "@/components/ui";
 import { fromParams } from "@/lib/i18n/params";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = { title: { default: "Hilfe-Center", template: "%s · Sellycat Hilfe" } };
 
@@ -39,6 +40,7 @@ export default async function HelpLayout({ children, params }: LayoutProps<"/p/[
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 sm:px-8">{children}</div>
+      <SiteFooter />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

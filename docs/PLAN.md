@@ -407,3 +407,11 @@ Offen/bewusst später: Wiederholungen nur so oft, wie der Shop Änderungen hat b
 Tests: `tests/rls/security-review.test.ts`, `src/lib/net/safe-fetch.test.ts`, `src/lib/shop/image.test.ts`.
 
 **Launch-Check**: `docs/LAUNCH.md` (Production-Datenbank, Vercel-Variablen, Stripe live, DNS/Mail, Rechtstexte, Go-live-Ablauf, akzeptierte Restpunkte).
+
+## 30. Rechtstexte, Consent, einheitliche Formular-Bausteine (20.11.2026)
+
+**Rechtstexte** (Entscheid Jan: Betreiberin my105 GmbH, Zürich): Impressum, AGB (nur B2B; Kunde ist Verkäufer, Sellycat technischer Anbieter; Gebühr pro Verkauf über Stripe, anteilige Rückerstattung; Haftung bei leichter Fahrlässigkeit begrenzt auf 12 Monatsentgelte; 30 Tage Export, Löschung innert 90 Tagen; Schweizer Recht, Gerichtsstand Zürich), Datenschutzerklärung (DSG/DSGVO, zwei Rollen, Dienstleister, Cookies), Auftragsverarbeitung (Unterauftragsverarbeiter, TOM, 48-Std.-Meldung). DE massgebend, EN als Übersetzung. Seiten `/legal/…`, Footer auf allen Sellycat-Seiten, Pflicht-Checkbox bei der Registrierung mit gespeicherter Version. Noch nötig: Prüfung durch eine Fachperson, UID im Impressum.
+
+**Consent**: sellycat.com braucht kein Banner (nur notwendige Cookies: Anmeldung, Sprache). Shops: Aufrufzähler speichern nichts mehr im Browser (vorher sessionStorage, das in der EU als Gerätezugriff gilt), Banner nennt die Dienste und verlinkt den Datenschutz, «Cookie-Einstellungen» im Shop-Fuss zum Widerrufen.
+
+**Formular-Bausteine**: eigene Dropdown-Komponente `Select` (Popup im Produkt-Design, Tastatur, Formular-Unterstützung) ersetzt alle System-Dropdowns (Sprache, Shop-Wechsel, Filter, Sortierung, Währung, Menge im Kauf, alle Formulare); `DateTimePicker` (Kalender, Stunden/Minuten, Schnellwahl Jetzt/Heute) jetzt auch für Formulare (`name`) und im Shop (Geschenkdatum, Shop-Farben); Abrechnungen nutzen ihn statt des System-Pickers.

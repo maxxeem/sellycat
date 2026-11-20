@@ -3,16 +3,14 @@
 import { useEffect } from "react";
 import { trackView } from "./actions";
 
-/** Counts a visit once per browser session (bots without JavaScript are not counted). */
+/** Deals already counted in this page load (memory only: nothing is stored on the device, so no consent is needed). */
+const seen = new Set<string>();
+
+/** Counts a deal visit once per page load (bots without JavaScript are not counted). */
 export function TrackView({ dealId }: { dealId: string }) {
   useEffect(() => {
-    const key = `sc_view_${dealId}`;
-    try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
-    } catch {
-      // Private mode without storage: count anyway.
-    }
+    if (seen.has(dealId)) return;
+    seen.add(dealId);
     void trackView(dealId).catch(() => {});
   }, [dealId]);
   return null;

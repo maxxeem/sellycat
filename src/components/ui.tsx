@@ -1,6 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 
 /*
  * UI primitives for Sellycat's own surfaces (adapted from SwypeCast's admin ui.tsx).
@@ -46,14 +45,8 @@ export function Input(props: ComponentProps<"input">) {
   return <input {...props} className={`${inputClass} ${props.className ?? ""}`} />;
 }
 
-export function Select({ className = "", ...props }: ComponentProps<"select">) {
-  return (
-    <span className={`relative block ${className}`}>
-      <select {...props} className={`${inputClass} appearance-none pr-10`} />
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
-    </span>
-  );
-}
+/** Dropdown in the product's look (see select.tsx); takes <option> children like a native select. */
+export { Select } from "./select";
 
 export function Card({ children, className = "", title, description, actions }: { children: ReactNode; className?: string; title?: string; description?: string; actions?: ReactNode }) {
   return (

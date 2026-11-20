@@ -11,6 +11,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useI18n } from "@/lib/i18n/context";
 import { logout, switchTenant } from "@/app/p/[locale]/dashboard/actions";
+import { Select } from "@/components/select";
 
 type Props = {
   user: { name: string; email: string };
@@ -35,18 +36,13 @@ export function ShellFrame({ user, tenants, current, children, nav, homeHref = "
         <Logo width={160} />
       </Link>
       {tenants.length > 1 && current ? (
-        <select
-          aria-label={t.dashboard.switchShop}
-          defaultValue={current.id}
-          onChange={(e) => switchTenant(e.target.value)}
-          className="mb-3 rounded-input border border-line bg-surface-2 px-2 py-2 text-sm font-semibold"
-        >
+        <Select aria-label={t.dashboard.switchShop} defaultValue={current.id} onChange={(e) => switchTenant(e.target.value)} className="mb-3 font-semibold">
           {tenants.map((tn) => (
             <option key={tn.id} value={tn.id}>
               {tn.name}
             </option>
           ))}
-        </select>
+        </Select>
       ) : current ? (
         <p className="mb-3 truncate px-2 text-sm font-semibold">{current.name}</p>
       ) : null}

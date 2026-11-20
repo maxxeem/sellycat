@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { inputClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { LIST_SORTS, LIST_STATUSES, type ListSort, type ListStatus } from "@/lib/dashboard/deal-list";
+import { Select } from "@/components/select";
 
 /** Search, status chips (with counts) and sorting; everything lives in the URL. */
 export function DealFilters({ q, status, sort, counts }: { q: string; status: ListStatus; sort: ListSort; counts: Record<ListStatus, number> }) {
@@ -44,13 +45,13 @@ export function DealFilters({ q, status, sort, counts }: { q: string; status: Li
         </label>
         <label className="flex items-center gap-2 text-sm">
           <span className="shrink-0 text-muted">{l.sortLabel}</span>
-          <select value={sort} onChange={(e) => go({ sort: e.target.value })} className={`${inputClass} sm:w-52`} data-testid="deal-sort">
+          <Select value={sort} onChange={(e) => go({ sort: e.target.value })} className="w-full sm:w-52" data-testid="deal-sort" aria-label={l.sortLabel}>
             {LIST_SORTS.map((s) => (
               <option key={s} value={s}>
                 {l.sorts[s]}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
       <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Status">

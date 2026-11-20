@@ -114,6 +114,18 @@ export function SignupForm({ root }: { root: string }) {
       <Field label={t.common.password} hint={t.auth.passwordTooShort}>
         <Input name="password" type="password" autoComplete="new-password" minLength={10} required />
       </Field>
+      <label className="flex items-start gap-2 text-sm text-muted">
+        <input type="checkbox" name="accept" required className="mt-1 size-4 shrink-0 accent-[var(--accent)]" data-testid="signup-accept" />
+        <span>
+          {t.legal.acceptBefore}
+          <a href="/legal/terms" target="_blank" className="font-semibold text-ink underline">{t.legal.terms}</a>
+          {t.legal.acceptAnd}
+          <a href="/legal/dpa" target="_blank" className="font-semibold text-ink underline">{t.legal.dpa}</a>
+          {t.legal.acceptMiddle}
+          <a href="/legal/privacy" target="_blank" className="font-semibold text-ink underline">{t.legal.privacy}</a>
+          {t.legal.acceptAfter}
+        </span>
+      </label>
       {error && state?.field !== "slug" ? <Notice tone="error">{error}</Notice> : null}
       <button type="submit" disabled={pending} className={buttonClass.primary}>
         {pending ? t.common.loading : t.auth.signupSubmit}

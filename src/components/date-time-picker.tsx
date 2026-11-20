@@ -2,12 +2,15 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { useI18n } from "@/lib/i18n/context";
+import { useOptionalI18n } from "@/lib/i18n/context";
 import { clampTime, formatValue, joinValue, monthGrid, shiftMonth, splitValue, zurichNow, type PickerMode } from "@/lib/date-picker";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Labels of the popup (the dashboard's `common` texts; shops pass their own `picker` texts). */
+export type PickerTexts = { now: string; today: string; clear: string; done: string; pickDate: string; pickTime: string; prevMonth: string; nextMonth: string; hour: string; minute: string };
 
 /**
  * Date / date-and-time / time field with its own popup: month calendar (Monday first), hour and
@@ -15,25 +18,54 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * as the native inputs, so forms keep working unchanged.
  */
 export function DateTimePicker({
-  value,
-  onChange,
+  value: controlled,
+  defaultValue = "",
+  onChange: notify,
   mode = "datetime",
   min,
+  max,
+  name,
+  size = "md",
+  clearable = true,
   placeholder,
   className = "",
+  id: triggerId,
   "aria-label": ariaLabel,
+  "data-testid": testId,
+  ...props
 }: {
-  value: string;
-  onChange: (value: string) => void;
+  value?: string;
+  /** Uncontrolled use (plain forms): start value; submit it with `name`. */
+  defaultValue?: string;
+  onChange?: (value: string) => void;
   mode?: PickerMode;
   /** Earliest selectable day ("YYYY-MM-DD"). */
   min?: string;
+  /** Latest selectable day ("YYYY-MM-DD"). */
+  max?: string;
+  /** Submits the value in a hidden input (same format as the native inputs). */
+  name?: string;
+  size?: "md" | "sm";
+  /** false for required fields: no "Clear" button. */
+  clearable?: boolean;
   placeholder?: string;
   className?: string;
+  id?: string;
   "aria-label"?: string;
+  "data-testid"?: string;
+  /** Outside the dashboard (shops have no I18nProvider): language and labels. */
+  locale?: "de" | "en";
+  texts?: PickerTexts;
 }) {
-  const { t, locale } = useI18n();
-  const c = t.common;
+  const [own, setOwn] = useState(defaultValue);
+  const value = controlled ?? own;
+  const onChange = (v: string) => {
+    if (controlled === undefined) setOwn(v);
+    notify?.(v);
+  };
+  const i18n = useOptionalI18n();
+  const locale = i18n?.locale ?? props.locale ?? "de";
+  const c: PickerTexts = i18n?.t.common ?? props.texts!;
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -41,6 +73,7 @@ export function DateTimePicker({
   // The current day is only read when the popup opens (never while rendering on the server).
   const [today, setToday] = useState("");
   const [view, setView] = useState({ year: 2000, month: 0 });
+  const [alignRight, setAlignRight] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +90,8 @@ export function DateTimePicker({
 
   const toggle = () => {
     if (!open) {
+      const r = box.current?.getBoundingClientRect();
+      setAlignRight(Boolean(r && r.left + 352 > window.innerWidth));
       const now = zurichNow().date;
       setToday(now);
       const d = parts.date ?? now;
@@ -68,7 +103,8 @@ export function DateTimePicker({
   const setTime = (h: number, m: number) => onChange(joinValue(parts.date ?? (today || zurichNow().date), clampTime(h, m), mode));
   const now = () => {
     const n = zurichNow();
-    onChange(joinValue(n.date, n.time, mode));
+    const date = min && n.date < min ? min : max && n.date > max ? max : n.date;
+    onChange(joinValue(date, n.time, mode));
     setView({ year: Number(n.date.slice(0, 4)), month: Number(n.date.slice(5, 7)) - 1 });
   };
   const [h, m] = (parts.time ?? "").split(":").map(Number);
@@ -79,14 +115,17 @@ export function DateTimePicker({
 
   return (
     <div ref={box} className={`relative ${className}`}>
+      {name ? <input type="hidden" name={name} value={value} /> : null}
       <button
         type="button"
+        id={triggerId}
+        data-testid={testId}
         onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={id}
         aria-label={ariaLabel}
-        className="flex w-full items-center gap-2 rounded-input border border-line bg-surface-2 px-3 py-2.5 text-left text-base outline-none transition hover:border-ink focus:border-ink focus:ring-2 focus:ring-accent/30 sm:text-sm"
+        className={`flex w-full items-center gap-2 border border-line bg-surface-2 text-left text-ink outline-none transition hover:border-ink focus:border-ink focus:ring-2 focus:ring-accent/30 ${size === "sm" ? "rounded-full px-3 py-1.5 text-sm" : "rounded-input px-3 py-2.5 text-base sm:text-sm"}`}
       >
         <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
         <span className={`min-w-0 flex-1 truncate ${shown ? "" : "text-muted"}`}>{shown || placeholder || (mode === "time" ? c.pickTime : c.pickDate)}</span>
@@ -97,7 +136,7 @@ export function DateTimePicker({
           id={id}
           role="dialog"
           aria-label={mode === "time" ? c.pickTime : c.pickDate}
-          className="absolute left-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface-2 p-3 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.35)]"
+          className={`absolute ${alignRight ? "right-0" : "left-0"} z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface-2 p-3 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.35)]`}
           data-testid="date-picker"
         >
           {mode !== "time" ? (
@@ -124,7 +163,7 @@ export function DateTimePicker({
                   .map((d, i) => {
                     if (!d) return <span key={`e${i}`} />;
                     const selected = d === parts.date;
-                    const disabled = Boolean(min && d < min);
+                    const disabled = Boolean((min && d < min) || (max && d > max));
                     return (
                       <button
                         key={d}
@@ -177,7 +216,7 @@ export function DateTimePicker({
             <button type="button" onClick={now} className="rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent-text hover:bg-accent/20" data-testid="date-picker-now">
               {mode === "date" ? c.today : c.now}
             </button>
-            {value ? (
+            {value && clearable ? (
               <button type="button" onClick={() => onChange("")} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-muted hover:bg-surface hover:text-ink">
                 <X className="h-3.5 w-3.5" aria-hidden /> {c.clear}
               </button>

@@ -7,6 +7,8 @@ import type { ShopTexts } from "@/components/shop/shop-texts";
 import { fmt } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { startCheckout, type StartResult } from "./actions";
+import { Select } from "@/components/select";
+import { DateTimePicker } from "@/components/date-time-picker";
 
 type Props = { tenantId: string; slug: string; unitCents: number; currency: string; locale: "de" | "en"; maxQty: number; shopName: string; t: ShopTexts };
 
@@ -85,16 +87,16 @@ export function CheckoutForm({ tenantId, slug, unitCents, currency, locale, maxQ
   return (
     <form action={submit} className="shop-card flex flex-col gap-4 p-6">
       <h1 className="shop-heading text-2xl font-bold">{t.checkoutTitle}</h1>
-      <label className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <span className="font-semibold">{t.quantity}</span>
-        <select value={qty} onChange={(e) => setQty(Number(e.target.value))} className={`${field} w-24`} name="qty">
+        <Select value={qty} onChange={(e) => setQty(Number(e.target.value))} className="w-24" name="qty" aria-label={t.quantity}>
           {Array.from({ length: maxQty }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>
               {n}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </div>
       <label className="flex flex-col gap-1.5">
         <span className="font-semibold">{t.email}</span>
         <input type="email" name="email" required autoComplete="email" className={field} />
@@ -144,7 +146,7 @@ export function CheckoutForm({ tenantId, slug, unitCents, currency, locale, maxQ
               </label>
               {later ? (
                 <>
-                  <input type="date" name="giftSendOn" required min={today()} max={today(365)} className={`${field} sm:w-56`} />
+                  <DateTimePicker mode="date" name="giftSendOn" min={today()} max={today(365)} defaultValue={today(1)} className="sm:w-56" aria-label={t.giftLater} locale={locale} texts={t.picker} clearable={false} />
                   <span className="text-xs text-[var(--shop-muted)]">{t.giftDateHint}</span>
                 </>
               ) : null}

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { shopImage } from "@/lib/shop/image";
 import { headerLook, type ShopTheme } from "@/lib/shop/theme";
 import type { ShopTexts } from "./shop-texts";
+import { CookieSettingsLink } from "./consent";
 
 /**
  * Header and footer of a shop (shop pages and editor previews). Internal links navigate client-side
@@ -16,6 +17,7 @@ export function ShopFrame({
   contact,
   inert = false,
   branding = false,
+  cookieSettings = false,
 }: {
   name: string;
   theme: ShopTheme;
@@ -25,6 +27,8 @@ export function ShopFrame({
   inert?: boolean;
   /** Free plan: a visible "Powered by Sellycat" badge; paid plans show no Sellycat branding. */
   branding?: boolean;
+  /** The shop uses consent-based analytics: offer a link to change the choice. */
+  cookieSettings?: boolean;
 }) {
   // Two logo variants: the stylesheet shows the one that fits the header's background.
   const forLight = theme.logoLight || theme.logoDark;
@@ -62,6 +66,7 @@ export function ShopFrame({
             <Link {...a("/impressum")} className="hover:text-[var(--shop-text)]">{t.imprint}</Link>
             <Link {...a("/agb")} className="hover:text-[var(--shop-text)]">{t.terms}</Link>
             <Link {...a("/datenschutz")} className="hover:text-[var(--shop-text)]">{t.privacy}</Link>
+            {cookieSettings && !inert ? <CookieSettingsLink label={t.cookieSettings} /> : null}
           </nav>
           <div className="flex flex-col gap-1 sm:items-end">
             {contact?.email ? <a {...a(`mailto:${contact.email}`)} className="hover:text-[var(--shop-text)]">{contact.email}</a> : null}

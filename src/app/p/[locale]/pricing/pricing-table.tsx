@@ -8,6 +8,7 @@ import { CURRENCIES, type Currency } from "@/lib/billing/currency";
 import { feePercent, formatPrice, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { sendContact, type ContactState } from "./actions";
+import { Select } from "@/components/select";
 
 /** Plan cards with the monthly/yearly switch; Business opens the contact form. */
 export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]; locale: "de" | "en"; initialCurrency: Currency }) {
@@ -46,13 +47,13 @@ export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]
             </button>
           ))}
         </div>
-        <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm" aria-label={t.currencyLabel}>
+        <Select size="sm" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} aria-label={t.currencyLabel}>
           {CURRENCIES.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-testid="pricing-plans">

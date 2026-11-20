@@ -16,3 +16,8 @@ export function useI18n() {
   if (!ctx) throw new Error("useI18n must be used inside <I18nProvider>");
   return ctx;
 }
+
+/** Like useI18n, but null outside <I18nProvider> (the shops render without it). */
+export function useOptionalI18n() {
+  return use(I18nContext);
+}

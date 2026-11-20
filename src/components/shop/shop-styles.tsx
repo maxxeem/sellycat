@@ -19,6 +19,7 @@ export function themeAttrs(theme: ShopTheme) {
  */
 export const SHOP_CSS = `
 .shop-root{background:var(--shop-bg);color:var(--shop-text);font-family:var(--shop-font-body);}
+.shop-root{--surface:var(--shop-bg);--surface-2:var(--shop-surface);--line:var(--shop-line);--ink:var(--shop-text);--muted:var(--shop-muted);--accent:var(--shop-primary);--accent-text:var(--shop-text);--sc-radius-input:var(--shop-radius);}
 .shop-heading{font-family:var(--shop-font-heading);}
 .shop-card{background:var(--shop-surface);border-radius:var(--shop-radius);color:inherit;text-decoration:none;transition:transform .2s ease,box-shadow .2s ease;}
 .shop-root[data-card="bordered"] .shop-card{background:var(--shop-bg);border:1px solid var(--shop-line);}

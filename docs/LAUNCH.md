@@ -56,7 +56,8 @@ Auf Vercel sind heute **nur Preview-Variablen** gesetzt. Für Production (Ziel �
 
 ## 6. Rechtliches und Inhalte
 
-- ⬜👤 Sellycat-eigene AGB, Datenschutzerklärung und Impressum (Apex) sowie Auftragsverarbeitungsvertrag für Kunden.
+- ✅ Sellycat-eigene AGB, Datenschutzerklärung, Impressum und Auftragsverarbeitung (DE/EN) unter `/legal/…`, Zustimmung bei der Registrierung (20.11.2026).
+- ⬜👤 Rechtstexte von einer Fachperson prüfen lassen; UID/Handelsregister-Nummer der my105 GmbH im Impressum ergänzen; Verträge (DPA) mit Vercel, Supabase, Mailgun, Anthropic, Mapbox abschliessen bzw. akzeptieren.
 - ⬜ Hilfe-Center-Artikel durchsehen (kommen aus den Migrationen).
 
 ## 7. Go-live

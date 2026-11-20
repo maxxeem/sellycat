@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { buttonClass } from "@/components/ui";
 import { getDictionary } from "@/lib/i18n";
 import { isLocale } from "@/lib/i18n/locales";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * Placeholder start page. The real landing page comes later: it will live in this route and can
@@ -28,6 +29,7 @@ export default async function HomePage({ params }: PageProps<"/p/[locale]">) {
           {t.common.login}
         </Link>
       </section>
+      <SiteFooter />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

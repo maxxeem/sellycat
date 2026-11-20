@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { fmt } from "@/lib/i18n";
 import type { ShopTexts } from "./shop-texts";
 
 const KEY = "sc_consent";
@@ -61,13 +62,40 @@ export function ConsentBanner({ ga4, metaPixel, t }: { ga4: string | null; metaP
     } catch {}
     window.dispatchEvent(new Event(EVENT));
   };
+  const tools = [ga4 ? "Google Analytics" : null, metaPixel ? "Meta Pixel" : null].filter(Boolean).join(", ");
   return (
     <div role="dialog" aria-live="polite" aria-label="Cookies" className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl flex-col gap-3 rounded-[var(--shop-radius)] border border-[var(--shop-line)] bg-[var(--shop-bg)] p-4 text-sm shadow-2xl sm:flex-row sm:items-center">
-      <p className="flex-1">{t.cookieText}</p>
+      <p className="flex-1">
+        {fmt(t.cookieText, { tools })}{" "}
+        <a href="/datenschutz" className="underline">{t.cookieMore}</a>
+      </p>
       <div className="flex gap-2">
         <button type="button" onClick={() => decide("no")} className="shop-chip">{t.cookieDecline}</button>
         <button type="button" onClick={() => decide("yes")} className="shop-btn min-h-0 py-2">{t.cookieAccept}</button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Footer link to change the choice (withdrawing consent must be as easy as giving it). After a
+ * withdrawal the page reloads, so scripts that were already loaded are gone.
+ */
+export function CookieSettingsLink({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className="text-left hover:text-[var(--shop-text)]"
+      onClick={() => {
+        const had = readChoice();
+        try {
+          localStorage.removeItem(KEY);
+        } catch {}
+        if (had === "yes") window.location.reload();
+        else window.dispatchEvent(new Event(EVENT));
+      }}
+    >
+      {label}
+    </button>
   );
 }

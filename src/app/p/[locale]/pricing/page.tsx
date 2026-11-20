@@ -11,6 +11,7 @@ import { getDictionary } from "@/lib/i18n";
 import { isLocale } from "@/lib/i18n/locales";
 import { createPublicClient } from "@/lib/supabase/admin";
 import { PricingTable } from "./pricing-table";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = { title: "Sellycat – Preise / Pricing" };
 
@@ -39,6 +40,7 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
           <Plans locale={locale} searchParams={searchParams} />
         </Suspense>
       </section>
+      <SiteFooter />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );
