@@ -4,7 +4,9 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
-export type MemberRole = Database["public"]["Enums"]["member_role"];
+import type { MemberRole } from "./roles";
+export type { MemberRole } from "./roles";
+export { roleAtLeast } from "./roles";
 export type MyTenant = { id: string; name: string; slug: string; role: MemberRole; status: Database["public"]["Enums"]["tenant_status"] };
 
 /** Cookie remembering which shop the dashboard shows (users can belong to several). */
@@ -23,6 +25,3 @@ export const getCurrentTenant = cache(async (): Promise<MyTenant | null> => {
   return tenants.find((t) => t.id === wanted) ?? tenants[0] ?? null;
 });
 
-/** Role ladder for dashboard permissions (redeemer/partner only use the redemption mode). */
-const RANK: Record<MemberRole, number> = { owner: 4, admin: 3, editor: 2, redeemer: 1, partner: 1 };
-export const roleAtLeast = (role: MemberRole, min: MemberRole) => RANK[role] >= RANK[min];

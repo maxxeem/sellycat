@@ -1421,33 +1421,42 @@ export type Database = {
       tenant_invites: {
         Row: {
           accepted_at: string | null
+          accepted_by: string | null
           created_at: string
           email: string
           expires_at: string
           id: string
           invited_by: string | null
+          name: string | null
           role: Database["public"]["Enums"]["member_role"]
           tenant_id: string
+          token_hash: string | null
         }
         Insert: {
           accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           email: string
           expires_at?: string
           id?: string
           invited_by?: string | null
+          name?: string | null
           role: Database["public"]["Enums"]["member_role"]
           tenant_id: string
+          token_hash?: string | null
         }
         Update: {
           accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           email?: string
           expires_at?: string
           id?: string
           invited_by?: string | null
+          name?: string | null
           role?: Database["public"]["Enums"]["member_role"]
           tenant_id?: string
+          token_hash?: string | null
         }
         Relationships: [
           {
@@ -1895,6 +1904,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invite: { Args: { p_token: string }; Returns: string }
       application_fee: {
         Args: { p_amount: number; p_tenant: string }
         Returns: number
@@ -1946,6 +1956,16 @@ export type Database = {
       in_redeem_window: {
         Args: { p_at: string; p_windows: Json }
         Returns: boolean
+      }
+      invite_preview: {
+        Args: { p_token: string }
+        Returns: {
+          email_masked: string
+          expired: boolean
+          open: boolean
+          role: Database["public"]["Enums"]["member_role"]
+          tenant_name: string
+        }[]
       }
       is_staff: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
@@ -2048,6 +2068,7 @@ export type Database = {
           unit_cents: number
         }[]
       }
+      team_seats_used: { Args: { p_tenant: string }; Returns: number }
       tenant_is_public: { Args: { p_tenant: string }; Returns: boolean }
       tenant_role: {
         Args: { p_tenant: string }

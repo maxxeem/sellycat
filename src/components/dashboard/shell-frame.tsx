@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import { DashboardMenu } from "./menu";
+import type { MemberRole } from "@/lib/auth/roles";
 import { Logo } from "@/components/brand";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,7 +15,7 @@ import { logout, switchTenant } from "@/app/p/[locale]/dashboard/actions";
 type Props = {
   user: { name: string; email: string };
   tenants: Array<{ id: string; name: string }>;
-  current: { id: string; name: string; slug: string } | null;
+  current: { id: string; name: string; slug: string; role?: MemberRole } | null;
   children: ReactNode;
   /** Staff admin reuses the frame with its own menu. */
   nav?: Array<{ href: string; label: string }>;
@@ -63,7 +64,7 @@ export function ShellFrame({ user, tenants, current, children, nav, homeHref = "
           </Link>
         ))
       ) : (
-        <DashboardMenu isActive={active} onNavigate={() => setOpen(false)} />
+        <DashboardMenu isActive={active} onNavigate={() => setOpen(false)} role={current?.role} />
       )}
       <div className="mt-auto flex flex-col gap-3 border-t border-line pt-4">
         <div className="px-2 text-sm">

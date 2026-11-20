@@ -216,3 +216,27 @@ ${button(i.brand, i.url, s.mailButton)}
     text: [s.mailHeading, "", hello, intro, "", `${s.mailButton}: ${i.url}`, "", s.mailHow].join("\n"),
   };
 }
+
+/** Invitation into a shop's team (dashboard access on sellycat.com). */
+export function teamInviteMail(i: { brand: MailBrand; name: string; inviter: string; role: "owner" | "admin" | "editor" | "redeemer"; url: string; days: number }): Mail {
+  const t = getDictionary(i.brand.locale);
+  const m = t.team.mail;
+  const role = t.team.roles[i.role];
+  const hello = i.name ? fmt(m.hello, { name: i.name }) : m.helloAnon;
+  const intro = fmt(i.inviter ? m.intro : m.introAnon, { inviter: i.inviter, shop: i.brand.shopName, role });
+  const valid = fmt(m.valid, { days: i.days });
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(fmt(m.heading, { shop: i.brand.shopName }))}</h1>
+<p style="margin:0 0 8px;">${esc(hello)}</p>
+<p style="margin:0;">${esc(intro)}</p>
+${button(i.brand, i.url, m.button)}
+<p style="margin:0;font-size:14px;color:#52525b;">${esc(valid)}</p>`,
+    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+  );
+  return {
+    subject: subjectLine(fmt(m.subject, { shop: i.brand.shopName })),
+    html,
+    text: [fmt(m.heading, { shop: i.brand.shopName }), "", hello, intro, "", `${m.button}: ${i.url}`, "", valid].join("\n"),
+  };
+}

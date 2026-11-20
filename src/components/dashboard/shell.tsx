@@ -13,7 +13,7 @@ export async function DashboardShell({ children }: { children: ReactNode }) {
     <ShellFrame
       user={{ name: user.name, email: user.email }}
       tenants={tenants.map((t) => ({ id: t.id, name: t.name }))}
-      current={current ? { id: current.id, name: current.name, slug: current.slug } : null}
+      current={current ? { id: current.id, name: current.name, slug: current.slug, role: current.role } : null}
     >
       {children}
     </ShellFrame>

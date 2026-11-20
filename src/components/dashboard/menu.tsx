@@ -5,7 +5,8 @@ import { useState, type ComponentType } from "react";
 import { CaretDown, ChartLineUp, GearSix, House, Lifebuoy, Question, ShoppingBagOpen, Storefront, Ticket, type IconProps } from "@phosphor-icons/react";
 import { useI18n } from "@/lib/i18n/context";
 import type { Dictionary } from "@/lib/i18n";
-import type { SectionKey } from "@/lib/dashboard/nav";
+import { SECTION_MIN_ROLE, type SectionKey } from "@/lib/dashboard/nav";
+import { roleAtLeast, type MemberRole } from "@/lib/auth/roles";
 
 type Icon = ComponentType<IconProps>;
 type MenuLabel = (t: Dictionary) => string;
@@ -41,14 +42,18 @@ const idle = "text-muted hover:bg-surface hover:text-ink";
 const current = "bg-accent/10 font-semibold text-accent-text";
 
 /** Customer dashboard menu: groups open by themselves when one of their pages is shown. */
-export function DashboardMenu({ isActive, onNavigate }: { isActive: (href: string) => boolean; onNavigate: () => void }) {
+export function DashboardMenu({ isActive, onNavigate, role = "owner" }: { isActive: (href: string) => boolean; onNavigate: () => void; role?: MemberRole }) {
   const { t } = useI18n();
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
 
   return (
     <>
       <ul className="flex flex-col gap-0.5">
-        {MENU.map((entry) => {
+        {MENU.map((original) => {
+          // Only what this role may open; a group without visible items disappears.
+          const entry = original.kind === "group" ? { ...original, items: original.items.filter((i) => roleAtLeast(role, SECTION_MIN_ROLE[i.key])) } : original;
+          if (entry.kind === "group" && !entry.items.length) return null;
+          if (entry.kind === "link" && entry.href === "/dashboard/analytics" && !roleAtLeast(role, SECTION_MIN_ROLE.analytics)) return null;
           const Icon = entry.icon;
           if (entry.kind === "link") {
             const on = isActive(entry.href);
