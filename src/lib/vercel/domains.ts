@@ -6,8 +6,20 @@ import "server-only";
  * On staging (preview deployments) the domain is bound to the `main` branch. Without a token the
  * domain is stored anyway and staff adds it by hand.
  */
+/** The API token; a value pasted with line breaks or spaces would break the header (and leak into errors). */
+function vercelToken(): string | null {
+  const raw = process.env.VERCEL_API_TOKEN?.trim();
+  if (!raw) return null;
+  const token = raw.split(/\s+/)[0];
+  if (token !== raw) console.error("[vercel] VERCEL_API_TOKEN contains whitespace or line breaks; using the first value. Fix the variable.");
+  return token;
+}
+
+/** Never let a token end up in a message we log or show. */
+const redact = (message: string) => message.replace(/Bearer\s+\S+/g, "Bearer ***").replace(/vc[a-z]_[A-Za-z0-9]{20,}/g, "***");
+
 export async function registerDomain(host: string): Promise<{ ok: boolean; message: string }> {
-  const token = process.env.VERCEL_API_TOKEN;
+  const token = vercelToken();
   const project = process.env.VERCEL_PROJECT_ID;
   const team = process.env.VERCEL_TEAM_ID;
   if (!token || !project) return { ok: false, message: `${host}: no VERCEL_API_TOKEN, add the domain in Vercel by hand.` };
@@ -22,7 +34,7 @@ export async function registerDomain(host: string): Promise<{ ok: boolean; messa
   if (res.ok) return { ok: true, message: `${host} added to Vercel.` };
   const err = (await res.json().catch(() => ({}))) as { error?: { code?: string; message?: string } };
   if (err.error?.code === "domain_already_in_use" || err.error?.code === "domain_already_exists" || res.status === 409) return { ok: true, message: `${host} already on Vercel.` };
-  return { ok: false, message: `Vercel: ${err.error?.message ?? res.statusText}` };
+  return { ok: false, message: `Vercel: ${redact(err.error?.message ?? res.statusText)}` };
 }
 
 // ---------------------------------------------------------------- shops' own domains
@@ -36,17 +48,17 @@ const FALLBACK_CNAME = "cname.vercel-dns.com";
 const FALLBACK_IPV4 = ["76.76.21.21"];
 
 async function vercel<T>(path: string, init: RequestInit = {}): Promise<VercelResult<T>> {
-  const token = process.env.VERCEL_API_TOKEN;
+  const token = vercelToken();
   const team = process.env.VERCEL_TEAM_ID;
   if (!token || !process.env.VERCEL_PROJECT_ID) return { ok: false, status: 0, code: "not_configured", message: "VERCEL_API_TOKEN/VERCEL_PROJECT_ID missing" };
   const url = `https://api.vercel.com${path}${path.includes("?") ? "&" : "?"}${team ? `teamId=${encodeURIComponent(team)}` : ""}`;
   try {
     const res = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers ?? {}) }, signal: AbortSignal.timeout(15000) });
     const json = (await res.json().catch(() => ({}))) as T & { error?: { code?: string; message?: string } };
-    if (!res.ok) return { ok: false, status: res.status, code: json.error?.code ?? String(res.status), message: json.error?.message ?? res.statusText };
+    if (!res.ok) return { ok: false, status: res.status, code: json.error?.code ?? String(res.status), message: redact(json.error?.message ?? res.statusText) };
     return { ok: true, value: json };
   } catch (e) {
-    return { ok: false, status: 0, code: "network", message: e instanceof Error ? e.message : "Vercel not reachable" };
+    return { ok: false, status: 0, code: "network", message: e instanceof Error ? redact(e.message) : "Vercel not reachable" };
   }
 }
 
