@@ -34,7 +34,7 @@ Auf Vercel sind heute **nur Preview-Variablen** gesetzt. Für Production (Ziel �
 | `GOOGLE_WALLET_*` | wie Staging; 👤 Freigabe bei Google beantragen (sonst nur Testkonten) |
 | `GOOGLE_PLACES_API_KEY`, `ANTHROPIC_API_KEY` | eigene Schlüssel mit Budget-Limit empfohlen |
 | `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID` | für Shop-Domains |
-| `SUPPORT_EMAIL`, `SALES_EMAIL` | 👤 Adressen festlegen |
+| `SUPPORT_EMAIL`, `SALES_EMAIL` | ✅ `support@sellycat.com`, `hello@sellycat.com` (Preview und Production gesetzt, 20.11.2026); Postfächer müssen existieren |
 | `STAGING_PASSWORD`, `PLATFORM_MFA_OPTIONAL` | **nicht** setzen |
 
 - ⬜ Crons (`vercel.json`): reservations, mail, domains, wallet, webhooks; laufen in Production automatisch mit `CRON_SECRET`.
