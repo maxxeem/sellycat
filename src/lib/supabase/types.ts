@@ -755,6 +755,123 @@ export type Database = {
           },
         ]
       }
+      invite_code_uses: {
+        Row: {
+          code_id: string
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          released_at: string | null
+          status: Database["public"]["Enums"]["invite_use_status"]
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          code_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          released_at?: string | null
+          status?: Database["public"]["Enums"]["invite_use_status"]
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          code_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          released_at?: string | null
+          status?: Database["public"]["Enums"]["invite_use_status"]
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_code_uses_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "invite_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_code_uses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          disabled_at: string | null
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          note: string | null
+          plan_id: string | null
+          stripe_coupon_id: string | null
+          tag: string | null
+          trial_days: number | null
+          uses: number
+          waitlist_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          disabled_at?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          note?: string | null
+          plan_id?: string | null
+          stripe_coupon_id?: string | null
+          tag?: string | null
+          trial_days?: number | null
+          uses?: number
+          waitlist_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          disabled_at?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          note?: string | null
+          plan_id?: string | null
+          stripe_coupon_id?: string | null
+          tag?: string | null
+          trial_days?: number | null
+          uses?: number
+          waitlist_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_codes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_codes_waitlist_fk"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "waitlist"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       legal_pages: {
         Row: {
           content: string
@@ -1438,6 +1555,7 @@ export type Database = {
         Row: {
           billing: Json
           id: boolean
+          invite_reminder_days: number
           signup_mode: Database["public"]["Enums"]["signup_mode"]
           support_notify_email: string | null
           support_notify_staff_ids: string[]
@@ -1447,6 +1565,7 @@ export type Database = {
         Insert: {
           billing?: Json
           id?: boolean
+          invite_reminder_days?: number
           signup_mode?: Database["public"]["Enums"]["signup_mode"]
           support_notify_email?: string | null
           support_notify_staff_ids?: string[]
@@ -1456,6 +1575,7 @@ export type Database = {
         Update: {
           billing?: Json
           id?: boolean
+          invite_reminder_days?: number
           signup_mode?: Database["public"]["Enums"]["signup_mode"]
           support_notify_email?: string | null
           support_notify_staff_ids?: string[]
@@ -1530,6 +1650,24 @@ export type Database = {
           locale?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rate_hits: {
+        Row: {
+          hits: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          hits?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          hits?: number
+          key?: string
+          window_start?: string
         }
         Relationships: []
       }
@@ -2081,6 +2219,7 @@ export type Database = {
           fee_override_bps: number | null
           fee_override_fixed: number | null
           id: string
+          invite_code_id: string | null
           locale: string
           mail_from_name: string | null
           name: string
@@ -2110,6 +2249,7 @@ export type Database = {
           fee_override_bps?: number | null
           fee_override_fixed?: number | null
           id?: string
+          invite_code_id?: string | null
           locale?: string
           mail_from_name?: string | null
           name: string
@@ -2139,6 +2279,7 @@ export type Database = {
           fee_override_bps?: number | null
           fee_override_fixed?: number | null
           id?: string
+          invite_code_id?: string | null
           locale?: string
           mail_from_name?: string | null
           name?: string
@@ -2157,6 +2298,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tenants_invite_code_id_fkey"
+            columns: ["invite_code_id"]
+            isOneToOne: false
+            referencedRelation: "invite_codes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tenants_pending_plan_id_fkey"
             columns: ["pending_plan_id"]
@@ -2315,6 +2463,86 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist: {
+        Row: {
+          company: string | null
+          confirm_sent_at: string | null
+          confirm_token_hash: string | null
+          confirmed_at: string | null
+          consent_at: string
+          consent_version: string
+          created_at: string
+          email: string
+          id: string
+          invite_code_id: string | null
+          invited_at: string | null
+          locale: string
+          message: string | null
+          name: string | null
+          registered_at: string | null
+          reminded_at: string | null
+          staff_note: string | null
+          status: Database["public"]["Enums"]["waitlist_status"]
+          updated_at: string
+          use_case: Database["public"]["Enums"]["waitlist_use_case"] | null
+          website: string | null
+        }
+        Insert: {
+          company?: string | null
+          confirm_sent_at?: string | null
+          confirm_token_hash?: string | null
+          confirmed_at?: string | null
+          consent_at: string
+          consent_version: string
+          created_at?: string
+          email: string
+          id?: string
+          invite_code_id?: string | null
+          invited_at?: string | null
+          locale?: string
+          message?: string | null
+          name?: string | null
+          registered_at?: string | null
+          reminded_at?: string | null
+          staff_note?: string | null
+          status?: Database["public"]["Enums"]["waitlist_status"]
+          updated_at?: string
+          use_case?: Database["public"]["Enums"]["waitlist_use_case"] | null
+          website?: string | null
+        }
+        Update: {
+          company?: string | null
+          confirm_sent_at?: string | null
+          confirm_token_hash?: string | null
+          confirmed_at?: string | null
+          consent_at?: string
+          consent_version?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invite_code_id?: string | null
+          invited_at?: string | null
+          locale?: string
+          message?: string | null
+          name?: string | null
+          registered_at?: string | null
+          reminded_at?: string | null
+          staff_note?: string | null
+          status?: Database["public"]["Enums"]["waitlist_status"]
+          updated_at?: string
+          use_case?: Database["public"]["Enums"]["waitlist_use_case"] | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_invite_code_id_fkey"
+            columns: ["invite_code_id"]
+            isOneToOne: false
+            referencedRelation: "invite_codes"
             referencedColumns: ["id"]
           },
         ]
@@ -2606,6 +2834,7 @@ export type Database = {
     }
     Functions: {
       accept_invite: { Args: { p_token: string }; Returns: string }
+      access_housekeeping: { Args: { p_hours?: number }; Returns: Json }
       api_find_voucher: {
         Args: { p_code: string; p_tenant: string }
         Returns: string
@@ -2633,6 +2862,10 @@ export type Database = {
         Args: { p_amount: number; p_tenant: string }
         Returns: number
       }
+      attach_invite_user: {
+        Args: { p_use: string; p_user: string }
+        Returns: undefined
+      }
       auth_user_id: { Args: { p_email: string }; Returns: string }
       bump_analytics: {
         Args: { p_deal: string; p_metric: string; p_tenant: string }
@@ -2647,7 +2880,20 @@ export type Database = {
       can_see_orders: { Args: { p_tenant: string }; Returns: boolean }
       can_see_ticket: { Args: { p_ticket: string }; Returns: boolean }
       can_use_redeem: { Args: { p_tenant: string }; Returns: boolean }
+      claim_invite_code: {
+        Args: { p_code: string; p_email: string }
+        Returns: string
+      }
       clear_pool_codes: { Args: { p_deal: string }; Returns: Json }
+      confirm_invite_use: {
+        Args: { p_user: string }
+        Returns: {
+          code_id: string
+          plan_id: string
+          stripe_coupon_id: string
+          trial_days: number
+        }[]
+      }
       create_settlement: {
         Args: { p_partner: string; p_tenant: string; p_until: string }
         Returns: string
@@ -2692,6 +2938,10 @@ export type Database = {
       find_voucher_by_token: {
         Args: { p_tenant: string; p_token: string }
         Returns: string
+      }
+      finish_invite_signup: {
+        Args: { p_tenant: string; p_user: string }
+        Returns: undefined
       }
       fulfil_order: {
         Args: { p_payment_intent: string; p_session: string }
@@ -2764,6 +3014,10 @@ export type Database = {
         Returns: Json
       }
       random_digits: { Args: { n: number }; Returns: string }
+      rate_hit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
       record_refund: {
         Args: { p_payment_intent: string; p_refunded: number }
         Returns: string
@@ -2803,6 +3057,7 @@ export type Database = {
         Returns: Json
       }
       release_expired: { Args: { p_deal?: string }; Returns: number }
+      release_invite_use: { Args: { p_use: string }; Returns: undefined }
       release_order: { Args: { p_order: string }; Returns: boolean }
       resolve_shop: {
         Args: { p_host?: string; p_slug?: string }
@@ -2990,6 +3245,7 @@ export type Database = {
       deal_type: "fixed" | "value"
       domain_kind: "subdomain" | "custom"
       domain_status: "pending" | "dns_ok" | "active" | "error"
+      invite_use_status: "pending" | "confirmed" | "released"
       legal_kind: "imprint" | "terms" | "privacy"
       member_role: "owner" | "admin" | "editor" | "redeemer" | "partner"
       order_status:
@@ -3002,9 +3258,17 @@ export type Database = {
       redeem_validity: "none" | "until_date" | "days_after_purchase"
       redemption_source: "dashboard" | "pwa" | "api"
       reservation_status: "active" | "converted" | "released"
-      signup_mode: "open" | "paused"
+      signup_mode: "open" | "invite" | "paused"
       tenant_status: "trial" | "active" | "suspended" | "closed"
       voucher_status: "valid" | "redeemed" | "expired" | "refunded" | "void"
+      waitlist_status: "new" | "invited" | "registered" | "rejected"
+      waitlist_use_case:
+        | "media"
+        | "association"
+        | "city_tourism"
+        | "retail_gastro"
+        | "agency"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3148,6 +3412,7 @@ export const Constants = {
       deal_type: ["fixed", "value"],
       domain_kind: ["subdomain", "custom"],
       domain_status: ["pending", "dns_ok", "active", "error"],
+      invite_use_status: ["pending", "confirmed", "released"],
       legal_kind: ["imprint", "terms", "privacy"],
       member_role: ["owner", "admin", "editor", "redeemer", "partner"],
       order_status: [
@@ -3161,9 +3426,18 @@ export const Constants = {
       redeem_validity: ["none", "until_date", "days_after_purchase"],
       redemption_source: ["dashboard", "pwa", "api"],
       reservation_status: ["active", "converted", "released"],
-      signup_mode: ["open", "paused"],
+      signup_mode: ["open", "invite", "paused"],
       tenant_status: ["trial", "active", "suspended", "closed"],
       voucher_status: ["valid", "redeemed", "expired", "refunded", "void"],
+      waitlist_status: ["new", "invited", "registered", "rejected"],
+      waitlist_use_case: [
+        "media",
+        "association",
+        "city_tourism",
+        "retail_gastro",
+        "agency",
+        "other",
+      ],
     },
   },
 } as const

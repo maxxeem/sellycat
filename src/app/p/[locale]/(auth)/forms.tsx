@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
 import { Field, Input, Notice, buttonClass, linkClass } from "@/components/ui";
+import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { slugify } from "@/lib/site/hosts";
 import { forgotAction, loginAction, setPasswordAction, signupAction, type AuthState } from "./actions";
@@ -80,7 +81,7 @@ export function SetPasswordForm() {
   );
 }
 
-export function SignupForm({ root }: { root: string }) {
+export function SignupForm({ root, code = "", onChangeCode }: { root: string; code?: string; onChangeCode?: () => void }) {
   const { t, locale } = useI18n();
   const [state, action, pending] = useActionState(signupAction, null);
   const { error, notice } = useMessage(state);
@@ -92,6 +93,17 @@ export function SignupForm({ root }: { root: string }) {
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="code" value={code} />
+      {code ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-input border border-success/40 bg-success/10 px-3 py-2 text-sm text-success" data-testid="signup-code">
+          <span>{fmt(t.access.code.applied, { code })}</span>
+          {onChangeCode ? (
+            <button type="button" onClick={onChangeCode} className="font-semibold underline">
+              {t.access.code.change}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <Field label={t.auth.shopName}>
         <Input name="shopName" value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} />
       </Field>

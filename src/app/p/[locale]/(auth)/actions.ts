@@ -9,6 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getSignupMode } from "@/lib/platform/settings";
 import { registerDomain } from "@/lib/vercel/domains";
 import { LEGAL_VERSION } from "@/lib/legal/docs";
+import { codeRequired, normaliseCode } from "@/lib/access/rules";
+import { clientIp, countCodeFailure, networkOf, rateLimit } from "@/lib/access/server";
 
 /** Error/notice keys map to the `auth` dictionary on the client. */
 export type AuthState = { error?: string; notice?: string; field?: string } | null;
@@ -49,23 +51,38 @@ const signupSchema = z.object({
   password: z.string().min(10),
   locale: z.enum(["de", "en"]),
   accept: z.literal("on"),
+  code: z.string().max(60).optional().default(""),
 });
 
 export async function signupAction(_: AuthState, form: FormData): Promise<AuthState> {
-  if ((await getSignupMode()) !== "open") return { error: "signupPausedTitle" };
+  const mode = await getSignupMode();
   const parsed = signupSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) {
     const field = String(parsed.error.issues[0]?.path[0] ?? "");
     return { error: field === "password" ? "passwordTooShort" : field === "accept" ? "acceptRequired" : "linkInvalid", field };
   }
   const { shopName, slug, email, password, locale } = parsed.data;
+  const code = normaliseCode(parsed.data.code);
+  if (codeRequired(mode) && !code) return { error: "codeRequired", field: "code" };
+  if (!(await rateLimit("signup", networkOf(await clientIp()), 10, 3600))) return { error: "rateLimited" };
   const check = validateSlug(slug);
   if (!check.ok) return { error: check.reason === "reserved" ? "slugReserved" : "slugInvalid", field: "slug" };
-  const { data: free } = await createAdminClient().rpc("slug_available", { p_slug: slug });
+  const db = createAdminClient();
+  const { data: free } = await db.rpc("slug_available", { p_slug: slug });
   if (!free) return { error: "slugTaken", field: "slug" };
 
+  // The code's slot is held before the account exists (atomic), and given back if signup fails.
+  let use: string | null = null;
+  if (code) {
+    use = (await db.rpc("claim_invite_code", { p_code: code, p_email: email })).data ?? null;
+    if (!use) {
+      await countCodeFailure();
+      return { error: "codeInvalid", field: "code" };
+    }
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -75,6 +92,12 @@ export async function signupAction(_: AuthState, form: FormData): Promise<AuthSt
       data: { shop_name: shopName, shop_slug: slug, locale, terms_version: LEGAL_VERSION, terms_accepted_at: new Date().toISOString() },
     },
   });
+  // An existing address comes back without identities: same answer, but the slot is released.
+  const fresh = !error && data.user && (data.user.identities?.length ?? 0) > 0;
+  if (use) {
+    if (fresh) await db.rpc("attach_invite_user", { p_use: use, p_user: data.user!.id });
+    else await db.rpc("release_invite_use", { p_use: use });
+  }
   if (error) return { error: "linkInvalid" };
   return { notice: "signupCheckMail" };
 }
@@ -90,10 +113,16 @@ export async function provisionFromSignup(): Promise<void> {
   if (!claims?.claims?.sub || !meta.shop_slug || !meta.shop_name) return;
   const { data: mine } = await supabase.rpc("my_tenants");
   if (mine && mine.length > 0) return;
+  const userId = claims.claims.sub;
+  const db = createAdminClient();
+  // An invite use becomes confirmed now (a slot released in the meantime is taken again if free).
+  await db.rpc("confirm_invite_use", { p_user: userId });
   const root = (siteHost() || DEFAULT_ROOT).split(":")[0];
   for (const candidate of [meta.shop_slug, `${meta.shop_slug.slice(0, 35)}-${Math.random().toString(36).slice(2, 6)}`]) {
-    const { error } = await supabase.rpc("create_tenant", { p_name: meta.shop_name, p_slug: candidate, p_root: root, p_locale: meta.locale ?? "de" });
+    const { data: tenantId, error } = await supabase.rpc("create_tenant", { p_name: meta.shop_name, p_slug: candidate, p_root: root, p_locale: meta.locale ?? "de" });
     if (!error) {
+      // Links the code (plan, trial, coupon) and marks the waitlist entry as registered.
+      await db.rpc("finish_invite_signup", { p_user: userId, p_tenant: tenantId });
       await registerDomain(`${candidate}.${root}`);
       return;
     }

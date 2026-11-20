@@ -287,3 +287,59 @@ ${button(i.brand, i.url, s.button)}
     text: [fmt(s.heading, { number: i.number }), i.subject, "", hello, "", i.message, "", `${s.button}: ${i.url}`, "", s.signature].join("\n"),
   };
 }
+
+// ---------------------------------------------------------------- waitlist (Sellycat as sender)
+
+function accessMail(i: { brand: MailBrand; subject: string; heading: string; name: string | null; text: string; button: { href: string; label: string }; extraHtml?: string; extraText?: string; after?: string }): Mail {
+  const a = getDictionary(i.brand.locale).access.mail;
+  const hello = i.name ? fmt(a.hello, { name: i.name }) : a.helloAnon;
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">${esc(i.heading)}</h1>
+<p style="margin:0 0 12px;">${esc(hello)},</p>
+<p style="margin:0 0 12px;">${esc(i.text)}</p>
+${i.extraHtml ?? ""}
+${button(i.brand, i.button.href, i.button.label)}
+${i.after ? `<p style="margin:0;font-size:14px;color:#52525b;">${esc(i.after)}</p>` : ""}`,
+    esc(a.footer),
+  );
+  return {
+    subject: subjectLine(i.subject),
+    html,
+    text: [i.heading, "", `${hello},`, "", i.text, ...(i.extraText ? ["", i.extraText] : []), "", `${i.button.label}: ${i.button.href}`, ...(i.after ? ["", i.after] : []), "", a.footer].join("\n"),
+  };
+}
+
+/** Double opt-in after joining the waitlist. */
+export function waitlistConfirmMail(i: { brand: MailBrand; name: string | null; url: string }): Mail {
+  const a = getDictionary(i.brand.locale).access.mail;
+  return accessMail({ brand: i.brand, subject: a.confirmSubject, heading: a.confirmHeading, name: i.name, text: a.confirmText, button: { href: i.url, label: a.confirmButton }, after: a.confirmIgnore });
+}
+
+function codeBlock(brand: MailBrand, code: string) {
+  const a = getDictionary(brand.locale).access.mail;
+  return {
+    html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 4px;border:1px solid #e4e4e7;border-radius:12px;"><tr><td style="padding:16px;">
+<p style="margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#71717a;">${esc(a.inviteCode)}</p>
+<p style="margin:0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:20px;font-weight:700;letter-spacing:.08em;">${esc(code)}</p>
+</td></tr></table>`,
+    text: `${a.inviteCode}: ${code}`,
+  };
+}
+
+/** Personal invitation from the waitlist (code + prefilled link). */
+export function waitlistInviteMail(i: { brand: MailBrand; name: string | null; code: string; url: string; expiresAt: string | null; reminder?: boolean }): Mail {
+  const a = getDictionary(i.brand.locale).access.mail;
+  const block = codeBlock(i.brand, i.code);
+  return accessMail({
+    brand: i.brand,
+    subject: i.reminder ? a.reminderSubject : a.inviteSubject,
+    heading: i.reminder ? a.reminderHeading : a.inviteHeading,
+    name: i.name,
+    text: i.reminder ? a.reminderText : a.inviteText,
+    extraHtml: block.html,
+    extraText: block.text,
+    button: { href: i.url, label: a.inviteButton },
+    after: i.expiresAt ? fmt(a.inviteValid, { date: dateText(i.expiresAt, i.brand.locale) }) : a.inviteNoExpiry,
+  });
+}

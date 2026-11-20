@@ -64,14 +64,33 @@ export function ConsentBanner({ ga4, metaPixel, t }: { ga4: string | null; metaP
   };
   const tools = [ga4 ? "Google Analytics" : null, metaPixel ? "Meta Pixel" : null].filter(Boolean).join(", ");
   return (
-    <div role="dialog" aria-live="polite" aria-label="Cookies" className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl flex-col gap-3 rounded-[var(--shop-radius)] border border-[var(--shop-line)] bg-[var(--shop-bg)] p-4 text-sm shadow-2xl sm:flex-row sm:items-center">
-      <p className="flex-1">
-        {fmt(t.cookieText, { tools })}{" "}
-        <a href="/datenschutz" className="underline">{t.cookieMore}</a>
+    <div
+      role="dialog"
+      aria-live="polite"
+      aria-labelledby="sc-consent-title"
+      className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-[var(--shop-radius)] border border-[var(--shop-line)] bg-[var(--shop-bg)] p-5 shadow-[0_24px_60px_-12px_rgba(0,0,0,0.35)] sm:bottom-5"
+    >
+      <p id="sc-consent-title" className="shop-heading flex items-center gap-2 text-base font-bold">
+        <span aria-hidden>🍪</span> {t.cookieTitle}
       </p>
-      <div className="flex gap-2">
-        <button type="button" onClick={() => decide("no")} className="shop-chip">{t.cookieDecline}</button>
-        <button type="button" onClick={() => decide("yes")} className="shop-btn min-h-0 py-2">{t.cookieAccept}</button>
+      <p className="mt-2 text-sm leading-relaxed text-[var(--shop-muted)]">
+        {fmt(t.cookieText, { tools })}{" "}
+        <a href="/datenschutz" className="font-semibold text-[var(--shop-text)] underline underline-offset-2">
+          {t.cookieMore}
+        </a>
+      </p>
+      {/* Both choices equally visible (no nudging towards "accept"). */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => decide("no")}
+          className="inline-flex min-h-11 items-center justify-center rounded-[var(--shop-radius-button)] border-2 border-[var(--shop-line)] px-3 text-sm font-bold text-[var(--shop-text)] transition hover:border-[var(--shop-text)]"
+        >
+          {t.cookieDecline}
+        </button>
+        <button type="button" onClick={() => decide("yes")} className="shop-btn min-h-11 px-3 text-sm">
+          {t.cookieAccept}
+        </button>
       </div>
     </div>
   );

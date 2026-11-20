@@ -27,7 +27,7 @@ async function billingContext() {
   const { tenant, user } = await requireTenant("admin");
   const { data } = await createAdminClient()
     .from("tenants")
-    .select("id, name, locale, plan_id, billing, billing_status, billing_interval, stripe_customer_id, stripe_subscription_id, stripe_schedule_id")
+    .select("id, name, locale, plan_id, billing, billing_status, billing_interval, stripe_customer_id, stripe_subscription_id, stripe_schedule_id, invite_code_id")
     .eq("id", tenant.id)
     .single();
   return { tenant: data!, email: user.email ?? "" };
@@ -74,6 +74,9 @@ export async function choosePlan(planId: string, interval: Interval): Promise<Bi
     const customer = await ensureCustomer(tenant, email);
     const currency = await resolveCurrency(customer, tenant.billing);
     const firstTime = tenant.billing_status === "none";
+    // An invite code may set the trial and a Stripe coupon for the first booking.
+    const perks = firstTime && tenant.invite_code_id ? (await createAdminClient().from("invite_codes").select("trial_days, stripe_coupon_id").eq("id", tenant.invite_code_id).maybeSingle()).data : null;
+    const trialDays = perks?.trial_days ?? plan.trialDays;
     const url = await base();
     session = await getStripe().checkout.sessions.create({
       mode: "subscription",
@@ -87,9 +90,9 @@ export async function choosePlan(planId: string, interval: Interval): Promise<Bi
       customer_update: { address: "auto", name: "auto" },
       ...(stripeTaxEnabled() ? { automatic_tax: { enabled: true }, tax_id_collection: { enabled: true } } : {}),
       locale: tenant.locale === "en" ? "en" : "de",
-      allow_promotion_codes: true,
+      ...(perks?.stripe_coupon_id ? { discounts: [{ coupon: perks.stripe_coupon_id }] } : { allow_promotion_codes: true }),
       metadata: { tenant_id: tenant.id, plan_id: planId },
-      subscription_data: { metadata: { tenant_id: tenant.id, plan_id: planId }, ...(firstTime && plan.trialDays > 0 ? { trial_period_days: plan.trialDays } : {}) },
+      subscription_data: { metadata: { tenant_id: tenant.id, plan_id: planId }, ...(firstTime && trialDays > 0 ? { trial_period_days: trialDays } : {}) },
     });
   } catch (e) {
     return stripeError(e);
