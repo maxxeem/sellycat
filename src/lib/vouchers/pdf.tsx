@@ -46,7 +46,7 @@ export type PdfInput = {
 };
 
 let fontsReady: Promise<void> | null = null;
-function registerFonts() {
+export function registerFonts() {
   fontsReady ??= (async () => {
     const dir = path.join(process.cwd(), "src/app/fonts");
     const [regular, semibold, bold] = await Promise.all(["Inter-Regular.ttf", "Inter-SemiBold.ttf", "Inter-Bold.ttf"].map((f) => readFile(path.join(dir, f))));
@@ -66,7 +66,7 @@ function allowedImage(url: string | null): url is string {
 type Loaded = { data: Buffer; width: number; height: number };
 
 /** Any stored image (WebP, SVG, PNG, JPEG) → PNG/JPEG that the PDF can embed, with its size. */
-async function loadImage(url: string | null, width: number, format: "jpeg" | "png"): Promise<Loaded | null> {
+export async function loadImage(url: string | null, width: number, format: "jpeg" | "png"): Promise<Loaded | null> {
   if (!allowedImage(url)) return null;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });

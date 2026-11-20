@@ -7,6 +7,7 @@ import { geocode } from "@/lib/geo/geocode";
 import { placeDetails, placesConfigured, searchPlaces, type PlaceDetails, type PlaceSuggestion } from "@/lib/places/google";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { parseHours, type OpeningHours } from "@/lib/shop/hours";
+import { cleanBilling } from "@/lib/settlements/billing";
 import { inviteScanner, removeScanner, type ScannerError } from "@/lib/vouchers/scanners";
 
 export type FormState = { error?: string; ok?: boolean } | null;
@@ -36,6 +37,16 @@ export async function savePartner(_: FormState, form: FormData): Promise<FormSta
   const { data, error } = await supabase.from("partners").insert(row).select("id").single();
   if (error || !data) return { error: error?.message ?? "insert" };
   redirect(`/dashboard/partners/${data.id}`);
+}
+
+/** Billing details for statements (owners and admins: bank details are sensitive). */
+export async function savePartnerBilling(partnerId: string, input: Record<string, string>): Promise<{ ok: boolean; error?: "iban" | "failed" }> {
+  const { tenant, supabase } = await requireTenant("admin");
+  const { billing, ibanInvalid } = cleanBilling(input);
+  if (ibanInvalid) return { ok: false, error: "iban" };
+  const { error } = await supabase.from("partners").update({ billing }).eq("id", partnerId).eq("tenant_id", tenant.id);
+  revalidatePath("/p/[locale]/dashboard/partners", "layout");
+  return error ? { ok: false, error: "failed" } : { ok: true };
 }
 
 export async function deletePartner(id: string) {

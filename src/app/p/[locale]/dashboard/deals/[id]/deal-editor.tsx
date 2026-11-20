@@ -18,8 +18,8 @@ import { Badge, Card, Field, Input, Notice, Select, buttonClass, inputClass } fr
 import { STATUS_TONE } from "@/lib/dashboard/deal-ui";
 import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
-import { BARCODE_TYPES, slugifyTitle, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
-import { dealStatus, parseMoney } from "@/lib/shop/deal-status";
+import { BARCODE_TYPES, commissionBps, slugifyTitle, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
+import { dealStatus, formatMoney, parseMoney } from "@/lib/shop/deal-status";
 import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
 import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
@@ -72,6 +72,15 @@ export function DealEditor(props: {
 
   const set = <K extends keyof DealForm>(key: K, value: DealForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const err = (key: keyof DealForm) => (errors[key] ? d.errors[errors[key]!] : undefined);
+  const settleExample = useMemo(() => {
+    if (form.settleMode === "off") return null;
+    const price = parseMoney(form.price);
+    if (price === null || Number.isNaN(price)) return null;
+    const bps = commissionBps(form.settleCommission);
+    const payout = form.settleKind === "fixed" ? parseMoney(form.settlePayout) : bps === null ? null : price - Math.round((price * bps) / 10000);
+    if (payout === null || Number.isNaN(payout)) return null;
+    return fmt(d.settle.example, { price: formatMoney(price, props.shop.currency, locale), payout: formatMoney(payout, props.shop.currency, locale) });
+  }, [form.settleMode, form.settleKind, form.settleCommission, form.settlePayout, form.price, props.shop.currency, locale, d.settle.example]);
 
   const partner = props.partners.find((p) => p.id === form.partnerId) ?? null;
   const view: DealView = useMemo(() => {
@@ -497,6 +506,43 @@ export function DealEditor(props: {
                 <Choice checked={form.codeSource === "pool"} onSelect={() => set("codeSource", "pool")} title={d.sourcePool} />
               </div>
               {form.codeSource === "pool" ? <PoolPanel dealId={props.id} free={props.stock.pool_free} used={props.stock.pool_used} saved={props.initial.codeSource === "pool"} /> : null}
+            </div>
+          </Card>
+
+          <Card title={d.sections.settle} description={d.settle.intro}>
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-3 sm:grid-cols-3" role="radiogroup">
+                {(["off", "sale", "redemption"] as const).map((m) => (
+                  <Choice
+                    key={m}
+                    checked={form.settleMode === m}
+                    onSelect={() => set("settleMode", m)}
+                    title={d.settle[m]}
+                    hint={m === "off" ? d.settle.offHint : m === "sale" ? d.settle.saleHint : d.settle.redemptionHint}
+                  />
+                ))}
+              </div>
+              {err("settleMode") ? <p className="text-sm text-danger">{err("settleMode")}</p> : null}
+              {form.settleMode !== "off" && !form.partnerId ? <p className="text-sm text-muted">{d.settle.needsPartner}</p> : null}
+              {form.settleMode !== "off" ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
+                    {(["percent", "fixed"] as const).map((k) => (
+                      <Choice key={k} checked={form.settleKind === k} onSelect={() => set("settleKind", k)} title={d.settle[k]} hint={k === "percent" ? d.settle.percentHint : d.settle.fixedHint} />
+                    ))}
+                  </div>
+                  {form.settleKind === "percent" ? (
+                    <Field label={d.settle.commission} error={err("settleCommission")}>
+                      <Input value={form.settleCommission} inputMode="decimal" className="max-w-xs" onChange={(e) => set("settleCommission", e.target.value)} />
+                    </Field>
+                  ) : (
+                    <Field label={`${d.settle.payout} (${props.shop.currency})`} error={err("settlePayout")}>
+                      <Input value={form.settlePayout} inputMode="decimal" className="max-w-xs" onChange={(e) => set("settlePayout", e.target.value)} />
+                    </Field>
+                  )}
+                  {settleExample ? <p className="text-sm text-muted">{settleExample}</p> : null}
+                </>
+              ) : null}
             </div>
           </Card>
 

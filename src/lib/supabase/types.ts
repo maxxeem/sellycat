@@ -414,6 +414,10 @@ export type Database = {
           reserved_qty: number
           sales_end: string | null
           sales_start: string | null
+          settle_commission_bps: number
+          settle_kind: string
+          settle_mode: string
+          settle_payout_cents: number | null
           show_countdown: boolean
           show_remaining: boolean
           show_stock_bar: boolean
@@ -458,6 +462,10 @@ export type Database = {
           reserved_qty?: number
           sales_end?: string | null
           sales_start?: string | null
+          settle_commission_bps?: number
+          settle_kind?: string
+          settle_mode?: string
+          settle_payout_cents?: number | null
           show_countdown?: boolean
           show_remaining?: boolean
           show_stock_bar?: boolean
@@ -502,6 +510,10 @@ export type Database = {
           reserved_qty?: number
           sales_end?: string | null
           sales_start?: string | null
+          settle_commission_bps?: number
+          settle_kind?: string
+          settle_mode?: string
+          settle_payout_cents?: number | null
           show_countdown?: boolean
           show_remaining?: boolean
           show_stock_bar?: boolean
@@ -1061,8 +1073,181 @@ export type Database = {
           },
         ]
       }
+      partner_settlement_lines: {
+        Row: {
+          base_cents: number
+          code: string
+          commission_cents: number
+          corrects: string | null
+          deal_id: string | null
+          deal_title: string
+          id: string
+          kind: string
+          occurred_at: string
+          payout_cents: number
+          redemption_id: string | null
+          settlement_id: string
+          tenant_id: string
+          voucher_id: string | null
+        }
+        Insert: {
+          base_cents: number
+          code: string
+          commission_cents: number
+          corrects?: string | null
+          deal_id?: string | null
+          deal_title: string
+          id?: string
+          kind: string
+          occurred_at: string
+          payout_cents: number
+          redemption_id?: string | null
+          settlement_id: string
+          tenant_id: string
+          voucher_id?: string | null
+        }
+        Update: {
+          base_cents?: number
+          code?: string
+          commission_cents?: number
+          corrects?: string | null
+          deal_id?: string | null
+          deal_title?: string
+          id?: string
+          kind?: string
+          occurred_at?: string
+          payout_cents?: number
+          redemption_id?: string | null
+          settlement_id?: string
+          tenant_id?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_settlement_lines_corrects_fkey"
+            columns: ["corrects"]
+            isOneToOne: false
+            referencedRelation: "partner_settlement_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_settlement_lines_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_settlement_lines_redemption_id_fkey"
+            columns: ["redemption_id"]
+            isOneToOne: false
+            referencedRelation: "redemptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_settlement_lines_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "partner_settlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_settlement_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_settlement_lines_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_settlements: {
+        Row: {
+          base_cents: number
+          commission_cents: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          finalized_at: string | null
+          id: string
+          note: string | null
+          number: number | null
+          paid_at: string | null
+          partner: Json
+          partner_id: string | null
+          payout_cents: number
+          period_from: string | null
+          period_to: string
+          sent_at: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          base_cents?: number
+          commission_cents?: number
+          created_at?: string
+          created_by?: string | null
+          currency: string
+          finalized_at?: string | null
+          id?: string
+          note?: string | null
+          number?: number | null
+          paid_at?: string | null
+          partner?: Json
+          partner_id?: string | null
+          payout_cents?: number
+          period_from?: string | null
+          period_to: string
+          sent_at?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          base_cents?: number
+          commission_cents?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          finalized_at?: string | null
+          id?: string
+          note?: string | null
+          number?: number | null
+          paid_at?: string | null
+          partner?: Json
+          partner_id?: string | null
+          payout_cents?: number
+          period_from?: string | null
+          period_to?: string
+          sent_at?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_settlements_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_settlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
+          billing: Json
           created_at: string
           description: string | null
           email: string | null
@@ -1075,6 +1260,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          billing?: Json
           created_at?: string
           description?: string | null
           email?: string | null
@@ -1087,6 +1273,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          billing?: Json
           created_at?: string
           description?: string | null
           email?: string | null
@@ -2241,6 +2428,10 @@ export type Database = {
       can_see_ticket: { Args: { p_ticket: string }; Returns: boolean }
       can_use_redeem: { Args: { p_tenant: string }; Returns: boolean }
       clear_pool_codes: { Args: { p_deal: string }; Returns: Json }
+      create_settlement: {
+        Args: { p_partner: string; p_tenant: string; p_until: string }
+        Returns: string
+      }
       create_tenant: {
         Args: {
           p_locale?: string
@@ -2365,6 +2556,47 @@ export type Database = {
       set_primary_domain: {
         Args: { p_hostname: string; p_tenant: string }
         Returns: boolean
+      }
+      settlement_candidates: {
+        Args: { p_cutoff: string; p_partner: string; p_tenant: string }
+        Returns: {
+          base_cents: number
+          code: string
+          commission_cents: number
+          corrects: string
+          deal_id: string
+          deal_title: string
+          kind: string
+          occurred_at: string
+          partner_id: string
+          payout_cents: number
+          redemption_id: string
+          voucher_id: string
+        }[]
+      }
+      settlement_cutoff: {
+        Args: { p_tenant: string; p_until: string }
+        Returns: string
+      }
+      settlement_mark_sent: {
+        Args: { p_settlement: string }
+        Returns: undefined
+      }
+      settlement_open: {
+        Args: { p_tenant: string; p_until: string }
+        Returns: {
+          base_cents: number
+          commission_cents: number
+          has_draft: boolean
+          lines: number
+          partner_id: string
+          partner_name: string
+          payout_cents: number
+        }[]
+      }
+      settlement_set_status: {
+        Args: { p_settlement: string; p_status: string }
+        Returns: undefined
       }
       shop_legal_complete: { Args: { p_tenant: string }; Returns: boolean }
       shop_profile: {

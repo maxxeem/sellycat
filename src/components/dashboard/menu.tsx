@@ -19,7 +19,7 @@ const nav = (k: SectionKey | "overview"): MenuLabel => (t) => t.dashboard.nav[k]
 /** Main entries with icons; related pages sit below as sub-entries. */
 const MENU: Entry[] = [
   { kind: "link", href: "/dashboard", icon: House, label: nav("overview") },
-  { kind: "group", id: "sales", icon: ShoppingBagOpen, label: (t) => t.dashboard.menu.sales, items: [{ key: "deals" }, { key: "orders" }, { key: "partners" }] },
+  { kind: "group", id: "sales", icon: ShoppingBagOpen, label: (t) => t.dashboard.menu.sales, items: [{ key: "deals" }, { key: "orders" }, { key: "partners" }, { key: "settlements" }] },
   { kind: "group", id: "vouchers", icon: Ticket, label: (t) => t.dashboard.menu.vouchers, items: [{ key: "vouchers", label: (t) => t.dashboard.menu.issued }, { key: "redemptions" }] },
   { kind: "group", id: "shop", icon: Storefront, label: (t) => t.dashboard.menu.shop, items: [{ key: "design" }, { key: "arrangement" }, { key: "domains" }] },
   { kind: "link", href: "/dashboard/analytics", icon: ChartLineUp, label: nav("analytics") },

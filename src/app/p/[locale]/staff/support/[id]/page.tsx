@@ -11,13 +11,17 @@ import { TicketTools } from "../panels";
 
 export const metadata = { title: "Support" };
 
-export default async function StaffTicketPage({ params }: PageProps<"/p/[locale]/staff/support/[id]">) {
-  const { t } = await fromParams(params);
+export default function StaffTicketPage({ params }: PageProps<"/p/[locale]/staff/support/[id]">) {
   return (
     <Suspense fallback={<Skeleton className="h-96" />}>
-      <Ticket t={t} id={params.then((p) => p.id)} />
+      <TicketLoader params={params} />
     </Suspense>
   );
+}
+
+async function TicketLoader({ params }: { params: PageProps<"/p/[locale]/staff/support/[id]">["params"] }) {
+  const { t } = await fromParams(params);
+  return <Ticket t={t} id={params.then((p) => p.id)} />;
 }
 
 async function Ticket({ t, id }: { t: Dictionary; id: Promise<string> }) {

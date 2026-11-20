@@ -11,13 +11,17 @@ import { ReplyForm } from "../forms";
 
 export const metadata = { title: "Support" };
 
-export default async function TicketPage({ params }: PageProps<"/p/[locale]/dashboard/support/[id]">) {
-  const { t, locale } = await fromParams(params);
+export default function TicketPage({ params }: PageProps<"/p/[locale]/dashboard/support/[id]">) {
   return (
     <Suspense fallback={<Skeleton className="h-96" />}>
-      <Ticket t={t} locale={locale} id={params.then((p) => p.id)} />
+      <TicketLoader params={params} />
     </Suspense>
   );
+}
+
+async function TicketLoader({ params }: { params: PageProps<"/p/[locale]/dashboard/support/[id]">["params"] }) {
+  const { t, locale } = await fromParams(params);
+  return <Ticket t={t} locale={locale} id={params.then((p) => p.id)} />;
 }
 
 /** One request: the thread with our replies and a reply box. RLS decides who may open it. */

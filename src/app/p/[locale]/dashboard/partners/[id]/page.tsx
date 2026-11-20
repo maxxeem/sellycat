@@ -7,6 +7,8 @@ import { fromParams } from "@/lib/i18n/params";
 import { LOCALES } from "@/lib/i18n/locales";
 import { requireTenant } from "@/lib/dashboard/context";
 import { PartnerForm } from "../partner-form";
+import type { PartnerBilling } from "@/lib/settlements/billing";
+import { BillingForm } from "./billing";
 import { DeletePartner, LocationList } from "./locations";
 import { Scanners } from "./scanners";
 import { shopBase } from "@/lib/mail/deliver";
@@ -32,7 +34,7 @@ async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { data: partner } = await supabase
     .from("partners")
-    .select("id, name, description, website_url, email, phone, logo_url, partner_locations(id, name, street, zip, city, country, opening_hours, hours, google_place_id, lat, lng)")
+    .select("id, name, description, website_url, email, phone, logo_url, billing, partner_locations(id, name, street, zip, city, country, opening_hours, hours, google_place_id, lat, lng)")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle();
@@ -52,6 +54,11 @@ async function Partner({ t, id: idPromise }: { t: Dictionary; id: Promise<string
         <Card title={t.partners.locations}>
           <LocationList partnerId={partner.id} locations={partner.partner_locations ?? []} />
         </Card>
+        {tenant.role === "owner" || tenant.role === "admin" ? (
+          <Card title={t.partners.billing.title} description={t.partners.billing.intro} className="lg:col-span-2">
+            <BillingForm partnerId={partner.id} billing={(partner.billing ?? {}) as PartnerBilling} />
+          </Card>
+        ) : null}
         <Card title={t.scanners.title} className="lg:col-span-2">
           <Scanners partnerId={partner.id} partnerName={partner.name} scanUrl={scanUrl} scanners={scanners} canManage={tenant.role === "owner" || tenant.role === "admin"} />
         </Card>

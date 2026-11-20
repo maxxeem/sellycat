@@ -5,6 +5,7 @@ export const DASHBOARD_SECTIONS = [
   { key: "deals", phase: 2 },
   { key: "partners", phase: 2 },
   { key: "orders", phase: 3 },
+  { key: "settlements", phase: 7 },
   { key: "vouchers", phase: 4 },
   { key: "redemptions", phase: 4 },
   { key: "design", phase: 2 },
@@ -24,7 +25,7 @@ export type SectionKey = (typeof DASHBOARD_SECTIONS)[number]["key"];
 export const isSection = (v: string): v is SectionKey => DASHBOARD_SECTIONS.some((s) => s.key === v);
 
 /** Sections that already have their own page (the placeholder route skips them). */
-export const BUILT_SECTIONS = new Set<SectionKey>(["support", "help", "deals", "partners", "orders", "vouchers", "redemptions", "design", "arrangement", "payments", "domains", "analytics", "billing", "team", "settings"]);
+export const BUILT_SECTIONS = new Set<SectionKey>(["settlements", "support", "help", "deals", "partners", "orders", "vouchers", "redemptions", "design", "arrangement", "payments", "domains", "analytics", "billing", "team", "settings"]);
 
 /**
  * Lowest role that sees a section in the menu (the page itself checks the same or more).
@@ -34,6 +35,7 @@ export const SECTION_MIN_ROLE: Record<SectionKey, "redeemer" | "editor" | "admin
   deals: "editor",
   partners: "editor",
   orders: "editor",
+  settlements: "admin",
   vouchers: "editor",
   redemptions: "redeemer",
   design: "editor",
