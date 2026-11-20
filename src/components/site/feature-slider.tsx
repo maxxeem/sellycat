@@ -258,7 +258,7 @@ export function FeatureSlider({ labels }: { labels: Labels }) {
     else next.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", inline: "start", block: "nearest" });
   };
 
-  const arrow = "feature-nav flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-site-surface/90 text-white/80 transition duration-300 hover:border-coral hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
+  const arrow = "feature-nav flex h-11 w-11 items-center justify-center rounded-full border border-fg/15 bg-site-surface/90 text-fg/80 transition duration-300 hover:border-coral hover:text-coral-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
   const fade = { "--fs-fade-l": edge.start ? "0px" : "100px", "--fs-fade-r": edge.end ? "0px" : "100px" } as CSSProperties;
 
   return (
@@ -300,7 +300,7 @@ export function FeatureSlider({ labels }: { labels: Labels }) {
             </ul>
           </div>
           {pinned ? (
-            <div className="mt-6 h-px w-full bg-white/10" aria-hidden data-testid="features-progress">
+            <div className="mt-6 h-px w-full bg-fg/10" aria-hidden data-testid="features-progress">
               <div ref={barRef} className="h-px w-full origin-left bg-coral" style={{ transform: "scaleX(0)" }} />
             </div>
           ) : null}
@@ -310,7 +310,7 @@ export function FeatureSlider({ labels }: { labels: Labels }) {
                 <button
                   type="button"
                   onClick={() => goToCard(i)}
-                  className={`block h-1.5 rounded-full transition-all duration-300 ${i === index ? "w-[18px] bg-coral" : "w-1.5 bg-white/20"}`}
+                  className={`block h-1.5 rounded-full transition-all duration-300 ${i === index ? "w-[18px] bg-coral" : "w-1.5 bg-fg/20"}`}
                   aria-label={fmt(labels.goTo, { n: i + 1, total })}
                   aria-current={i === index ? "true" : undefined}
                 />
@@ -338,18 +338,18 @@ function FeatureCard({ id, title, text, index }: { id: FeatureKey; title: string
       style={{ "--fa-delay": `${-(index * 0.9)}s` } as CSSProperties}
       className="flex h-full flex-col overflow-hidden rounded-[26px] border border-site-line bg-site-surface transition duration-300 ease-out hover:-translate-y-0.5 hover:border-coral/55 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] focus-visible:border-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral motion-reduce:transform-none motion-reduce:transition-none"
     >
-      <div className="relative h-[170px] shrink-0 overflow-hidden border-b border-site-line sm:h-[190px]" style={STAGE_BG} data-testid="feature-stage">
+      <div className="site-dark relative h-[170px] shrink-0 overflow-hidden border-b border-site-line sm:h-[190px]" style={STAGE_BG} data-testid="feature-stage">
         {/* Inline illustration, so its animated elements can pause off screen and react to hover. */}
         <div className="feature-art-inline absolute inset-0 [&>svg]:h-full [&>svg]:w-full" data-testid="feature-art">
           <FeatureArt id={id} />
         </div>
       </div>
       <div className="flex flex-1 flex-col p-8 pt-7 lg:p-9 lg:pt-8">
-        <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full border border-white/15 text-coral">
+        <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full border border-fg/15 text-coral-text">
           <Icon className="h-[22px] w-[22px]" aria-hidden />
         </span>
         <h3 className="mt-6 text-[22px] font-semibold leading-tight tracking-[-0.01em]">{title}</h3>
-        <p className="mt-2.5 text-[15.5px] leading-relaxed text-white/65">{text}</p>
+        <p className="mt-2.5 text-[15.5px] leading-relaxed text-fg/65">{text}</p>
       </div>
     </article>
   );

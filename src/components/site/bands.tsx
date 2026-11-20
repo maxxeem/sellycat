@@ -97,7 +97,7 @@ function Card({ card, uid, index, labels, locale }: { card: BandDeal; uid: strin
   const badge = index % 2 === 0 ? labels.badges.left.replace("{n}", String(deal.left)) : labels.badges.off.replace("{n}", String(discount(deal)));
   return (
     <li className="band-card shrink-0">
-      <div className="relative block aspect-[3/4] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-white/10">
+      <div className="relative block aspect-[3/4] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10">
         <span className="band-kenburns absolute inset-0" style={{ ["--kb-delay" as string]: `${-(index * 3.7) % 16}s` }}>
           {/* A unique gradient id per copy: an id whose first use sits in a hidden copy would not paint elsewhere. */}
           <DealArt deal={{ ...deal, id: `${deal.id}-${uid}` }} />

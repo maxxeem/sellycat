@@ -51,16 +51,16 @@ export function StepsShowcase({ labels }: { labels: Labels }) {
                 tabIndex={on ? 0 : -1}
                 onClick={() => setActive(i)}
                 aria-label={labels.show.replace("{title}", s.title)}
-                className={`inline-flex w-full items-center gap-4 rounded-full py-3.5 pl-3.5 pr-6 text-left transition duration-300 lg:w-auto lg:py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-site-ground ${on ? "bg-coral text-on-coral" : "bg-white/[0.06] text-white hover:bg-white/[0.1]"}`}
+                className={`inline-flex w-full items-center gap-4 rounded-full py-3.5 pl-3.5 pr-6 text-left transition duration-300 lg:w-auto lg:py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-site-ground ${on ? "bg-coral text-on-coral" : "bg-fg/[0.06] text-fg hover:bg-fg/[0.1]"}`}
                 data-testid={`step-tab-${i}`}
               >
                 {/* Step number, not a plus: the pills read as 1 · 2 · 3. */}
-                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums ${on ? "bg-site-ground text-coral" : "border border-white/25 text-white/80"}`} aria-hidden>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums ${on ? "bg-[var(--ink-brand)] text-coral" : "border border-fg/25 text-fg/80"}`} aria-hidden>
                   {i + 1}
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[15px] font-semibold leading-tight lg:text-base">{s.title}</span>
-                  <span className={`mt-1 block text-xs leading-snug lg:text-[13px] ${on ? "text-on-coral/80" : "text-white/55"}`}>{s.text}</span>
+                  <span className={`mt-1 block text-xs leading-snug lg:text-[13px] ${on ? "text-on-coral/80" : "text-fg/55"}`}>{s.text}</span>
                 </span>
               </button>
             );

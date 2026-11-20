@@ -17,7 +17,7 @@ export const SCAN_SCENES = [3400, 4400, 4200];
 export const [SCAN, CHECK, WALLET] = SCAN_SCENES.map((_, i) => i);
 
 const DEAL = DEMO_DEALS[0]; // Brunch for two · Café Kater
-const SHOP = DEMO_BRANDS[0]; // sold in Radio Pfote's deal shop
+const SHOP = DEMO_BRANDS[0]; // sold in Lumen Magazin's deal shop
 const CODE = "BRN-4K7Q-92";
 const INK = "var(--ink-brand)";
 const GRAY = "var(--gray)";
@@ -65,7 +65,7 @@ function Camera({ s, title }: { s: Screen; title: string }) {
       <span className="absolute inset-0" style={{ background: "radial-gradient(120% 80% at 50% 40%, #5a4636 0%, #2b2019 55%, #120d0a 100%)" }} />
       <AddressBar light={false} />
       <div className="absolute left-1/2 top-[84px] flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-[15px] font-semibold">
-        <ScanLine className="h-4 w-4 text-coral" aria-hidden />{s.scanTitle}
+        <ScanLine className="h-4 w-4 text-coral-text" aria-hidden />{s.scanTitle}
       </div>
       <span className="absolute right-6 top-[88px] grid h-8 w-8 place-items-center rounded-full bg-black/50"><X className="h-4 w-4" aria-hidden /></span>
       <div className="absolute left-1/2 top-[150px] w-[290px] -translate-x-1/2 rotate-[-3deg] overflow-hidden rounded-2xl bg-white shadow-[0_24px_60px_-10px_rgba(0,0,0,0.7)]" style={{ color: INK }}>

@@ -4,7 +4,8 @@ import { ChevronRight, Globe, LifeBuoy, Menu, Tag, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Logo } from "@/components/brand";
+import Image from "next/image";
+import onLight from "../../../public/brand/sellycat-on-light-1024.png";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n/context";
 import { LOCALE_COOKIE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/locales";
@@ -13,7 +14,7 @@ import { LOCALE_COOKIE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/locales";
 export type SiteHeaderLabels = { brand: string; helpCenter: string; menu: string; closeMenu: string; language: string; login: string; pricing: string; cta: string; ctaHref: string };
 
 const pill = "inline-flex h-8 items-center rounded-full px-3.5 text-[13px] font-medium transition";
-const ghost = `${pill} border border-white/10 bg-white/[0.04] text-white/75 backdrop-blur hover:border-white/20 hover:bg-white/[0.08] hover:text-white`;
+const ghost = `${pill} border border-fg/10 bg-fg/[0.04] text-fg/75 backdrop-blur hover:border-fg/20 hover:bg-fg/[0.08] hover:text-fg`;
 
 /** Smooth jump to an anchor on the landing page (long page: jump close first, then glide; instant with reduced motion). */
 export function scrollToAnchor(id: string, e?: React.MouseEvent) {
@@ -34,7 +35,7 @@ function LanguageSegmented({ onChosen }: { onChosen?: () => void }) {
   const { locale, t } = useI18n();
   const router = useRouter();
   return (
-    <div role="radiogroup" aria-label={t.common.language} className="inline-flex rounded-full border border-white/10 bg-white/[0.04] p-0.5">
+    <div role="radiogroup" aria-label={t.common.language} className="inline-flex rounded-full border border-fg/10 bg-fg/[0.04] p-0.5">
       {LOCALES.map((l) => (
         <button
           key={l}
@@ -46,7 +47,7 @@ function LanguageSegmented({ onChosen }: { onChosen?: () => void }) {
             onChosen?.();
             router.refresh();
           }}
-          className={`h-7 rounded-full px-3 text-[12px] font-semibold uppercase tracking-[0.12em] ${locale === l ? "bg-white text-site-ground" : "text-white/60"}`}
+          className={`h-7 rounded-full px-3 text-[12px] font-semibold uppercase tracking-[0.12em] ${locale === l ? "bg-fg text-site-ground" : "text-fg/60"}`}
         >
           {LOCALE_LABEL[l].slice(0, 2)}
         </button>
@@ -94,10 +95,10 @@ export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
   return (
     <header className="relative z-30 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8" data-testid="site-header">
       <Link href="/" aria-label={l.brand} className="shrink-0">
-        <Logo width={160} priority />
+        <Image src={onLight} alt="Sellycat" width={160} height={Math.round((160 * onLight.height) / onLight.width)} priority />
       </Link>
       <div className="hidden items-center gap-2 sm:flex" data-testid="header-group">
-        <Link href="/login" className={`${pill} border border-coral/80 font-semibold text-coral hover:bg-coral/10`} data-testid="header-login">
+        <Link href="/login" className={`${pill} border border-coral/80 font-semibold text-coral-text hover:bg-coral/10`} data-testid="header-login">
           {l.login}
         </Link>
         <Link href="/#preise" onClick={toPricing} className={ghost} data-testid="header-pricing">
@@ -109,7 +110,7 @@ export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
         <LanguageSwitcher />
       </div>
       <div ref={root} className="flex items-center gap-2 sm:hidden">
-        <Link href="/login" className={`${pill} h-8 border border-coral/80 px-3 font-semibold text-coral active:bg-coral/10`} data-testid="header-login-mobile">
+        <Link href="/login" className={`${pill} h-8 border border-coral/80 px-3 font-semibold text-coral-text active:bg-coral/10`} data-testid="header-login-mobile">
           {l.login}
         </Link>
         <button
@@ -126,35 +127,35 @@ export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
         {open ? (
           <>
             <button type="button" aria-hidden tabIndex={-1} onClick={() => setOpen(false)} className="menu-fade fixed inset-0 z-40 cursor-default bg-site-ground/70 backdrop-blur-md" />
-            <div role="menu" className="menu-sheet fixed inset-x-3 top-3 z-50 overflow-hidden rounded-[1.75rem] border border-white/10 bg-site-sheet/95 shadow-[0_30px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl" data-testid="site-menu">
+            <div role="menu" className="menu-sheet fixed inset-x-3 top-3 z-50 overflow-hidden rounded-[1.75rem] border border-fg/10 bg-site-sheet/95 shadow-[0_30px_80px_rgba(0,0,0,0.6)] backdrop-blur-2xl" data-testid="site-menu">
               <span className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-coral/15 blur-3xl" aria-hidden />
               <div className="relative flex items-center justify-between px-4 pb-2 pt-4">
                 <Link href="/" onClick={() => setOpen(false)} aria-label={l.brand}>
-                  <Logo width={160} />
+                  <Image src={onLight} alt="Sellycat" width={160} height={Math.round((160 * onLight.height) / onLight.width)} />
                 </Link>
-                <button type="button" onClick={() => setOpen(false)} aria-label={l.closeMenu} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/80">
+                <button type="button" onClick={() => setOpen(false)} aria-label={l.closeMenu} className="grid h-9 w-9 place-items-center rounded-full border border-fg/10 bg-fg/[0.05] text-fg/80">
                   <X className="h-4 w-4" aria-hidden />
                 </button>
               </div>
               <div className="relative px-3 pb-3 pt-2">
-                <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-                  <Link href="/#preise" role="menuitem" onClick={toPricing} className="flex h-14 items-center gap-3 border-b border-white/[0.08] px-4 text-[16px] text-white/90 active:bg-white/[0.06]" data-testid="menu-pricing">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.07]">
-                      <Tag className="h-4 w-4 text-coral" aria-hidden />
+                <div className="overflow-hidden rounded-2xl border border-fg/[0.08] bg-fg/[0.03]">
+                  <Link href="/#preise" role="menuitem" onClick={toPricing} className="flex h-14 items-center gap-3 border-b border-fg/[0.08] px-4 text-[16px] text-fg/90 active:bg-fg/[0.06]" data-testid="menu-pricing">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-fg/[0.07]">
+                      <Tag className="h-4 w-4 text-coral-text" aria-hidden />
                     </span>
                     <span className="flex-1">{l.pricing}</span>
-                    <ChevronRight className="h-4 w-4 text-white/35" aria-hidden />
+                    <ChevronRight className="h-4 w-4 text-fg/35" aria-hidden />
                   </Link>
-                  <Link href="/help" role="menuitem" onClick={() => setOpen(false)} className="flex h-14 items-center gap-3 px-4 text-[16px] text-white/90 active:bg-white/[0.06]">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.07]">
-                      <LifeBuoy className="h-4 w-4 text-coral" aria-hidden />
+                  <Link href="/help" role="menuitem" onClick={() => setOpen(false)} className="flex h-14 items-center gap-3 px-4 text-[16px] text-fg/90 active:bg-fg/[0.06]">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-fg/[0.07]">
+                      <LifeBuoy className="h-4 w-4 text-coral-text" aria-hidden />
                     </span>
                     <span className="flex-1">{l.helpCenter}</span>
-                    <ChevronRight className="h-4 w-4 text-white/35" aria-hidden />
+                    <ChevronRight className="h-4 w-4 text-fg/35" aria-hidden />
                   </Link>
-                  <div className="flex h-14 items-center gap-3 border-t border-white/[0.08] px-4 text-[16px] text-white/90">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.07]">
-                      <Globe className="h-4 w-4 text-coral" aria-hidden />
+                  <div className="flex h-14 items-center gap-3 border-t border-fg/[0.08] px-4 text-[16px] text-fg/90">
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-fg/[0.07]">
+                      <Globe className="h-4 w-4 text-coral-text" aria-hidden />
                     </span>
                     <span className="flex-1">{l.language}</span>
                     <LanguageSegmented onChosen={() => setOpen(false)} />
@@ -164,7 +165,7 @@ export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
                   <Link href={l.ctaHref} role="menuitem" onClick={toCta} className="flex h-12 items-center justify-center gap-1.5 rounded-full bg-coral px-3 text-[15px] font-semibold text-on-coral shadow-[0_8px_24px_-8px_rgb(var(--coral-rgb)/0.55)] active:brightness-95" data-testid="menu-start">
                     <span className="truncate">{l.cta}</span>
                   </Link>
-                  <Link href="/login" role="menuitem" onClick={() => setOpen(false)} className="flex h-12 items-center justify-center gap-1.5 rounded-full border border-coral/80 px-3 text-[15px] font-semibold text-coral active:bg-coral/10">
+                  <Link href="/login" role="menuitem" onClick={() => setOpen(false)} className="flex h-12 items-center justify-center gap-1.5 rounded-full border border-coral/80 px-3 text-[15px] font-semibold text-coral-text active:bg-coral/10">
                     <span className="truncate">{l.login}</span>
                   </Link>
                 </div>

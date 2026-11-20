@@ -18,7 +18,7 @@ const POINT_ICONS = [MonitorSmartphone, ChartPie, ShieldCheck, ListChecks];
 export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de" | "en" }) {
   const root = useDarkening();
   return (
-    <section ref={root} id="einloesen" className="site-section relative scroll-mt-20" data-testid="scan-section">
+    <section ref={root} id="einloesen" className="site-dark site-section relative scroll-mt-20 text-white" data-testid="scan-section">
       {/*
         Fade to black: while this section travels to the middle of the screen, a black veil over the whole
         viewport rises (--dark 0 → 0.92) and everything else on the page sinks into it, only this section stays
@@ -26,6 +26,8 @@ export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de
         stacking context), this section's own layers sit above it. Only opacity changes.
       */}
       <div className="pointer-events-none fixed inset-0 z-20 bg-black" style={VEIL} aria-hidden />
+      {/* On the light page the section is its own Ink band (soft top and bottom edges), so the text reads before the veil rises. */}
+      <div className="pointer-events-none absolute inset-x-0 -inset-y-24 z-20 bg-site-ground [mask-image:linear-gradient(to_bottom,transparent,#000_18%,#000_82%,transparent)]" aria-hidden />
       {/* In the dark, a faint coral grid comes up behind the content, fading out to the edges. */}
       <div className="pointer-events-none absolute inset-x-0 -inset-y-24 z-[21]" style={GRID} aria-hidden />
       {/* One grid, four parts: on phones intro, phone, points, note one after another; from lg the phone stands on the right across all rows. */}
@@ -45,7 +47,7 @@ export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de
             const Icon = POINT_ICONS[i] ?? ShieldCheck;
             return (
               <li key={i} className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3.5 ring-1 ring-white/10">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-coral/10 text-coral ring-1 ring-coral/30"><Icon className="h-4 w-4" aria-hidden /></span>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-coral/10 text-coral-text ring-1 ring-coral/30"><Icon className="h-4 w-4" aria-hidden /></span>
                 <span className="min-w-0 text-[15px] font-semibold text-white">{p.title}</span>
               </li>
             );

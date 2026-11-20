@@ -10,7 +10,7 @@ type Labels = Dictionary["site"]["bands"];
 type Locale = "de" | "en";
 
 /**
- * The big phone of the bands block: «purchase → voucher» in a loop. A fictional shop (Radio Pfote) shows a
+ * The big phone of the bands block: «purchase → voucher» in a loop. A fictional shop (Lumen Magazin) shows a
  * deal with «only 7 left» and a running countdown; a finger taps «Buy», a checkout sheet slides up with a
  * generic wallet pay button, the payment spins, «Paid» confirms, then the PDF voucher (by mail) and the
  * wallet pass with its QR code fly in; back in the shop the counter shows 6. Drawn at 390 px design width
@@ -21,7 +21,6 @@ const [SHOP, SHEET, PROCESS, PAID, VOUCHER, BACK] = SCENES.map((_, i) => i);
 
 const BRAND = DEMO_BRANDS[0];
 const DEAL = DEMO_DEALS[0];
-const MORE = [DEMO_DEALS[2], DEMO_DEALS[3]];
 /** Stock bar: the deal's original quantity (fictional), so «7 left» fills a small part of the bar. */
 const STOCK = 40;
 const CODE = "PFOTE-7K2M-Q9XA";
@@ -43,7 +42,7 @@ export function PhoneBuyDemo({ labels, locale, className = "h-[520px] w-[240px] 
       </PhoneFrame>
       {caption ? (
         <div className="absolute left-1/2 top-full mt-5 flex -translate-x-1/2 justify-center whitespace-nowrap">
-          <span key={scene} className="demo-in inline-flex items-center gap-2 rounded-full border border-white/10 bg-site-surface/80 px-3.5 py-1.5 text-[13px] font-medium text-white/85 backdrop-blur" data-testid="phone-buy-demo-caption">
+          <span key={scene} className="demo-in inline-flex items-center gap-2 rounded-full border border-fg/10 bg-site-surface/80 px-3.5 py-1.5 text-[13px] font-medium text-fg/85 backdrop-blur" data-testid="phone-buy-demo-caption">
             <span className="h-1.5 w-1.5 rounded-full bg-coral" />
             {labels.captions[scene]}
           </span>
@@ -132,17 +131,6 @@ function Shop({ l, locale, seconds, left, sold, tap, cycle }: { l: Labels; local
             {tap ? <Finger key={`buy${cycle}`} x={163} y={25} at={2400} /> : null}
           </div>
         </div>
-      </div>
-
-      <p className="mt-5 px-5 text-[15px] font-bold">{u.more}</p>
-      <div className="mt-2.5 grid grid-cols-2 gap-3 px-4">
-        {MORE.map((d) => (
-          <div key={d.id} className="overflow-hidden bg-white" style={{ borderRadius: BRAND.radius - 4 }}>
-            <div className="h-[92px]"><DealArt deal={{ ...d, id: `buy-demo-${d.id}` }} /></div>
-            <p className="truncate px-3 pt-2 text-[13px] font-semibold">{d.title[locale]}</p>
-            <p className="px-3 pb-3 text-[12px] opacity-55">{chf(d.priceCents)}</p>
-          </div>
-        ))}
       </div>
 
       {sold ? (

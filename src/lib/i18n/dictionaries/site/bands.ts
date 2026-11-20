@@ -45,7 +45,6 @@ export const en = {
     addToWallet: "Add to Wallet",
     added: "Added",
     sold: "Sold: 1 more",
-    more: "More deals",
   },
 };
 
@@ -92,6 +91,5 @@ export const de: Widen<typeof en> = {
     addToWallet: "Zu Wallet hinzufügen",
     added: "Hinzugefügt",
     sold: "Wieder einer verkauft",
-    more: "Weitere Deals",
   },
 };

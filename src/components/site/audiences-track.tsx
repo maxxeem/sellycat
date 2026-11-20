@@ -61,7 +61,7 @@ export function AudiencesTrack({ labels, locale }: { labels: Labels; locale: Loc
     const w = tile ? tile.getBoundingClientRect().width + 16 : el.clientWidth * 0.6;
     el.scrollBy({ left: dir * w * 2, behavior: "smooth" });
   };
-  const arrow = "flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-site-surface/90 text-white/80 transition duration-300 hover:border-coral hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
+  const arrow = "flex h-11 w-11 items-center justify-center rounded-full border border-fg/15 bg-site-surface/90 text-fg/80 transition duration-300 hover:border-coral hover:text-coral-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
   return (
     <>
       <div className="site-head flex items-end justify-between gap-6">
@@ -112,7 +112,7 @@ function AudienceTile({ name, text, look, labels, locale }: { name: string; text
 
   return (
     <div className="aud-tile group block" data-preview={previewing ? "1" : "0"} onMouseEnter={start} onMouseLeave={stop} data-testid={`audience-${look.brand.id}`}>
-      <span className="relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-white/10 transition duration-300 group-hover:ring-white/25">
+      <span className="relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10 transition duration-300 group-hover:ring-fg/25">
         <span className="absolute inset-0 block transition duration-500 group-hover:scale-[1.03]">
           <Fill width={300}><MiniShop look={look} labels={labels} locale={locale} /></Fill>
         </span>

@@ -28,7 +28,7 @@ export function Hero({ t, cta }: { t: Dictionary; cta: SignupCta }) {
       </div>
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-5 text-center sm:px-8">
         <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{h.claim}</h1>
-        <p className="max-w-xl text-pretty text-lg leading-relaxed text-white/70 sm:text-xl">{h.subtitle}</p>
+        <p className="max-w-xl text-pretty text-lg leading-relaxed text-fg/70 sm:text-xl">{h.subtitle}</p>
         <CtaLink href={cta.href} className={`${primaryBtn} mt-2`} testId="hero-cta">
           {ctaLabel(t, cta)}
         </CtaLink>
@@ -48,15 +48,15 @@ export function FinalCta({ t, cta, turnstileKey }: { t: Dictionary; cta: SignupC
       <section className="site-section mx-auto max-w-6xl scroll-mt-6 px-5 sm:px-8" id="warteliste" data-testid="final-cta">
         <div className={`${box} sm:px-10`}>
           <h2 className="max-w-xl text-2xl font-semibold sm:text-3xl">{t.site.finalCta.textWaitlist}</h2>
-          <p className="max-w-xl text-white/65">{t.site.waitlist.intro}</p>
+          <p className="max-w-xl text-fg/65">{t.site.waitlist.intro}</p>
           <div className="w-full max-w-2xl">
             <Suspense fallback={<div className="h-[34rem]" />}>
               <WaitlistForm turnstileKey={turnstileKey} />
             </Suspense>
           </div>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-fg/60">
             {t.site.waitlist.haveCode}{" "}
-            <Link href="/signup" className="font-semibold text-coral underline underline-offset-4">
+            <Link href="/signup" className="font-semibold text-coral-text underline underline-offset-4">
               {t.site.waitlist.redeem}
             </Link>
           </p>

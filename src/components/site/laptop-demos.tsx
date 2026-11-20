@@ -53,7 +53,7 @@ function Shell({ l, nav, title, action, running, cursor, children }: { l: Labels
           const on = i === nav;
           return (
             <span key={name} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] ${on ? "bg-coral/10 font-medium" : ""}`} style={on ? undefined : { color: GRAY }}>
-              <Icon className={`h-4 w-4 ${on ? "text-coral" : ""}`} />{name}
+              <Icon className={`h-4 w-4 ${on ? "text-coral-text" : ""}`} />{name}
             </span>
           );
         })}
@@ -332,7 +332,7 @@ function SellDemo({ l, running, reduced }: SceneProps) {
             <Swap p={p} when={1} at={2100} from={counter(5)} to={counter(6)} />
           </Card>
           <Card className="flex items-center gap-3 p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-coral/10 text-coral"><Landmark className="h-5 w-5" /></span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-coral/10 text-coral-text"><Landmark className="h-5 w-5" /></span>
             <span className="min-w-0">
               <span className="block text-[14px] font-semibold leading-snug">{l.payout}</span>
               <span className="mt-0.5 block text-[12px]" style={{ color: GRAY }}>{l.payoutHint}</span>

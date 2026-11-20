@@ -88,7 +88,7 @@ export default async function HomePage({ params }: PageProps<"/p/[locale]">) {
   const t = getDictionary(locale);
   const cta = signupCta(await getSignupMode());
   return (
-    <main className="site dark relative min-h-dvh overflow-x-clip" data-testid="landing">
+    <main className="site relative min-h-dvh overflow-x-clip" data-testid="landing">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[900px]" aria-hidden>
         <span className="drift-a absolute -left-[20%] top-[10%] h-[55vmax] w-[55vmax] rounded-full bg-[rgb(var(--glow-rgb))] opacity-[0.45] blur-[120px]" />
         <span className="drift-b absolute -right-[15%] -top-[20%] h-[45vmax] w-[45vmax] rounded-full bg-coral opacity-[0.08] blur-[120px]" />

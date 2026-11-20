@@ -118,7 +118,7 @@ export function StatementBand({ before, brand, after, locale }: { before: string
     };
   }, []);
   return (
-    <section ref={root} className="statement-band relative isolate overflow-hidden" data-testid="statement" data-running={inView ? "1" : "0"}>
+    <section ref={root} className="site-dark statement-band relative isolate overflow-hidden" data-testid="statement" data-running={inView ? "1" : "0"}>
       <div className="statement-glow pointer-events-none absolute inset-0 -z-20" aria-hidden />
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
         {SLOTS.map((s, i) => (
@@ -156,7 +156,7 @@ export function StatementBand({ before, brand, after, locale }: { before: string
       <div className="statement-inner mx-auto flex min-h-[min(72vh,640px)] max-w-4xl items-center px-5 py-[calc(var(--site-gap)*1.6)] text-center sm:px-8 lg:min-h-[min(82vh,780px)]">
         <p className="text-[1.75rem] font-semibold leading-[1.25] tracking-[-0.02em] text-white sm:text-4xl lg:text-[3rem] lg:leading-[1.2]">
           {before}
-          <span className="text-coral">{brand}</span>
+          <span className="text-coral-text">{brand}</span>
           {after}
         </p>
       </div>

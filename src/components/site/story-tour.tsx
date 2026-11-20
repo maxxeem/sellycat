@@ -62,7 +62,7 @@ export function StoryTour({ labels, locale }: { labels: Labels; locale: Locale }
         <ol ref={pills} className="tour-pills flex gap-2 overflow-x-auto px-5 sm:px-8">
           {labels.chapters.map((c, i) => (
             <li key={i} className="shrink-0">
-              <button type="button" onClick={() => go(i)} aria-current={active === i ? "step" : undefined} className={`h-9 rounded-full px-4 text-sm font-medium transition ${active === i ? "bg-white text-site-ground" : "bg-white/[0.06] text-white/60 hover:text-white"}`} data-testid="tour-pill">{c.label}</button>
+              <button type="button" onClick={() => go(i)} aria-current={active === i ? "step" : undefined} className={`h-9 rounded-full px-4 text-sm font-medium transition ${active === i ? "bg-fg text-site-ground" : "bg-fg/[0.06] text-fg/60 hover:text-fg"}`} data-testid="tour-pill">{c.label}</button>
             </li>
           ))}
         </ol>
@@ -70,10 +70,10 @@ export function StoryTour({ labels, locale }: { labels: Labels; locale: Locale }
       <div className="lg:grid lg:grid-cols-[12rem_1fr] lg:gap-14">
         {/* Desktop: the rail on the left, the active chapter in white with a coral marker. */}
         <nav className="hidden lg:block" aria-label={labels.nav}>
-          <ol className="sticky top-28 flex flex-col gap-1 border-l border-white/10">
+          <ol className="sticky top-28 flex flex-col gap-1 border-l border-fg/10">
             {labels.chapters.map((c, i) => (
               <li key={i}>
-                <button type="button" onClick={() => go(i)} aria-current={active === i ? "step" : undefined} className={`relative -ml-px block w-full border-l-2 py-2 pl-5 text-left text-[17px] font-medium tracking-tight transition-colors ${active === i ? "border-coral text-white" : "border-transparent text-white/40 hover:text-white/70"}`} data-testid="tour-nav">{c.label}</button>
+                <button type="button" onClick={() => go(i)} aria-current={active === i ? "step" : undefined} className={`relative -ml-px block w-full border-l-2 py-2 pl-5 text-left text-[17px] font-medium tracking-tight transition-colors ${active === i ? "border-coral text-fg" : "border-transparent text-fg/40 hover:text-fg/70"}`} data-testid="tour-nav">{c.label}</button>
               </li>
             ))}
           </ol>
@@ -100,22 +100,22 @@ function ChapterBlock({ index, chapter, labels, locale, reduced, refFn }: { inde
   const Mock = MOCKS[index];
   return (
     <article ref={(el) => { refFn(el); setRef(el); }} data-index={index} className="demo-root scroll-mt-20 lg:scroll-mt-28" data-testid="tour-chapter" data-running={running ? "1" : "0"}>
-      <div className="tour-box overflow-hidden rounded-[2rem] border border-white/[0.08]">
+      <div className="tour-box overflow-hidden rounded-[2rem] border border-fg/[0.08]">
         <div className="tour-stage relative px-5 pb-8 pt-7 sm:px-10 sm:pb-12 sm:pt-10">
           <h3 className="max-w-2xl text-xl font-semibold leading-snug tracking-tight sm:text-2xl">
-            {chapter.title} <span className="text-white/55">{chapter.text}</span>
+            {chapter.title} <span className="text-fg/55">{chapter.text}</span>
           </h3>
           <div className="mt-8 sm:mt-10">
             <Scaled wide={[780, 460]} narrow={[360, 740]}>{(narrow) => <Mock narrow={narrow} running={running} still={reduced} l={labels} locale={locale} />}</Scaled>
           </div>
         </div>
-        <div className="grid border-t border-white/[0.08] sm:grid-cols-2">
+        <div className="grid border-t border-fg/[0.08] sm:grid-cols-2">
           {chapter.cards.slice(0, 2).map((c, i) => {
             const Card = CARDS[index][i];
             return (
-              <div key={i} className={`flex flex-col px-6 py-7 sm:px-8 sm:py-9 ${i ? "border-t border-white/[0.08] sm:border-l sm:border-t-0" : ""}`} data-testid="tour-card">
+              <div key={i} className={`flex flex-col px-6 py-7 sm:px-8 sm:py-9 ${i ? "border-t border-fg/[0.08] sm:border-l sm:border-t-0" : ""}`} data-testid="tour-card">
                 <h4 className="text-lg font-semibold tracking-tight">{c.title}</h4>
-                <p className="mt-1 text-[15px] leading-relaxed text-white/60">{c.text}</p>
+                <p className="mt-1 text-[15px] leading-relaxed text-fg/60">{c.text}</p>
                 <div className="mt-8 flex flex-1 items-end">
                   <Scaled wide={[340, 210]}>{() => <Card running={running} still={reduced} l={labels} locale={locale} />}</Scaled>
                 </div>
@@ -569,8 +569,8 @@ function FormatsMock({ narrow, running, still, l, locale }: MockProps) {
         </div>
       </div>
       <div className="mt-auto flex gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-medium ring-1 ring-black/[0.08]"><FileText className="h-3.5 w-3.5 text-coral" />{t.pdf}</span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-medium ring-1 ring-black/[0.08]"><Wallet className="h-3.5 w-3.5 text-coral" />{t.wallet}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-medium ring-1 ring-black/[0.08]"><FileText className="h-3.5 w-3.5 text-coral-text" />{t.pdf}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11px] font-medium ring-1 ring-black/[0.08]"><Wallet className="h-3.5 w-3.5 text-coral-text" />{t.wallet}</span>
       </div>
     </div>
   );
@@ -605,7 +605,7 @@ function FormatsMock({ narrow, running, still, l, locale }: MockProps) {
 
 /* ---------- Cards (small loops, 340 × 210) ---------- */
 
-const CARD = "h-full overflow-hidden rounded-2xl border border-white/10 bg-site-surface p-4 text-white";
+const CARD = "site-dark h-full overflow-hidden rounded-2xl border border-white/10 bg-site-surface p-4 text-white";
 
 /** Three brand kits (logo, colours, font sample); the active one is highlighted in turn. */
 function BrandKitCard({ running }: CardProps) {
@@ -674,7 +674,7 @@ function CertCard({ running, still, l }: CardProps) {
       <div className="flex items-center gap-3">
         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors duration-500 ${step >= 1 ? "bg-coral text-on-coral" : "bg-white/10 text-white/50"}`}><ShieldCheck className="h-5 w-5" /></span>
         <span className="min-w-0">
-          <span className="flex items-center gap-1.5 font-mono text-[13px]"><Lock className="h-3.5 w-3.5 text-coral" />{t.host}</span>
+          <span className="flex items-center gap-1.5 font-mono text-[13px]"><Lock className="h-3.5 w-3.5 text-coral-text" />{t.host}</span>
           <span className="text-[11px] text-white/50">HTTPS · TLS</span>
         </span>
       </div>
@@ -682,7 +682,7 @@ function CertCard({ running, still, l }: CardProps) {
         {rows.map((r, i) => (
           <span key={r.k} className={`flex items-center justify-between rounded-xl bg-white/[0.05] px-3 py-2.5 text-[12px] transition-opacity duration-500 ${step >= i + 2 ? "opacity-100" : "opacity-30"}`}>
             <span className="text-white/60">{r.k}</span>
-            <span className="flex items-center gap-1.5 font-medium"><Check className="h-3.5 w-3.5 text-coral" />{r.v}</span>
+            <span className="flex items-center gap-1.5 font-medium"><Check className="h-3.5 w-3.5 text-coral-text" />{r.v}</span>
           </span>
         ))}
       </div>
@@ -704,7 +704,7 @@ function SenderCard({ running, still, l }: CardProps) {
       </div>
       <div className="mt-3 flex items-center gap-2 text-[11px]">
         {["SPF", "DKIM"].map((k, i) => (
-          <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium transition-colors duration-500 ${step >= i + 1 ? "bg-coral/15 text-coral" : "bg-white/[0.06] text-white/40"}`}>
+          <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium transition-colors duration-500 ${step >= i + 1 ? "bg-coral/15 text-coral-text" : "bg-white/[0.06] text-white/40"}`}>
             {step >= i + 1 ? <Check className="h-3 w-3" /> : null}{k}
           </span>
         ))}
@@ -728,7 +728,7 @@ function WindowCard({ running, still, l }: CardProps) {
         <span className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-coral/40 transition-transform duration-700" style={{ transform: `scaleX(${step / 14})` }} />
         <span className="absolute -top-1.5 left-0 transition-transform duration-700" style={{ transform: `translateX(${(step / 14) * track}px)` }}>
           <span className="block h-5 w-1 -translate-x-1/2 rounded-full bg-coral" />
-          <span className="absolute left-0 top-6 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-coral">{t.now}</span>
+          <span className="absolute left-0 top-6 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-coral-text">{t.now}</span>
         </span>
       </div>
       <div className="mt-9 grid grid-cols-12 gap-1.5">
