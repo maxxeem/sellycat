@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   images: {
     remotePatterns: [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }],
+    // Uploads get a fresh file name on every change, so optimized copies can be kept for long.
+    minimumCacheTTL: 2_678_400,
   },
 };
 

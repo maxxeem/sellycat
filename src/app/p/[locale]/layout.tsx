@@ -14,7 +14,8 @@ export function generateStaticParams() {
 export const metadata: Metadata = {
   title: { default: "Sellycat", template: "%s · Sellycat" },
   description: "Sellycat – der eigene Deal-Shop mit Gutscheinen im Wallet.",
-  robots: { index: false },
+  // Public pages (start, pricing, help) are indexed in production only; staging and previews never.
+  robots: process.env.VERCEL_ENV === "production" ? undefined : { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

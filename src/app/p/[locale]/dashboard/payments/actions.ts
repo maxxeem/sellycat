@@ -4,13 +4,13 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { requestOrigin } from "@/lib/auth/session";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { audit } from "@/lib/platform/staff";
 import { CONNECT_COOKIE, authorizeUrl, signState } from "@/lib/payments/map";
 import { syncAccount } from "@/lib/payments/orders";
 import { connectClientId, getStripe, stateSecret, stripeConfigured } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { apexUrl } from "@/lib/site/hosts";
 
 const PAGE = "/p/[locale]/dashboard/payments";
 
@@ -27,7 +27,7 @@ export async function connectStripe(): Promise<void> {
     authorizeUrl({
       clientId: connectClientId()!,
       state,
-      redirectUri: `${await requestOrigin()}/api/stripe/connect/callback`,
+      redirectUri: `${apexUrl()}/api/stripe/connect/callback`,
       email: user.email,
       businessName: t?.name,
       country: billing.country && /^[A-Z]{2}$/.test(billing.country) ? billing.country : "CH",

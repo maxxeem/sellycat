@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { shopImage } from "@/lib/shop/image";
 import { headerLook, type ShopTheme } from "@/lib/shop/theme";
 import type { ShopTexts } from "./shop-texts";
 
@@ -38,9 +39,9 @@ export function ShopFrame({
             {forLight ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={forLight} alt={name} className="shop-logo-for-light h-9 w-auto max-w-[200px] object-contain sm:h-11" />
+                <img {...shopImage(forLight, "200px")} alt={name} className="shop-logo-for-light h-9 w-auto max-w-[200px] object-contain sm:h-11" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={forDark} alt="" aria-hidden className="shop-logo-for-dark h-9 w-auto max-w-[200px] object-contain sm:h-11" />
+                <img {...shopImage(forDark, "200px")} alt="" aria-hidden className="shop-logo-for-dark h-9 w-auto max-w-[200px] object-contain sm:h-11" />
               </>
             ) : (
               <span className="shop-heading truncate text-xl font-bold">{name}</span>

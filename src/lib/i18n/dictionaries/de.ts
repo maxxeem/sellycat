@@ -135,6 +135,7 @@ export const de: Dictionary = {
   shop: {
     allDeals: "Alle Deals",
     all: "Alle",
+    dealsHeading: "Angebote",
     featured: "Top-Deal",
     teaserLabel: "Bald da",
     teaserPrice: "Preis wird zum Start enthüllt",
@@ -736,6 +737,7 @@ export const de: Dictionary = {
       refunded: "Diese Bestellung wurde erstattet, der Gutschein gilt nicht mehr.",
       void: "Dieser Gutschein ist ungültig.",
       outside_window: "Jetzt ist keine Einlösezeit für diesen Deal.",
+      location: "Dieser Standort gehört nicht zum Partner des Gutscheins.",
       amount: "Ungültiger Betrag.",
       already_undone: "Schon rückgängig gemacht.",
       too_late: "Nur innerhalb von 7 Tagen möglich.",

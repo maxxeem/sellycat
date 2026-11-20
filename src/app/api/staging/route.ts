@@ -1,6 +1,12 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { createRateLimiter } from "@/lib/rate-limit";
 import { STAGING_COOKIE, stagingToken } from "@/lib/site/staging-gate";
 import { siteHost } from "@/lib/site/hosts";
+
+const limiter = createRateLimiter({ limit: 10, windowMs: 10 * 60_000 });
+const digest = (v: string) => createHash("sha256").update(v).digest();
+const samePassword = (given: unknown, expected: string) => typeof given === "string" && timingSafeEqual(digest(given), digest(expected));
 
 /** Checks the staging password and sets the gate cookie for the whole staging domain (30 days). */
 export async function POST(request: NextRequest) {
@@ -10,7 +16,8 @@ export async function POST(request: NextRequest) {
   const root = siteHost().split(":")[0];
   const requestHost = (request.headers.get("x-forwarded-host") ?? new URL(request.url).hostname).split(":")[0].toLowerCase();
   const back = new URL("/staging", request.url);
-  if (!password || form.get("password") !== password) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!password || !limiter.check(ip).ok || !samePassword(form.get("password"), password)) {
     back.searchParams.set("error", "1");
     back.searchParams.set("next", next);
     return NextResponse.redirect(back, 303);

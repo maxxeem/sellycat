@@ -7,6 +7,7 @@ import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles"
 import { shopTexts } from "@/components/shop/shop-texts";
 import { getShopProfile } from "@/lib/shop/queries";
 import { themeFontCss } from "@/lib/shop/theme";
+import { inlineFontCss } from "@/lib/design/font-css";
 
 // Cache Components needs one param to validate the route; real shops render on demand and are
 // then cached per tenant (tag `shop:<id>`).
@@ -18,14 +19,11 @@ export async function generateMetadata({ params }: LayoutProps<"/shop/[locale]/[
   "use cache";
   const shop = await getShopProfile((await params).tenant);
   if (!shop) return { title: "Shop" };
-  // Plain strings only: a cached function cannot return URL objects.
-  const base = shop.primaryHost ? `https://${shop.primaryHost}` : "";
   return {
     title: { default: shop.name, template: `%s · ${shop.name}` },
     description: shop.settings.seo_description ?? undefined,
     icons: shop.theme.favicon ? [{ url: shop.theme.favicon }] : undefined,
     openGraph: { siteName: shop.name, type: "website", images: shop.theme.socialImage ? [shop.theme.socialImage] : undefined, locale: shop.locale === "de" ? "de_CH" : "en_GB" },
-    alternates: base ? { canonical: `${base}/` } : undefined,
   };
 }
 
@@ -42,12 +40,15 @@ async function Shell({ tenant, children }: { tenant: Promise<string>; children: 
   if (!shop) notFound();
   const t = shopTexts(shop.locale);
   const fonts = themeFontCss(shop.theme);
+  // Font CSS inline instead of a stylesheet request each (render-blocking on slow networks).
+  const inlined = await Promise.all(fonts.links.map(inlineFontCss));
+  const links = fonts.links.filter((_, i) => !inlined[i]);
   return (
     <div className="shop-root min-h-dvh" style={themeStyle(shop.theme)} {...themeAttrs(shop.theme)}>
-      {fonts.links.map((href) => (
+      {links.map((href) => (
         <link key={href} rel="stylesheet" href={href} precedence="default" />
       ))}
-      <style>{SHOP_CSS + fonts.faces}</style>
+      <style>{SHOP_CSS + inlined.join("") + fonts.faces}</style>
       <ShopFrame name={shop.name} theme={shop.theme} t={t} contact={{ email: shop.settings.contact_email, phone: shop.settings.contact_phone }} branding={shop.settings.branding === true}>
         {children}
       </ShopFrame>

@@ -53,6 +53,8 @@
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --color-coral: var(--coral);
+  /* Text on coral is always the dark brand ink, also in dark mode. */
+  --color-on-coral: var(--ink-brand);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-ink: var(--ink);

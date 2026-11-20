@@ -72,7 +72,7 @@ export function BillingPanel(props: { plans: PanelPlan[]; currentPlanId: string;
             <div key={p.id} className={`flex flex-col gap-3 rounded-card border p-5 ${current ? "border-ink ring-2 ring-ink" : "border-line"}`} data-testid={`billing-plan-${p.id}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-lg font-bold">{p.name}</span>
-                {current ? <span className="rounded-full bg-coral px-2 py-0.5 text-xs font-bold text-ink">{s.yourPlan}</span> : null}
+                {current ? <span className="rounded-full bg-coral px-2 py-0.5 text-xs font-bold text-on-coral">{s.yourPlan}</span> : null}
               </div>
               <div>
                 <p className="text-xl font-bold tabular-nums">

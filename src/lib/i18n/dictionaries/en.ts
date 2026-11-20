@@ -133,6 +133,7 @@ export const en = {
   shop: {
     allDeals: "All deals",
     all: "All",
+    dealsHeading: "Deals",
     featured: "Featured",
     teaserLabel: "Coming soon",
     teaserPrice: "Price revealed at the start",
@@ -734,6 +735,7 @@ export const en = {
       refunded: "This order was refunded; the voucher is no longer valid.",
       void: "This voucher is void.",
       outside_window: "This deal cannot be redeemed at this time.",
+      location: "This location does not belong to the voucher's partner.",
       amount: "Invalid amount.",
       already_undone: "Already undone.",
       too_late: "Only possible within 7 days.",

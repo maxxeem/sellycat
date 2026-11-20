@@ -15,8 +15,11 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
   const t = shopTexts(shop.locale);
   if (!shop.legalComplete) return <p className="mx-auto max-w-xl px-4 py-24 text-center text-[var(--shop-muted)]">{t.notReady}</p>;
   if (category && !categories.some((c) => c.slug === category)) notFound();
+  const base = shop.primaryHost ? `https://${shop.primaryHost}` : "";
   return (
-    <ShopHome
+    <>
+      {base ? <link rel="canonical" href={category ? `${base}/k/${category}` : `${base}/`} /> : null}
+      <ShopHome
       shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }}
       theme={shop.theme}
       t={t}
@@ -24,6 +27,7 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
       categories={categories}
       activeCategory={category}
       now={new Date()}
-    />
+      />
+    </>
   );
 }

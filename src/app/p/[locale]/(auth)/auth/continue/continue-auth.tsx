@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { provisionFromSignup } from "../../actions";
+import { safeNext } from "@/lib/site/routing";
 
 /**
  * Turns whatever the auth mail carried into a session: a PKCE `code`, a `token_hash` (custom
@@ -22,7 +23,7 @@ export function ContinueAuth() {
   useEffect(() => {
     const supabase = createClient();
     const next = search.get("next");
-    const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    const target = safeNext(next);
     (async () => {
       const code = search.get("code");
       const tokenHash = search.get("token_hash");

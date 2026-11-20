@@ -42,7 +42,7 @@ export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]
           {(["monthly", "yearly"] as const).map((i) => (
             <button key={i} type="button" role="radio" aria-checked={interval === i} onClick={() => setInterval(i)} className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${interval === i ? "bg-ink text-surface-2" : "text-muted hover:text-ink"}`} data-testid={`pricing-${i}`}>
               {t.intervals[i]}
-              {i === "yearly" && saving > 0 ? <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[10px] text-ink">{fmt(t.yearlySave, { percent: saving })}</span> : null}
+              {i === "yearly" && saving > 0 ? <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[10px] text-on-coral">{fmt(t.yearlySave, { percent: saving })}</span> : null}
             </button>
           ))}
         </div>
@@ -62,7 +62,7 @@ export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]
           const monthly = interval === "yearly" ? yearlyPerMonth(p.prices, currency) : (p.prices.monthly[currency] ?? null);
           return (
             <div key={p.id} className={`relative flex flex-col gap-4 rounded-card border bg-surface p-6 shadow-card ${copy.badge ? "border-ink" : "border-line"}`} data-testid={`pricing-${p.id}`}>
-              {copy.badge ? <span className="absolute -top-3 left-6 rounded-full bg-coral px-3 py-1 text-xs font-bold text-ink">{copy.badge}</span> : null}
+              {copy.badge ? <span className="absolute -top-3 left-6 rounded-full bg-coral px-3 py-1 text-xs font-bold text-on-coral">{copy.badge}</span> : null}
               <div>
                 <h2 className="text-xl font-bold">{p.name}</h2>
                 {copy.tagline ? <p className="mt-1 min-h-[2.5rem] text-sm text-muted">{copy.tagline}</p> : null}

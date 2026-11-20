@@ -69,6 +69,7 @@ export function ShopDealList({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+      <h2 className="sr-only">{t.dealsHeading}</h2>
       {usedCategories.length > 1 ? (
         <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 py-6 [scrollbar-width:none] sm:mx-0 sm:px-0" aria-label="Categories">
           <Chip href={inert ? undefined : "/"} active={!active} onClick={select(null)}>

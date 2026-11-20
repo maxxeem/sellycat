@@ -55,21 +55,19 @@ export async function verifyRedeemCode(shopId: string, rawEmail: string, rawCode
   const code = rawCode.replace(/\D/g, "");
   if (!validEmail(email) || code.length !== 6) return { ok: false, error: "code" };
   const admin = createAdminClient();
-  const { data: row } = await admin
-    .from("redeem_logins")
-    .select("id, code_hash, attempts, expires_at, used_at")
-    .eq("tenant_id", shopId)
-    .eq("email", email)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!row || row.used_at || new Date(row.expires_at).getTime() <= Date.now()) return { ok: false, error: "code" };
-  if (row.attempts >= MAX_ATTEMPTS) return { ok: false, error: "tooMany" };
+  // Counts this guess before comparing (atomic in SQL, so parallel guesses cannot exceed the limit).
+  const { data: rows } = await admin.rpc("redeem_login_try", { p_tenant: shopId, p_email: email, p_max: MAX_ATTEMPTS });
+  const row = rows?.[0];
+  if (!row) {
+    // No open code, or the limit is used up: tell which, without revealing more.
+    const { data: last } = await admin.from("redeem_logins").select("attempts, used_at, expires_at").eq("tenant_id", shopId).eq("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const open = last && !last.used_at && new Date(last.expires_at).getTime() > Date.now();
+    return { ok: false, error: open && last.attempts >= MAX_ATTEMPTS ? "tooMany" : "code" };
+  }
   const expected = Buffer.from(row.code_hash, "hex");
   const given = Buffer.from(hash(shopId, email, code), "hex");
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) {
-    await admin.from("redeem_logins").update({ attempts: row.attempts + 1 }).eq("id", row.id);
-    return { ok: false, error: row.attempts + 1 >= MAX_ATTEMPTS ? "tooMany" : "code" };
+    return { ok: false, error: row.attempts >= MAX_ATTEMPTS ? "tooMany" : "code" };
   }
   // Claim the code once (a second request with the same code finds it used).
   const { data: claimed } = await admin.from("redeem_logins").update({ used_at: new Date().toISOString() }).eq("id", row.id).is("used_at", null).select("id");

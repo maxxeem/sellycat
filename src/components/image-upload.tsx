@@ -12,7 +12,7 @@ export async function uploadMedia(tenantId: string, folder: string, file: File):
   const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${tenantId}/${folder}/${crypto.randomUUID()}.${ext}`;
   const supabase = createClient();
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: "31536000", upsert: false, contentType: file.type || undefined });
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: "31536000", upsert: false, contentType: ext === "woff2" ? "font/woff2" : file.type || undefined });
   if (error) throw error;
   return supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
 }

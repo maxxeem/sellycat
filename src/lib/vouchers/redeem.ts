@@ -10,7 +10,7 @@ import { kickWebhooks } from "@/lib/developers/webhooks";
  */
 type Client = Awaited<ReturnType<typeof createClient>>;
 
-export type VoucherError = "not_found" | "forbidden" | "redeemed" | "expired" | "refunded" | "void" | "outside_window" | "amount" | "already_undone" | "too_late" | "valid" | "failed";
+export type VoucherError = "not_found" | "forbidden" | "redeemed" | "expired" | "refunded" | "void" | "outside_window" | "location" | "amount" | "already_undone" | "too_late" | "valid" | "failed";
 
 export type VoucherInfo = {
   id: string;
@@ -25,7 +25,7 @@ export type VoucherInfo = {
   partner: string | null;
 };
 
-const ERRORS = new Set<VoucherError>(["not_found", "forbidden", "redeemed", "expired", "refunded", "void", "outside_window", "amount", "already_undone", "too_late", "valid"]);
+const ERRORS = new Set<VoucherError>(["not_found", "forbidden", "redeemed", "expired", "refunded", "void", "outside_window", "location", "amount", "already_undone", "too_late", "valid"]);
 export const asVoucherError = (e: unknown): VoucherError => (ERRORS.has(e as VoucherError) ? (e as VoucherError) : "failed");
 
 export async function voucherInfo(supabase: Client, id: string): Promise<VoucherInfo | null> {

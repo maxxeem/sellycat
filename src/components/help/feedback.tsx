@@ -30,7 +30,7 @@ export function HelpFeedback({ articleId, locale, texts }: { articleId: string; 
           }}
         >
           <input value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} placeholder={texts.prompt} aria-label={texts.prompt} className="h-10 flex-1 rounded-full border border-line bg-surface px-4 text-sm outline-none focus:border-accent" />
-          <button type="submit" className="h-10 rounded-full bg-coral px-5 text-sm font-semibold text-ink">{texts.send}</button>
+          <button type="submit" className="h-10 rounded-full bg-coral px-5 text-sm font-semibold text-on-coral">{texts.send}</button>
         </form>
       ) : null}
     </div>

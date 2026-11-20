@@ -2780,6 +2780,14 @@ export type Database = {
         }
         Returns: Json
       }
+      redeem_login_try: {
+        Args: { p_email: string; p_max: number; p_tenant: string }
+        Returns: {
+          attempts: number
+          code_hash: string
+          id: string
+        }[]
+      }
       redeem_user_id: {
         Args: { p_email: string; p_tenant: string }
         Returns: string

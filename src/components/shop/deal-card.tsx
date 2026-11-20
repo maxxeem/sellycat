@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { dealStatus, formatMoney, isTeaser, remaining, savingsPercent } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
+import { shopImage } from "@/lib/shop/image";
 import { Countdown } from "./countdown";
 import { StockBar } from "./stock-bar";
 import type { ShopTexts } from "./shop-texts";
@@ -29,7 +30,7 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
       <div className={`relative shrink-0 overflow-hidden bg-[var(--shop-surface)] ${variant === "list" ? "w-32 sm:w-48" : "w-full"} ${isHero ? "md:w-3/5" : ""} ${variant === "list" ? "aspect-square" : isHero ? "aspect-[16/10]" : "aspect-[4/3]"}`}>
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover.url} alt={cover.alt ?? deal.title} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+          <img {...shopImage(cover.url, variant === "list" ? "(min-width: 640px) 192px, 128px" : isHero ? "(min-width: 768px) 60vw, 100vw" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw")} alt={cover.alt ?? deal.title} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-[var(--shop-muted)]">{deal.title.slice(0, 1)}</div>
         )}

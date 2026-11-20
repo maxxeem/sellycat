@@ -2,8 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requestOrigin } from "@/lib/auth/session";
-import { siteHost, DEFAULT_ROOT, validateSlug } from "@/lib/site/hosts";
+import { apexUrl, siteHost, DEFAULT_ROOT, validateSlug } from "@/lib/site/hosts";
 import { safeNext } from "@/lib/site/routing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -27,7 +26,7 @@ export async function forgotAction(_: AuthState, form: FormData): Promise<AuthSt
   if (email) {
     const supabase = await createClient();
     // Same answer whether or not the account exists (no account enumeration).
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${await requestOrigin()}/auth/continue?next=/set-password` });
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${apexUrl()}/auth/continue?next=/set-password` });
   }
   return { notice: "forgotSent" };
 }
@@ -68,7 +67,7 @@ export async function signupAction(_: AuthState, form: FormData): Promise<AuthSt
     email,
     password,
     options: {
-      emailRedirectTo: `${await requestOrigin()}/auth/continue?next=/dashboard`,
+      emailRedirectTo: `${apexUrl()}/auth/continue?next=/dashboard`,
       // Read back after email confirmation to create the shop (provisionFromSignup).
       data: { shop_name: shopName, shop_slug: slug, locale },
     },

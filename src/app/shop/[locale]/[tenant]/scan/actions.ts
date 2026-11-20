@@ -23,6 +23,13 @@ async function hostShop() {
   return resolved ? getShopProfile(resolved.id) : null;
 }
 
+/** Per instance and IP: blunts code-mail floods and guessing (the per-code limit in SQL stays authoritative). */
+const codeMailLimit = createRateLimiter({ limit: 10, windowMs: 60 * 60_000 });
+const codeTryLimit = createRateLimiter({ limit: 20, windowMs: 10 * 60_000 });
+async function clientIp() {
+  return (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
 export type LoginError = "login" | "code" | "tooMany" | "noAccess" | "failed";
 
 /** Signed in and allowed to redeem in this shop? */
@@ -35,6 +42,7 @@ async function allowed(shopId: string) {
 /** Always the same answer (no hint whether the address has access). */
 export async function requestCode(email: string): Promise<{ ok: true }> {
   const shop = await hostShop();
+  if (!codeMailLimit.check(await clientIp()).ok) return { ok: true };
   if (shop) await sendRedeemCode(shop, email).catch((e) => console.error("[redeem] code mail", e));
   return { ok: true };
 }
@@ -42,6 +50,7 @@ export async function requestCode(email: string): Promise<{ ok: true }> {
 export async function codeLogin(email: string, code: string): Promise<{ ok: true } | { ok: false; error: LoginError }> {
   const shop = await hostShop();
   if (!shop) return { ok: false, error: "failed" };
+  if (!codeTryLimit.check(await clientIp()).ok) return { ok: false, error: "tooMany" };
   return verifyRedeemCode(shop.id, email, code);
 }
 

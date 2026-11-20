@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
+import { shopImage } from "@/lib/shop/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { fmt } from "@/lib/i18n";
 import type { ShopTexts } from "./shop-texts";
@@ -42,7 +43,7 @@ export function DealGallery({ images, title, t }: { images: Picture[]; title: st
           {images.map((img, i) => (
             <button key={img.url} type="button" onClick={() => setZoom(i)} className="relative w-full shrink-0 snap-center cursor-zoom-in" aria-label={fmt(t.galleryOpen, { n: i + 1 })}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt={img.alt ?? title} className="aspect-[16/10] w-full object-cover" loading={i ? "lazy" : "eager"} fetchPriority={i ? "auto" : "high"} draggable={false} />
+              <img {...shopImage(img.url, "(min-width: 1024px) 60vw, 100vw")} alt={img.alt ?? title} className="aspect-[16/10] w-full object-cover" loading={i ? "lazy" : "eager"} fetchPriority={i ? "auto" : "high"} draggable={false} />
             </button>
           ))}
         </div>
@@ -73,7 +74,7 @@ export function DealGallery({ images, title, t }: { images: Picture[]; title: st
               className={`w-20 shrink-0 overflow-hidden rounded-[var(--shop-radius)] border-2 transition sm:w-24 ${i === index ? "border-[var(--shop-primary)]" : "border-transparent opacity-70 hover:opacity-100"}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt="" loading="lazy" className="aspect-square w-full object-cover" draggable={false} />
+              <img {...shopImage(img.url, "96px")} alt="" loading="lazy" className="aspect-square w-full object-cover" draggable={false} />
             </button>
           ))}
         </div>
@@ -164,7 +165,7 @@ function Lightbox({ images, title, start, t, onClose }: { images: Picture[]; tit
           {images.map((img, i) => (
             <div key={img.url} className="flex h-full w-full shrink-0 snap-center items-center justify-center p-2 sm:px-20 sm:py-4" onClick={(e) => e.target === e.currentTarget && onClose(index)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt={img.alt ?? title} className="max-h-full max-w-full select-none object-contain" loading={Math.abs(i - start) > 1 ? "lazy" : "eager"} draggable={false} />
+              <img {...shopImage(img.url, "100vw")} alt={img.alt ?? title} className="max-h-full max-w-full select-none object-contain" loading={Math.abs(i - start) > 1 ? "lazy" : "eager"} draggable={false} />
             </div>
           ))}
         </div>
@@ -180,7 +181,7 @@ function Lightbox({ images, title, start, t, onClose }: { images: Picture[]; tit
           {images.map((img, i) => (
             <button key={img.url} type="button" onClick={() => show(i)} aria-label={fmt(t.galleryOpen, { n: i + 1 })} aria-current={i === index} className={`w-14 shrink-0 overflow-hidden rounded-md border-2 transition ${i === index ? "border-white" : "border-transparent opacity-50 hover:opacity-100"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt="" loading="lazy" className="aspect-square w-full object-cover" draggable={false} />
+              <img {...shopImage(img.url, "96px")} alt="" loading="lazy" className="aspect-square w-full object-cover" draggable={false} />
             </button>
           ))}
         </div>

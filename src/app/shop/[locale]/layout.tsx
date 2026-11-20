@@ -1,7 +1,7 @@
 import type { Viewport } from "next";
 import { notFound } from "next/navigation";
 import { LOCALES, isLocale } from "@/lib/i18n/locales";
-import { inter } from "../../fonts";
+import { interLazy } from "../../fonts";
 import "../../globals.css";
 
 /**
@@ -18,7 +18,7 @@ export default async function ShopRootLayout({ children, params }: LayoutProps<"
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} className={interLazy.variable}>
       <body className="min-h-dvh bg-surface-2">{children}</body>
     </html>
   );

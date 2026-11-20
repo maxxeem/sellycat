@@ -3,10 +3,9 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requestOrigin } from "@/lib/auth/session";
 import { SETTINGS_TAG } from "@/lib/platform/settings";
 import { audit, requireStaff } from "@/lib/platform/staff";
-import { DEFAULT_ROOT, siteHost, validateSlug } from "@/lib/site/hosts";
+import { apexUrl, DEFAULT_ROOT, siteHost, validateSlug } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registerDomain } from "@/lib/vercel/domains";
 
@@ -45,7 +44,7 @@ export async function createTenant(_: StaffFormState, form: FormData): Promise<S
 
   // Owner account: invite a new user, or reuse an existing one.
   let ownerId: string | null = null;
-  const invite = await db.auth.admin.inviteUserByEmail(ownerEmail, { redirectTo: `${await requestOrigin()}/auth/continue?next=/set-password` });
+  const invite = await db.auth.admin.inviteUserByEmail(ownerEmail, { redirectTo: `${apexUrl()}/auth/continue?next=/set-password` });
   if (invite.data.user) ownerId = invite.data.user.id;
   else {
     const { data } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
