@@ -60,12 +60,6 @@ export async function updateCode(id: string, p: CodePerks & { active: boolean })
   return error ? { ok: false as const, error: "invalid" as const } : { ok: true as const };
 }
 
-export async function setCodesActive(ids: string[], active: boolean) {
-  const db = createAdminClient().from("invite_codes");
-  if (active) await db.update({ disabled_at: null }).in("id", ids);
-  else await db.update({ disabled_at: new Date().toISOString() }).in("id", ids).is("disabled_at", null);
-}
-
 // ---------------------------------------------------------------- waitlist
 
 export type InviteOptions = { planId: string | null; trialDays: number | null; couponId: string | null; expiresDays: number | null };

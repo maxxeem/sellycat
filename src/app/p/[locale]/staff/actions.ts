@@ -1,23 +1,14 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { SETTINGS_TAG } from "@/lib/platform/settings";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { apexUrl, DEFAULT_ROOT, siteHost, validateSlug } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registerDomain } from "@/lib/vercel/domains";
 
 export type StaffFormState = { error?: string; ok?: boolean } | null;
-
-export async function setSignupMode(mode: "open" | "paused") {
-  const staff = await requireStaff({ role: "superadmin" });
-  await createAdminClient().from("platform_settings").update({ signup_mode: mode, updated_by: staff.id }).eq("id", true);
-  await audit(staff.id, "platform.signup_mode", { meta: { mode } });
-  updateTag(SETTINGS_TAG);
-  revalidatePath("/p/[locale]/staff/settings", "page");
-}
 
 const tenantSchema = z.object({
   name: z.string().trim().min(1).max(120),

@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { joinWaitlistAction } from "@/app/p/[locale]/(auth)/access-actions";
 import { Field, Input, Notice, Select, buttonClass } from "@/components/ui";
 import { USE_CASES } from "@/lib/access/rules";
@@ -15,8 +15,11 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
   const { t, locale } = useI18n();
   const w = t.access.waitlist;
   const [state, action, pending] = useActionState(joinWaitlistAction, null);
-  const [renderedAt, setRenderedAt] = useState(0);
-  useEffect(() => setRenderedAt(Date.now()), []);
+  // Time the form appeared in the browser (bots submit instantly); written straight into the field.
+  const renderedAt = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (renderedAt.current) renderedAt.current.value = String(Date.now());
+  }, []);
 
   if (state?.sent)
     return (
@@ -31,7 +34,7 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
   return (
     <form action={action} className="flex flex-col gap-4 text-left" data-testid="waitlist-form">
       <input type="hidden" name="locale" value={locale} />
-      <input type="hidden" name="rendered_at" value={renderedAt} />
+      <input type="hidden" name="rendered_at" ref={renderedAt} defaultValue="0" />
       {/* Honeypot: invisible for people, tempting for bots. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
         <label>
