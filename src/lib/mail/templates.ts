@@ -343,3 +343,22 @@ export function waitlistInviteMail(i: { brand: MailBrand; name: string | null; c
     after: i.expiresAt ? fmt(a.inviteValid, { date: dateText(i.expiresAt, i.brand.locale) }) : a.inviteNoExpiry,
   });
 }
+
+/** Code that unlocks "Show voucher" after a scan (sent to the buyer, or the recipient of a gift). */
+export function voucherAccessMail(i: { brand: MailBrand; code: string; minutes: number }): Mail {
+  const r = getDictionary(i.brand.locale).voucherAccess;
+  const t = getDictionary(i.brand.locale);
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(r.mailHeading)}</h1>
+<p style="margin:0;">${esc(fmt(r.mailIntro, { shop: i.brand.shopName }))}</p>
+<p style="margin:20px 0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:.3em;">${esc(i.code)}</p>
+<p style="margin:0;font-size:14px;color:#52525b;">${esc(fmt(r.mailValid, { minutes: String(i.minutes) }))} ${esc(r.mailIgnore)}</p>`,
+    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+  );
+  return {
+    subject: subjectLine(fmt(r.mailSubject, { code: i.code, shop: i.brand.shopName })),
+    html,
+    text: [r.mailHeading, "", fmt(r.mailIntro, { shop: i.brand.shopName }), "", i.code, "", fmt(r.mailValid, { minutes: String(i.minutes) }), r.mailIgnore].join("\n"),
+  };
+}

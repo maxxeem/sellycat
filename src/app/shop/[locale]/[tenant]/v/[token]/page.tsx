@@ -15,12 +15,19 @@ import { VoucherActions } from "@/components/shop/wallet-buttons";
 import { findVoucher } from "@/lib/vouchers/redeem";
 import { ScannerRedeem } from "./scanner-redeem";
 import { walletAvailable } from "@/lib/wallet/passes";
+import { accessTarget, hasAccess } from "@/lib/vouchers/access";
+import { VoucherGate } from "./voucher-gate";
 
 export function generateStaticParams() {
   return [{ token: "placeholder" }];
 }
 
-/** Voucher check page (the QR code points here): status, validity and code; nothing personal. */
+/**
+ * Voucher page (the QR code points here). Signed-in staff and partners of the shop get "slide to
+ * redeem". Everyone else first sees a menu: "Scan voucher" (sign in with an email code) or "Show
+ * voucher" (the owner confirms with a code sent to the order's address; the device is remembered
+ * for 30 days). Only then are code, status and the wallet/PDF buttons shown.
+ */
 export default function VoucherPage({ params }: PageProps<"/shop/[locale]/[tenant]/v/[token]">) {
   return (
     <Suspense fallback={<PageFallback />}>
@@ -45,6 +52,8 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
   const scanner = user && supabase ? (await supabase.rpc("can_use_redeem", { p_tenant: tenant })).data === true : false;
   const forScanner = scanner && supabase ? await findVoucher(supabase, tenant, { token }) : null;
   const d = getDictionary(shop.locale);
+  const unlocked = found && !forScanner ? await hasAccess(tenant, token) : false;
+  const ownerEmail = found && !forScanner && !unlocked ? await accessTarget(tenant, token) : null;
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
@@ -53,9 +62,10 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
       <meta name="referrer" content="no-referrer" />
       {found && forScanner && user ? (
         <ScannerRedeem voucher={forScanner} locale={shop.locale} email={user.email} />
+      ) : found && !unlocked ? (
+        <VoucherGate token={token} title={v.title} shopName={shop.name} locale={shop.locale} ownerEmail={ownerEmail ?? "•••"} notYours={scanner ? d.redeem.notYours : null} />
       ) : found ? (
         <div className="flex flex-col gap-4">
-          {scanner ? <p className="rounded-[var(--shop-radius)] bg-[var(--shop-surface)] p-3 text-sm font-semibold">{d.redeem.notYours}</p> : null}
           <VoucherCard
             t={t}
             locale={shop.locale}
@@ -77,11 +87,6 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
           {v.deal_slug ? (
             <Link href={`/d/${v.deal_slug}`} className="text-center text-sm font-semibold underline underline-offset-2">
               {t.toDeal}
-            </Link>
-          ) : null}
-          {!scanner ? (
-            <Link href={`/scan?next=/v/${token}`} className="mt-6 text-center text-xs text-[var(--shop-muted)] underline underline-offset-2" data-testid="partner-login">
-              {d.wallet.partnerHint}
             </Link>
           ) : null}
         </div>

@@ -2321,6 +2321,60 @@ export type Database = {
           },
         ]
       }
+      voucher_access: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          device_expires_at: string | null
+          device_hash: string | null
+          expires_at: string
+          id: string
+          tenant_id: string
+          verified_at: string | null
+          voucher_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          device_expires_at?: string | null
+          device_hash?: string | null
+          expires_at: string
+          id?: string
+          tenant_id: string
+          verified_at?: string | null
+          voucher_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          device_expires_at?: string | null
+          device_hash?: string | null
+          expires_at?: string
+          id?: string
+          tenant_id?: string
+          verified_at?: string | null
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_access_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_access_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voucher_designs: {
         Row: {
           accent: string | null
@@ -3169,7 +3223,23 @@ export type Database = {
       track_shop_view: { Args: { p_tenant: string }; Returns: undefined }
       undo_redemption: { Args: { p_redemption: string }; Returns: Json }
       void_voucher: { Args: { p_voucher: string }; Returns: Json }
+      voucher_access_try: {
+        Args: { p_max: number; p_voucher: string }
+        Returns: {
+          attempts: number
+          code_hash: string
+          id: string
+        }[]
+      }
       voucher_code_text: { Args: { p_groups?: number }; Returns: string }
+      voucher_owner: {
+        Args: { p_token: string }
+        Returns: {
+          email: string
+          tenant_id: string
+          voucher_id: string
+        }[]
+      }
       voucher_partner_hint: {
         Args: { p_code: string; p_tenant: string; p_token: string }
         Returns: string
