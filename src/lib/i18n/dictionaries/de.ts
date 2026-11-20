@@ -1,4 +1,5 @@
 import type { Dictionary } from "./en";
+import { siteDe } from "./site";
 
 /** Deutsch (Schweizer Schreibweise: ss statt ß). */
 export const de: Dictionary = {
@@ -1745,13 +1746,13 @@ export const de: Dictionary = {
   shopDomain: {
     title: "Eigene Shop-Domain",
     intro: "Lass deinen Shop unter deiner eigenen Adresse laufen, z.B. deals.deinefirma.ch. Das Zertifikat (https) erstellen wir automatisch.",
-    domain: "Domain",
     processTitle: "So läuft es",
     process: [
       "Domain unten eingeben und verbinden. Am einfachsten eine Subdomain wie deals.deinefirma.ch.",
       "Wir zeigen dir danach die DNS-Einträge (meist einen CNAME, manchmal zusätzlich einen TXT als Besitznachweis), mit Anleitung für GoDaddy, Infomaniak, Hostpoint, Cloudflare und andere.",
       "Du trägst sie bei deinem Domain-Anbieter ein. Wir prüfen automatisch, erstellen das Zertifikat (https) und zeigen «Aktiv». Danach kannst du die Domain als Hauptadresse wählen.",
     ],
+    domain: "Domain",
     placeholder: "deals.deinefirma.ch",
     hint: "Am einfachsten ist eine Subdomain wie deals.deinefirma.ch. Deine Website auf deinefirma.ch bleibt dann unverändert.",
     apexWarning: "Achtung: Mit {domain} zeigt deine ganze Hauptdomain auf den Shop. Eine bestehende Website darauf wäre nicht mehr erreichbar. Lieber eine Subdomain wie deals.{domain}?",
@@ -1797,8 +1798,8 @@ export const de: Dictionary = {
       taken: "Diese Domain ist schon verbunden.",
       in_use: "Diese Domain wird bereits von einem anderen Dienst verwendet. Entferne sie dort zuerst oder melde dich beim Support.",
       not_configured: "Domains können gerade nicht verbunden werden (Server-Konfiguration). Bitte melde dich beim Support.",
-      not_found: "Domain nicht gefunden.",
       rejected: "Die Domain kann nicht verbunden werden: {detail}",
+      not_found: "Domain nicht gefunden.",
       failed: "Das hat nicht geklappt. Bitte in einer Minute nochmals versuchen.",
     },
   },
@@ -1845,6 +1846,7 @@ export const de: Dictionary = {
       forbidden: "Dafür fehlt dir die Berechtigung.",
     },
   },
+  site: siteDe,
   access: {
     waitlist: {
       title: "Auf die Warteliste",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
 import { Field, Input, Notice, buttonClass, linkClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { slugify } from "@/lib/site/hosts";
 import { forgotAction, loginAction, setPasswordAction, signupAction, type AuthState } from "./actions";

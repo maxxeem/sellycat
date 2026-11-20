@@ -1,0 +1,12 @@
+/* Product tour (story-tour.tsx): block-specific keyframes on top of the shared tour-* ones in site.css.
+   Only transform/opacity; paused off screen (data-running="0"), none under reduced motion. */
+.stour-fade { animation: stour-fade 0.6s ease both; }
+@keyframes stour-fade { from { opacity: 0; } }
+.stour-spin { animation: stour-spin 0.9s linear infinite; }
+@keyframes stour-spin { to { transform: rotate(360deg); } }
+.stour-rise { animation: stour-rise 0.9s ease-out both; }
+@keyframes stour-rise { from { opacity: 0; transform: translateY(6px); } 25% { opacity: 1; transform: translateY(0); } 75% { opacity: 1; } to { opacity: 0; transform: translateY(-12px); } }
+.stour-flip { animation: stour-flip 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes stour-flip { from { opacity: 0; transform: perspective(400px) rotateX(-90deg); } to { transform: perspective(400px) rotateX(0); } }
+[data-running="0"] :is(.stour-spin) { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { :is(.stour-fade, .stour-spin, .stour-rise, .stour-flip) { animation: none; } }

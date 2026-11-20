@@ -53,6 +53,13 @@
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --color-coral: var(--coral);
+  /* Landing page tokens (src/components/site/site.css, scope .site). */
+  --color-site-ground: var(--site-ground);
+  --color-site-surface: var(--site-surface);
+  --color-site-sheet: var(--site-sheet);
+  --color-site-raise: var(--site-raise);
+  --color-site-line: var(--site-line);
+  --color-site-device: var(--site-device);
   /* Text on coral is always the dark brand ink, also in dark mode. */
   --color-on-coral: var(--ink-brand);
   --color-surface: var(--surface);

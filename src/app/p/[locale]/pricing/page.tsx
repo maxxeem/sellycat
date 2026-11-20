@@ -40,7 +40,7 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
           <Plans locale={locale} searchParams={searchParams} />
         </Suspense>
       </section>
-      <SiteFooter />
+      <SiteFooter language={false} />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

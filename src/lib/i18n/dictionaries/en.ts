@@ -1,3 +1,4 @@
+import { siteEn } from "./site";
 /** English dictionary (fallback). Keys are grouped by area; de.ts must have the same shape. */
 export const en = {
   common: {
@@ -1743,13 +1744,13 @@ export const en = {
   shopDomain: {
     title: "Your own shop domain",
     intro: "Run your shop under your own address, e.g. deals.yourcompany.com. We create the certificate (https) automatically.",
-    domain: "Domain",
     processTitle: "How it works",
     process: [
       "Enter the domain below and connect it. A subdomain like deals.yourcompany.com is easiest.",
       "We then show you the DNS records (usually one CNAME, sometimes a TXT as proof of ownership), with a guide for GoDaddy, Infomaniak, Hostpoint, Cloudflare and others.",
       "You add them at your domain provider. We check automatically, create the certificate (https) and show \"Active\". Then you can make the domain your main address.",
     ],
+    domain: "Domain",
     placeholder: "deals.yourcompany.com",
     hint: "A subdomain like deals.yourcompany.com is easiest. Your website on yourcompany.com stays as it is.",
     apexWarning: "Careful: with {domain} your whole main domain points to the shop. A website on it would no longer be reachable. Rather use a subdomain like deals.{domain}?",
@@ -1795,8 +1796,8 @@ export const en = {
       taken: "This domain is already connected.",
       in_use: "This domain is already used by another service. Remove it there first or contact support.",
       not_configured: "Domains cannot be connected right now (server configuration). Please contact support.",
-      not_found: "Domain not found.",
       rejected: "The domain cannot be connected: {detail}",
+      not_found: "Domain not found.",
       failed: "That did not work. Please try again in a minute.",
     },
   },
@@ -1843,6 +1844,7 @@ export const en = {
       forbidden: "You are not allowed to do this.",
     },
   },
+  site: siteEn,
   access: {
     waitlist: {
       title: "Get on the waitlist",

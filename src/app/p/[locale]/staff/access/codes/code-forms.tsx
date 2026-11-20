@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { Field, Input, Notice, Select, buttonClass } from "@/components/ui";
 import { codeLink } from "@/lib/access/rules";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { createCodesAction } from "../actions";
 

@@ -40,7 +40,7 @@ export default async function HelpLayout({ children, params }: LayoutProps<"/p/[
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 sm:px-8">{children}</div>
-      <SiteFooter />
+      <SiteFooter language={false} />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

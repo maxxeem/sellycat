@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useState, useTransition } from "react";
 import { Badge, Field, Input, Notice, Select, Table, buttonClass, tdClass, thClass } from "@/components/ui";
 import { USE_CASES, WAITLIST_STATUSES, type UseCase, type WaitlistStatus } from "@/lib/access/rules";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { intlTag } from "@/lib/i18n/locales";
 import { inviteAction, setWaitlistStatusAction } from "../actions";

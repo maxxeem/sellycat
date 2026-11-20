@@ -9,7 +9,4 @@ export function getDictionary(locale: Locale): Dictionary {
   return DICTIONARIES[locale] ?? en;
 }
 
-/** Fills {placeholders}: fmt("Hello {name}", { name: "Jan" }). */
-export function fmt(text: string, vars: Record<string, string | number>): string {
-  return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
-}
+export { fmt } from "./fmt";

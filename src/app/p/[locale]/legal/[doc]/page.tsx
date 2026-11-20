@@ -72,7 +72,7 @@ export default async function LegalPage({ params }: PageProps<"/p/[locale]/legal
           </nav>
         </aside>
       </div>
-      <SiteFooter />
+      <SiteFooter language={false} />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

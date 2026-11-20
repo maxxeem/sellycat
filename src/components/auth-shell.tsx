@@ -33,7 +33,7 @@ export function AuthShell({
           ) : null}
         </div>
       </div>
-      <SiteFooter />
+      <SiteFooter language={false} />
     </main>
   );
 }

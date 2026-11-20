@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { apexUrl } from "@/lib/site/hosts";
 
 /**
  * Same file on every host (Sellycat and the shops): private areas stay out of search engines.
@@ -13,5 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin", "/dashboard", "/auth", "/login", "/signup", "/forgot", "/invite", "/set-password", "/checkout", "/order", "/my", "/v/", "/scan", "/redeem"],
       },
     ],
+    sitemap: `${apexUrl()}/sitemap.xml`,
   };
 }

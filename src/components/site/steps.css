@@ -1,0 +1,31 @@
+/*
+ * «So funktioniert es» (steps-showcase.tsx, laptop-demos.tsx): the few keyframes the dashboard demos
+ * need on top of the shared `demo-*` set in site.css. Timings are `--d` ms into the current scene;
+ * paused off screen by `.demo-root[data-running="0"]`, no motion under reduced motion.
+ */
+
+/* A value, a ring or a recoloured layer fading in (opacity only). */
+.steps-fade { animation: steps-fade 0.4s ease both; animation-delay: var(--d, 0ms); }
+@keyframes steps-fade { from { opacity: 0; } }
+
+/* Selection ring around a colour swatch: pops in. */
+.steps-ring { animation: steps-ring 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: var(--d, 0ms); }
+@keyframes steps-ring { from { opacity: 0; transform: scale(0.6); } }
+
+/* New order on top: the whole list slides down by one row (--h) while the new row fades in. */
+.steps-push { animation: steps-push 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+@keyframes steps-push { from { transform: translateY(calc(-1 * var(--h, 64px))); } }
+
+/* A second mouse pointer that takes over from the first one at --d (instant, no fade). */
+.steps-on { animation: steps-on 1ms step-end both; animation-delay: var(--d, 0ms); }
+@keyframes steps-on { from { opacity: 0; } to { opacity: 1; } }
+.steps-off { animation: steps-off 1ms step-end both; animation-delay: var(--d, 0ms); }
+@keyframes steps-off { from { opacity: 1; } to { opacity: 0; } }
+
+/* «Live» dot. */
+.steps-blink { animation: steps-blink 1.6s ease-in-out infinite; }
+@keyframes steps-blink { 50% { opacity: 0.3; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .steps-fade, .steps-ring, .steps-push, .steps-on, .steps-off, .steps-blink { animation: none; }
+}
