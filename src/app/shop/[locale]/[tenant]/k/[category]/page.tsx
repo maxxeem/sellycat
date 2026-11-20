@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
 import { CachedHome } from "../../home";
+import { TrackShopView } from "../../track-shop-view";
 
 export function generateStaticParams() {
   return [{ category: "placeholder" }];
@@ -17,5 +18,10 @@ export default function CategoryPage({ params }: PageProps<"/shop/[locale]/[tena
 
 async function Category({ params }: { params: PageProps<"/shop/[locale]/[tenant]/k/[category]">["params"] }) {
   const { tenant, category } = await params;
-  return <CachedHome tenantId={tenant} category={category} />;
+  return (
+    <>
+      <CachedHome tenantId={tenant} category={category} />
+      <TrackShopView tenantId={tenant} />
+    </>
+  );
 }

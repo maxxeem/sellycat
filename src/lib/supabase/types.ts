@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_daily: {
+        Row: {
+          count: number
+          day: string
+          deal_id: string | null
+          metric: string
+          tenant_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          deal_id?: string | null
+          metric: string
+          tenant_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          deal_id?: string | null
+          metric?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_daily_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_daily_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_events: {
         Row: {
           created_at: string
@@ -1910,6 +1949,10 @@ export type Database = {
         Returns: number
       }
       auth_user_id: { Args: { p_email: string }; Returns: string }
+      bump_analytics: {
+        Args: { p_deal: string; p_metric: string; p_tenant: string }
+        Returns: undefined
+      }
       can_edit: { Args: { p_tenant: string }; Returns: boolean }
       can_manage: { Args: { p_tenant: string }; Returns: boolean }
       can_redeem: {
@@ -1993,6 +2036,10 @@ export type Database = {
         Returns: boolean
       }
       plan_limit: { Args: { p_key: string; p_tenant: string }; Returns: number }
+      platform_analytics: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       random_digits: { Args: { n: number }; Returns: string }
       record_refund: {
         Args: { p_payment_intent: string; p_refunded: number }
@@ -2069,12 +2116,18 @@ export type Database = {
         }[]
       }
       team_seats_used: { Args: { p_tenant: string }; Returns: number }
+      tenant_analytics: {
+        Args: { p_from: string; p_tenant: string; p_to: string }
+        Returns: Json
+      }
       tenant_is_public: { Args: { p_tenant: string }; Returns: boolean }
       tenant_role: {
         Args: { p_tenant: string }
         Returns: Database["public"]["Enums"]["member_role"]
       }
+      tenant_today: { Args: { p_tenant: string }; Returns: string }
       track_deal_view: { Args: { p_deal: string }; Returns: undefined }
+      track_shop_view: { Args: { p_tenant: string }; Returns: undefined }
       undo_redemption: { Args: { p_redemption: string }; Returns: Json }
       void_voucher: { Args: { p_voucher: string }; Returns: Json }
       voucher_code_text: { Args: { p_groups?: number }; Returns: string }

@@ -361,3 +361,10 @@ Vorbild SwypeCast (Preise, Währung nach Ort, Stripe Billing, Upgrade/Downgrade)
 - **Einladung**: eigene Mail (Shop-Absender, `teamInviteMail`) mit Link `sellycat.com/invite/<token>`; gespeichert wird nur der SHA-256 des Tokens (`tenant_invites.token_hash`), 14 Tage gültig. Neue Adressen bekommen beim Einladen ein Konto ohne Passwort und setzen es auf der Einladungsseite (nur solange das Konto nie benutzt wurde), bestehende melden sich an und nehmen an. Annehmen nur über `accept_invite` (SQL: richtige Adresse, offen, nicht abgelaufen; ein bestehender Inhaber wird nie herabgestuft). Getestet in `tests/rls/team.test.ts`, End-to-End lokal durchgespielt.
 - **Menü nach Rolle** (`SECTION_MIN_ROLE` in `src/lib/dashboard/nav.ts`, Rollenleiter `src/lib/auth/roles.ts`): jede Rolle sieht nur, was sie öffnen darf.
 - **Behoben**: «Date.now() while prerendering» im Dashboard (Supabase-Client liest beim Start die Uhr) – `connection()` in `createClient` (`src/lib/supabase/server.ts`).
+
+## 25. Phase 7, Teil 3: Auswertungen (20.11.2026)
+
+Erledigt: Shop- und Deal-Aufrufe als Tageszähler (`analytics_daily`, Shop-Zeitzone, einmal pro Browser-Sitzung, ohne Cookies und ohne persönliche Daten). Dashboard → Auswertungen: Zeitraum 7/30/90 Tage/12 Monate mit Vergleich zum Zeitraum davor; Kennzahlen Umsatz (nach Rückerstattungen, am Zahltag), Bestellungen, verkaufte Gutscheine, Ø Bestellung, Deal-Aufrufe, Conversion, Einlösungen, Sellycat-Gebühr; Verlauf als Säulendiagramm (pro Tag, Woche oder 30 Tage, auch als Tabelle); Trichter Shop-Aufruf → Deal-Aufruf → Kasse → bezahlt; Deals mit Aufrufen, Verkäufen, Umsatz. Staff → Auswertungen: Umsatz und Gebühren je Währung, Bestellungen, neue Shops, Shops nach Plan, Top-Shops nach Gebühren. Cross-Tenant-Tests in `tests/rls/analytics.test.ts`.
+
+Hinweis: Tagesaufrufe zählen ab 20.11.2026; Conversion wird erst angezeigt, wenn der ganze Zeitraum Aufrufe hat.
+
