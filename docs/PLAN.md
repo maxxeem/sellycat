@@ -368,3 +368,9 @@ Erledigt: Shop- und Deal-Aufrufe als Tageszähler (`analytics_daily`, Shop-Zeitz
 
 Hinweis: Tagesaufrufe zählen ab 20.11.2026; Conversion wird erst angezeigt, wenn der ganze Zeitraum Aufrufe hat.
 
+## 26. Phase 7, Teil 4: Support und Hilfe-Center (20.11.2026)
+
+Erledigt (Vorbild SwypeCast): **Support** im Dashboard (Anfrage mit Kategorie und Anhang bis 10 MB, Verlauf, Antworten; Inhaber und Admins sehen alle Anfragen ihres Shops, andere nur ihre eigenen; 5 Anfragen pro Stunde). Staff → Support: Eingang mit Statusfilter, Antworten (per Mail in der Sprache des Kunden, mit Link zurück ins Dashboard), «Antworten und erledigen», Status, interne Notiz, Benachrichtigung an ausgewählte Staff-Mitglieder und/oder eine Adresse (Rückfall `SUPPORT_EMAIL`). **Hilfe-Center** öffentlich unter sellycat.com/help: 8 Kategorien, Artikel DE/EN mit Inhaltsverzeichnis, vorherigem/nächstem Artikel, Volltextsuche, «War das hilfreich?» mit Kommentar; fehlt eine Sprache, erscheint die andere mit Hinweis. Staff → Hilfe-Artikel: anlegen, Entwurf/Veröffentlichen je Sprache, Vorschau, Bilder hochladen, frühere Fassungen zurückholen, Reihenfolge, archivieren, löschen (Superadmin), Feedback ansehen. 15 Startartikel auf Deutsch und Englisch. Cross-Tenant-Tests in `tests/rls/support.test.ts`.
+
+Bewusst nicht übernommen: der automatische Funktions-Scan und die Screenshot-Pipeline aus SwypeCast (später, wenn das Produkt stabil ist).
+

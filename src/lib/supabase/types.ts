@@ -543,6 +543,159 @@ export type Database = {
           },
         ]
       }
+      help_article_history: {
+        Row: {
+          article_id: string
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          locale: string
+          title: string
+        }
+        Insert: {
+          article_id: string
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          locale: string
+          title: string
+        }
+        Update: {
+          article_id?: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          locale?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_article_history_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_article_versions: {
+        Row: {
+          article_id: string
+          body: string
+          draft_body: string | null
+          draft_title: string | null
+          draft_updated_at: string | null
+          locale: string
+          published_at: string | null
+          search: unknown
+          title: string
+          updated_by: string | null
+        }
+        Insert: {
+          article_id: string
+          body?: string
+          draft_body?: string | null
+          draft_title?: string | null
+          draft_updated_at?: string | null
+          locale: string
+          published_at?: string | null
+          search?: unknown
+          title?: string
+          updated_by?: string | null
+        }
+        Update: {
+          article_id?: string
+          body?: string
+          draft_body?: string | null
+          draft_title?: string | null
+          draft_updated_at?: string | null
+          locale?: string
+          published_at?: string | null
+          search?: unknown
+          title?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_article_versions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_articles: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          slug: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          slug: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      help_feedback: {
+        Row: {
+          article_id: string
+          comment: string | null
+          created_at: string
+          helpful: boolean
+          id: string
+          locale: string
+          session: string
+        }
+        Insert: {
+          article_id: string
+          comment?: string | null
+          created_at?: string
+          helpful: boolean
+          id?: string
+          locale: string
+          session: string
+        }
+        Update: {
+          article_id?: string
+          comment?: string | null
+          created_at?: string
+          helpful?: boolean
+          id?: string
+          locale?: string
+          session?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       legal_pages: {
         Row: {
           content: string
@@ -1052,6 +1205,8 @@ export type Database = {
           billing: Json
           id: boolean
           signup_mode: Database["public"]["Enums"]["signup_mode"]
+          support_notify_email: string | null
+          support_notify_staff_ids: string[]
           updated_at: string
           updated_by: string | null
         }
@@ -1059,6 +1214,8 @@ export type Database = {
           billing?: Json
           id?: boolean
           signup_mode?: Database["public"]["Enums"]["signup_mode"]
+          support_notify_email?: string | null
+          support_notify_staff_ids?: string[]
           updated_at?: string
           updated_by?: string | null
         }
@@ -1066,6 +1223,8 @@ export type Database = {
           billing?: Json
           id?: boolean
           signup_mode?: Database["public"]["Enums"]["signup_mode"]
+          support_notify_email?: string | null
+          support_notify_staff_ids?: string[]
           updated_at?: string
           updated_by?: string | null
         }
@@ -1393,6 +1552,125 @@ export type Database = {
             foreignKeyName: "stripe_accounts_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          attachment_bytes: number | null
+          attachment_name: string | null
+          attachment_path: string | null
+          author: string
+          author_user_id: string | null
+          body: string
+          created_at: string
+          id: string
+          tenant_id: string | null
+          ticket_id: string
+        }
+        Insert: {
+          attachment_bytes?: number | null
+          attachment_name?: string | null
+          attachment_path?: string | null
+          author: string
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          tenant_id?: string | null
+          ticket_id: string
+        }
+        Update: {
+          attachment_bytes?: number | null
+          attachment_name?: string | null
+          attachment_path?: string | null
+          author?: string
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          tenant_id?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          internal_note: string | null
+          last_message_at: string
+          locale: string
+          number: number
+          plan_id: string | null
+          status: string
+          subject: string
+          tenant_id: string | null
+          tenant_name: string | null
+          updated_at: string
+          user_email: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          last_message_at?: string
+          locale?: string
+          number?: number
+          plan_id?: string | null
+          status?: string
+          subject: string
+          tenant_id?: string | null
+          tenant_name?: string | null
+          updated_at?: string
+          user_email: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          last_message_at?: string
+          locale?: string
+          number?: number
+          plan_id?: string | null
+          status?: string
+          subject?: string
+          tenant_id?: string | null
+          tenant_name?: string | null
+          updated_at?: string
+          user_email?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1960,6 +2238,7 @@ export type Database = {
         Returns: boolean
       }
       can_see_orders: { Args: { p_tenant: string }; Returns: boolean }
+      can_see_ticket: { Args: { p_ticket: string }; Returns: boolean }
       can_use_redeem: { Args: { p_tenant: string }; Returns: boolean }
       clear_pool_codes: { Args: { p_deal: string }; Returns: Json }
       create_tenant: {
@@ -1991,6 +2270,16 @@ export type Database = {
           p_tenant: string
         }
         Returns: boolean
+      }
+      help_search: {
+        Args: { p_limit?: number; p_locale: string; p_query: string }
+        Returns: {
+          category: string
+          rank: number
+          slug: string
+          snippet: string
+          title: string
+        }[]
       }
       import_pool_codes: {
         Args: { p_codes: string[]; p_deal: string }

@@ -33,7 +33,7 @@ const MENU: Entry[] = [
 ];
 
 const FOOTER: Array<{ href: string; icon: Icon; label: MenuLabel }> = [
-  { href: "/dashboard/help", icon: Question, label: nav("help") },
+  { href: "/help", icon: Question, label: nav("help") },
   { href: "/dashboard/support", icon: Lifebuoy, label: nav("support") },
 ];
 

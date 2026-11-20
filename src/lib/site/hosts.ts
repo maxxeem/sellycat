@@ -80,3 +80,8 @@ export function shopUrlForSlug(slug: string, root = siteHost() || DEFAULT_ROOT):
   const local = root.startsWith("localhost");
   return `${local ? "http" : "https"}://${slug}.${root}`;
 }
+
+/** https://<root> of the platform (sellycat.com, staging.sellycat.com, http://localhost:3000). */
+export function apexUrl(root = siteHost() || DEFAULT_ROOT): string {
+  return `${root.startsWith("localhost") ? "http" : "https"}://${root}`;
+}

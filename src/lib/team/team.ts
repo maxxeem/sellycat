@@ -5,7 +5,7 @@ import { sendMail } from "@/lib/mail/mailgun";
 import { loadSender } from "@/lib/mail/sender-load";
 import { teamInviteMail } from "@/lib/mail/templates";
 import { getShopProfile } from "@/lib/shop/queries";
-import { DEFAULT_ROOT, siteHost } from "@/lib/site/hosts";
+import { apexUrl } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canChangeRole, canInvite, canRemove, isTeamRole, seatsLeft, validEmail, type TeamRole } from "./rules";
 
@@ -20,10 +20,6 @@ export type TeamError = "invalid" | "forbidden" | "seats" | "exists" | "last_own
 
 const INVITE_DAYS = 14;
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
-const apexUrl = () => {
-  const root = siteHost() || DEFAULT_ROOT;
-  return `${root.startsWith("localhost") ? "http" : "https"}://${root}`;
-};
 
 export async function loadTeam(tenantId: string): Promise<{ members: TeamMember[]; invites: TeamInvite[]; seatLimit: number | null; seatsUsed: number }> {
   const db = createAdminClient();

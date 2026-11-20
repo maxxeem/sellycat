@@ -240,3 +240,50 @@ ${button(i.brand, i.url, m.button)}
     text: [fmt(m.heading, { shop: i.brand.shopName }), "", hello, intro, "", `${m.button}: ${i.url}`, "", valid].join("\n"),
   };
 }
+
+/** Sellycat itself as the sender (support mails, not shop mails). */
+export function platformBrand(locale: "de" | "en", siteUrl: string): MailBrand {
+  return { shopName: "Sellycat", locale, primary: "#FF4B23", logoUrl: `${siteUrl}/brand/sellycat-on-light-1024.png`, shopUrl: siteUrl };
+}
+
+const paragraphs = (text: string) =>
+  text
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 12px;">${esc(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+
+/** To the support team: a new request or a follow-up (always German, internal). */
+export function supportTeamMail(i: { brand: MailBrand; number: number; subject: string; reply: boolean; name: string; email: string; shop: string; plan: string; category: string; message: string; url: string }): Mail {
+  const head = `${i.reply ? "Neue Nachricht zu" : "Neue Support-Anfrage"} #${i.number}: ${i.subject}`;
+  const meta = `${i.name} (${i.email}) · ${i.shop || "–"} · Plan ${i.plan} · ${i.category}`;
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:20px;line-height:1.3;">${esc(head)}</h1>
+<p style="margin:0 0 16px;font-size:14px;color:#52525b;">${esc(meta)}</p>
+${paragraphs(i.message)}
+${button(i.brand, i.url, "Im Staff-Dashboard öffnen")}`,
+    "Sellycat Support",
+  );
+  return { subject: subjectLine(head), html, text: [head, meta, "", i.message, "", i.url].join("\n") };
+}
+
+/** To the customer: our answer, with the way back to the thread in the dashboard. */
+export function supportReplyMail(i: { brand: MailBrand; number: number; subject: string; name: string; message: string; url: string }): Mail {
+  const s = getDictionary(i.brand.locale).support.mail;
+  const hello = i.name ? fmt(s.hello, { name: i.name }) : s.helloAnon;
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:20px;line-height:1.3;">${esc(fmt(s.heading, { number: i.number }))}</h1>
+<p style="margin:0 0 16px;font-size:14px;color:#52525b;">${esc(i.subject)}</p>
+<p style="margin:0 0 12px;">${esc(hello)}</p>
+${paragraphs(i.message)}
+${button(i.brand, i.url, s.button)}
+<p style="margin:0;font-size:14px;color:#52525b;">${esc(s.signature)}</p>`,
+    esc(s.footer),
+  );
+  return {
+    subject: subjectLine(fmt(s.subject, { number: i.number, subject: i.subject })),
+    html,
+    text: [fmt(s.heading, { number: i.number }), i.subject, "", hello, "", i.message, "", `${s.button}: ${i.url}`, "", s.signature].join("\n"),
+  };
+}
