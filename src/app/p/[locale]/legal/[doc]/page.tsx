@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Logo } from "@/components/brand";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { SiteFooter } from "@/components/site-footer";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { LOCALES, isLocale } from "@/lib/i18n/locales";
@@ -34,7 +33,9 @@ export default async function LegalPage({ params }: PageProps<"/p/[locale]/legal
         <Link href="/" aria-label="Sellycat">
           <Logo width={130} />
         </Link>
-        <LanguageSwitcher />
+        <Link href="/login" className="text-sm font-semibold text-muted hover:text-ink">
+          {t.common.login}
+        </Link>
       </header>
       <div className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-4 pb-20 pt-6 sm:px-8 lg:grid-cols-[1fr_16rem]">
         <article>
@@ -72,7 +73,7 @@ export default async function LegalPage({ params }: PageProps<"/p/[locale]/legal
           </nav>
         </aside>
       </div>
-      <SiteFooter language={false} />
+      <SiteFooter />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

@@ -153,6 +153,8 @@ export const en = {
     acceptMiddle: " and have read the ",
     acceptAfter: ". I am acting for a business or organisation.",
     company: "my105 GmbH, Zurich",
+    product: "Product",
+    legalTitle: "Legal",
     help: "Help",
     pricing: "Pricing",
   },

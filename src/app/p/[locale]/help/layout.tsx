@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/brand";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { buttonClass } from "@/components/ui";
 import { fromParams } from "@/lib/i18n/params";
 import { SiteFooter } from "@/components/site-footer";
@@ -36,11 +35,10 @@ export default async function HelpLayout({ children, params }: LayoutProps<"/p/[
           <Link href="/dashboard/support" className={buttonClass.primary}>
             {h.contact}
           </Link>
-          <LanguageSwitcher />
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 pb-20 sm:px-8">{children}</div>
-      <SiteFooter language={false} />
+      <SiteFooter />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

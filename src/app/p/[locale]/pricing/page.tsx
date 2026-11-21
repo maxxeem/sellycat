@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Logo } from "@/components/brand";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { Skeleton, buttonClass } from "@/components/ui";
 import { isCurrency } from "@/lib/billing/currency";
 import { currencyFromRequest } from "@/lib/billing/currency-server";
@@ -27,7 +26,6 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
           <Logo width={150} />
         </Link>
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
           <Link href="/login" className={buttonClass.secondary}>
             {t.common.login}
           </Link>
@@ -40,7 +38,7 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
           <Plans locale={locale} searchParams={searchParams} />
         </Suspense>
       </section>
-      <SiteFooter language={false} />
+      <SiteFooter />
       <div className="h-2 bg-coral" aria-hidden />
     </main>
   );

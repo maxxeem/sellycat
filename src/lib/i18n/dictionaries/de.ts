@@ -155,6 +155,8 @@ export const de: Dictionary = {
     acceptMiddle: " und habe die ",
     acceptAfter: " gelesen. Ich handle für ein Unternehmen oder eine Organisation.",
     company: "my105 GmbH, Zürich",
+    product: "Produkt",
+    legalTitle: "Rechtliches",
     help: "Hilfe",
     pricing: "Preise",
   },
