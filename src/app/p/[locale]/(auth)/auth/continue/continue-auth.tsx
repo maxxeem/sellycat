@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Notice } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
@@ -13,14 +13,22 @@ import { safeNext } from "@/lib/site/routing";
  * Turns whatever the auth mail carried into a session: a PKCE `code`, a `token_hash` (custom
  * mail templates) or tokens in the URL fragment (Supabase's default invite links). Then creates
  * the shop from the signup data (first login only) and moves on to `next`.
+ *
+ * The browser client also redeems a `code` on its own (`detectSessionInUrl`), so our own exchange
+ * can lose that race and fail although the user is signed in. A failure therefore only counts
+ * when there is no session afterwards.
  */
 export function ContinueAuth() {
   const { t } = useI18n();
   const router = useRouter();
   const search = useSearchParams();
   const [failed, setFailed] = useState(false);
+  const started = useRef(false);
 
   useEffect(() => {
+    // A link is single-use: never redeem it twice (re-render, Strict Mode).
+    if (started.current) return;
+    started.current = true;
     const supabase = createClient();
     const next = search.get("next");
     const target = safeNext(next);
@@ -35,7 +43,11 @@ export function ContinueAuth() {
       else if (fragment.get("access_token") && fragment.get("refresh_token"))
         ({ error } = await supabase.auth.setSession({ access_token: fragment.get("access_token")!, refresh_token: fragment.get("refresh_token")! }));
       else error = new Error("no credentials in link");
-      if (error || fragment.get("error")) return setFailed(true);
+      if (error || fragment.get("error")) {
+        // getUser waits for the client's own URL detection, so a session it created counts.
+        const { data } = await supabase.auth.getUser();
+        if (!data.user) return setFailed(true);
+      }
       await provisionFromSignup();
       router.replace(target);
       router.refresh();
