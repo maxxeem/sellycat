@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, Mail } from "lucide-react";
+import { Globe } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -10,7 +10,7 @@ import { Logo } from "./brand";
 /**
  * Footer of Sellycat's own pages (landing, pricing, help, legal, sign-in). Theme tokens only, so it
  * fits light pages and the dark app theme alike.
- * - full (default): brand column with tagline and contact, link columns (product, legal), bottom
+ * - full (default): brand column with the logo, link columns (product incl. contact form, legal), bottom
  *   bar with copyright and language. On phones everything stacks, one link per line.
  * - compact (sign-in pages): one quiet row with the legal links, copyright and language.
  * `language={false}` hides the switcher where the page header already has one.
@@ -26,8 +26,8 @@ export function SiteFooter({ language = true, compact = false }: { language?: bo
   const product: Array<[string, string]> = [
     ["/pricing", l.pricing],
     ["/help", l.help],
+    ["/contact", t.contact.nav],
     ["/login", t.common.login],
-    ["/signup", t.common.signup],
   ];
   const legal: Array<[string, string]> = [
     ["/legal/imprint", l.imprint],
@@ -92,10 +92,6 @@ export function SiteFooter({ language = true, compact = false }: { language?: bo
           <Link href="/" aria-label="Sellycat" className="self-start">
             <Logo width={160} />
           </Link>
-          <p className="leading-relaxed">{t.home.tagline}</p>
-          <a href="mailto:hello@sellycat.com" className="inline-flex items-center gap-2 self-start font-semibold text-ink hover:underline">
-            <Mail className="h-4 w-4" aria-hidden /> hello@sellycat.com
-          </a>
         </div>
         {column(l.product, product)}
         {column(l.legalTitle, legal)}
