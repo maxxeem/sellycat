@@ -15,7 +15,7 @@ type Labels = Dictionary["site"]["audiences"];
 /**
  * One photo per audience, in the order of `labels.tiles` (chosen by Jan, web-sized copies in
  * public/site/audiences): TV heads (media), golf (clubs), a fjord (city & tourism), a shared table
- * (retail & hospitality), a chair with a monstera leaf (agencies). `focus` keeps the subject in the
+ * (retail & hospitality), a floating type book with colour fan and headphones (agencies). `focus` keeps the subject in the
  * portrait crop and above the type.
  */
 const PHOTOS: { id: string; src: StaticImageData; focus: string }[] = [
@@ -23,7 +23,7 @@ const PHOTOS: { id: string; src: StaticImageData; focus: string }[] = [
   { id: "aud-clubs", src: clubs, focus: "34% 50%" },
   { id: "aud-city", src: city, focus: "50% 35%" },
   { id: "aud-retail", src: retail, focus: "50% 40%" },
-  { id: "aud-agency", src: agencies, focus: "50% 45%" },
+  { id: "aud-agency", src: agencies, focus: "50% 40%" },
 ];
 
 /**
