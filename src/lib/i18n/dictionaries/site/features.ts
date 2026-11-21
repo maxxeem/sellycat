@@ -18,7 +18,7 @@ export const en = {
     stock: { title: "Quantity & timeframe", text: "Set the stock, the sales window and a limit per order. The countdown and “Only X left” do the rest." },
     partners: { title: "Partners & settlement", text: "Every deal belongs to a partner. Sellycat works out who gets what, per sale or per redemption, and drafts the settlement." },
     analytics: { title: "Analytics", text: "Revenue, vouchers sold and redeemed, and views at a glance. So you can see what is working." },
-    team: { title: "Team, API & webhooks", text: "Bring your team on board with the right roles. Plug in your own systems through the API and webhooks." },
+    team: { title: "API & webhooks", text: "Connect your own systems: read deals, orders and vouchers through the API, get every sale and redemption as a webhook." },
   },
 };
 
@@ -40,6 +40,6 @@ export const de: Widen<typeof en> = {
     stock: { title: "Stückzahl & Zeitraum", text: "Lege Stückzahl, Verkaufszeitraum und ein Maximum pro Bestellung fest. Countdown und «Noch X verfügbar» erledigen den Rest." },
     partners: { title: "Partner & Abrechnung", text: "Jeder Deal gehört zu einem Partner. Sellycat rechnet aus, was wem zusteht, pro Verkauf oder pro Einlösung, und erstellt die Abrechnung." },
     analytics: { title: "Auswertungen", text: "Umsatz, verkaufte und eingelöste Gutscheine und Aufrufe auf einen Blick. Damit du siehst, was läuft." },
-    team: { title: "Team, API & Webhooks", text: "Hol dein Team mit den passenden Rollen dazu. Über API und Webhooks hängst du deine eigenen Systeme an." },
+    team: { title: "API & Webhooks", text: "Verbinde deine eigenen Systeme: Deals, Bestellungen und Gutscheine über die API, jeden Verkauf und jede Einlösung als Webhook." },
   },
 };

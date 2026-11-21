@@ -249,8 +249,8 @@ function DealDemo({ l, running, reduced }: SceneProps) {
             {field(l.value, chf(DEAL.valueCents), "CHF", 1, 1800)}
           </div>
           <div className="mt-4 grid grid-cols-[0.8fr_1.2fr] gap-4">
-            {field(l.stock, "50", "–", 1, 2100)}
-            {field(l.window, <span className="flex items-center gap-2"><Calendar className="h-4 w-4" style={{ color: GRAY }} />{l.windowValue}</span>, "–", 1, 2400)}
+            {field(l.stock, "50", "", 1, 2100)}
+            {field(l.window, <span className="flex items-center gap-2"><Calendar className="h-4 w-4" style={{ color: GRAY }} />{l.windowValue}</span>, "", 1, 2400)}
           </div>
           <div className="mt-6 flex h-11 items-center justify-center rounded-xl bg-coral text-[14px] font-semibold text-on-coral">{l.publish}</div>
           <div className="mt-3 h-5 text-[13px]">

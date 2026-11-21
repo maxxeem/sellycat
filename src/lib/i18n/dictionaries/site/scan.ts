@@ -2,14 +2,14 @@ import type { Widen } from "../../widen";
 
 /** Landing page copy: scan block (English). */
 export const en = {
-  eyebrow: "Redeem on velvet paws",
+  eyebrow: "Redemption",
   title: "Scan to redeem. No app.",
   text: "Your partner scans the voucher with their phone's camera and the check page shows right away whether it's valid. One swipe redeems it, and the buyer's wallet pass follows along.",
   points: [
-    { title: "No download, right in the browser" },
-    { title: "Partial redemption for value vouchers" },
-    { title: "Permissions per partner" },
-    { title: "A complete log" },
+    { title: "Right in the browser" },
+    { title: "Partial redemption" },
+    { title: "Rights per partner" },
+    { title: "Full audit log" },
   ],
   browser: "Runs in any browser",
   phoneLabel: "Animation: a partner scans a voucher with the phone camera, the check page shows «Valid», one swipe redeems it and the wallet pass switches to «Redeemed».",
@@ -34,14 +34,14 @@ export const en = {
 
 /** Landing page copy: scan block (Deutsch, Schweizer Schreibweise). */
 export const de: Widen<typeof en> = {
-  eyebrow: "Samtpfotig einlösen",
+  eyebrow: "Einlöseprozess",
   title: "Einlösen mit der Handykamera. Ohne App.",
-  text: "Dein Partner scannt den Gutschein mit der Kamera seines Handys, die Prüfseite zeigt sofort, ob er gültig ist. Ein Wisch, und er ist eingelöst – auch im Wallet des Käufers.",
+  text: "Dein Partner scannt den Gutschein mit der Kamera seines Handys, die Prüfseite zeigt sofort, ob er gültig ist. Ein Wisch, und er ist eingelöst, auch im Wallet des Käufers.",
   points: [
-    { title: "Ohne Download, direkt im Browser" },
-    { title: "Teileinlösung bei Wertgutscheinen" },
+    { title: "Direkt im Browser" },
+    { title: "Teileinlösung" },
     { title: "Rechte pro Partner" },
-    { title: "Lückenloses Protokoll" },
+    { title: "Volles Protokoll" },
   ],
   browser: "Läuft in jedem Browser",
   phoneLabel: "Animation: Ein Partner scannt einen Gutschein mit der Handykamera, die Prüfseite zeigt «Gültig», ein Wisch löst ihn ein und der Wallet-Pass wechselt auf «Eingelöst».",

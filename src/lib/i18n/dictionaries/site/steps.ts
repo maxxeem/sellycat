@@ -3,7 +3,7 @@ import type { Widen } from "../../widen";
 /** Landing page copy: steps block (English). */
 export const en = {
   title: "Live in three steps. Without a single line of code.",
-  subtitle: "Style your shop, create a deal, start selling. Payment, vouchers and redemption are on Sellycat.",
+  subtitle: "Style your shop, create a deal, start selling. Sellycat does the rest.",
   tabs: "Steps",
   /** Accessible name of a step tab; {title} = the step's title. */
   show: "Show step: {title}",
@@ -43,7 +43,7 @@ export const en = {
     value: "Value",
     stock: "Stock",
     window: "Sales window",
-    windowValue: "1 Dec – 24 Dec",
+    windowValue: "1 Dec to 24 Dec",
     publish: "Publish",
     draft: "Draft",
     live: "Live",
@@ -69,7 +69,7 @@ export const en = {
 /** Landing page copy: steps block (Deutsch, Schweizer Schreibweise). */
 export const de: Widen<typeof en> = {
   title: "In drei Schritten live. Ohne eine Zeile Code.",
-  subtitle: "Shop gestalten, Deal anlegen, verkaufen. Zahlung, Gutschein und Einlösung übernimmt Sellycat.",
+  subtitle: "Shop gestalten, Deal anlegen, verkaufen. Den Rest erledigt Sellycat.",
   tabs: "Schritte",
   show: "Schritt zeigen: {title}",
   items: [
@@ -104,7 +104,7 @@ export const de: Widen<typeof en> = {
     value: "Wert",
     stock: "Stückzahl",
     window: "Verkaufszeitraum",
-    windowValue: "1.12. – 24.12.",
+    windowValue: "1.12. bis 24.12.",
     publish: "Veröffentlichen",
     draft: "Entwurf",
     live: "Live",

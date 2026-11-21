@@ -7,11 +7,11 @@ export const en = {
   prev: "Previous",
   next: "Next",
   tiles: [
-    { name: "Media & radio", text: "Listener deals in your look, promoted on air." },
-    { name: "Clubs & associations", text: "Member benefits from partners, with settlement." },
-    { name: "City & tourism", text: "Experience vouchers for guests and locals." },
-    { name: "Retail & hospitality", text: "Your own vouchers, paid straight to your account." },
-    { name: "Agencies", text: "Shops for several clients, each in its own look." },
+    { name: "Media & radio", text: "Exclusive deals for your listeners, readers and viewers." },
+    { name: "Clubs & associations", text: "Member benefits that bring in new revenue." },
+    { name: "City & tourism", text: "Sell the best of your region as a voucher." },
+    { name: "Retail & hospitality", text: "Sell vouchers, even while your doors are closed." },
+    { name: "Agencies", text: "Run deal shops for your clients, each in their brand." },
   ],
 };
 
@@ -22,10 +22,10 @@ export const de: Widen<typeof en> = {
   prev: "Zurück",
   next: "Weiter",
   tiles: [
-    { name: "Medien & Radio", text: "Hörer-Deals im eigenen Look, beworben im Programm." },
-    { name: "Verbände & Vereine", text: "Mitgliedervorteile von Partnern, mit Abrechnung." },
-    { name: "Stadt & Tourismus", text: "Erlebnisgutscheine für Gäste und Einheimische." },
-    { name: "Handel & Gastronomie", text: "Eigene Gutscheine, bezahlt direkt aufs Konto." },
-    { name: "Agenturen", text: "Shops für mehrere Kunden, jeder im eigenen Look." },
+    { name: "Medien & Radio", text: "Exklusive Deals für deine Hörer, Leser und Zuschauer." },
+    { name: "Verbände & Vereine", text: "Mitgliedervorteile, die neue Einnahmen bringen." },
+    { name: "Stadt & Tourismus", text: "Das Beste deiner Region als Gutschein verkaufen." },
+    { name: "Handel & Gastronomie", text: "Gutscheine verkaufen, auch wenn der Laden zu ist." },
+    { name: "Agenturen", text: "Deal-Shops für deine Kunden, jeder in seiner Marke." },
   ],
 };

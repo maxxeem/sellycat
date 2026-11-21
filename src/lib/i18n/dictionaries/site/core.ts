@@ -6,7 +6,7 @@ import type { Widen } from "../../widen";
  */
 export const en = {
   meta: {
-    title: "Sellycat – your own deal shop with vouchers in the wallet",
+    title: "Sellycat: your own deal shop with vouchers in the wallet",
     description: "Launch a deal shop in your own look on your own domain. Payments go straight to you via Stripe, buyers get their voucher instantly as a PDF and in Apple or Google Wallet.",
     ogTitle: "Turn deals into your own business",
     ogClaim: "Instant revenue with digital vouchers.",
@@ -89,7 +89,7 @@ export const en = {
 
 export const de: Widen<typeof en> = {
   meta: {
-    title: "Sellycat – dein eigener Deal-Shop mit Gutscheinen im Wallet",
+    title: "Sellycat: dein eigener Deal-Shop mit Gutscheinen im Wallet",
     description: "Starte einen Deal-Shop im eigenen Look auf deiner Domain. Das Geld geht über Stripe direkt an dich, Käufer erhalten den Gutschein sofort als PDF und in Apple oder Google Wallet.",
     ogTitle: "Aus Deals wird dein Geschäft",
     ogClaim: "Sofort Umsatz mit digitalen Gutscheinen.",

@@ -128,12 +128,13 @@ const ART: Record<FeatureKey, ReactNode> = {
       <rect className={anim("analytics-bar")} x={340} y={100} width={22} height={110} rx={5} fill={T.coral} />
     </g>
   ),
-  // Team, API & webhooks: three members, a signal pings next to them.
+  // API & webhooks: a system (code brackets) wired to an endpoint, the event signal pings.
   team: (
     <g>
-      <circle cx={262} cy={150} r={24} fill={T.bg1} stroke={T.n2} strokeWidth={SW} />
-      <circle cx={298} cy={150} r={24} fill={T.bg1} stroke={T.n2} strokeWidth={SW} />
-      <circle cx={334} cy={150} r={24} fill={T.bg1} stroke={T.light} strokeWidth={SW} />
+      <rect x={210} y={118} width={72} height={64} rx={10} fill={T.bg1} stroke={T.n2} strokeWidth={SW} />
+      <path d="M236 138 l-10 12 l10 12 M256 138 l10 12 l-10 12" stroke={T.light} {...line} />
+      <line x1={282} y1={150} x2={366} y2={150} stroke={T.n1} {...line} strokeDasharray="2 8" />
+      <circle cx={384} cy={150} r={18} fill={T.bg1} stroke={T.coral} strokeWidth={SW} />
       <circle cx={384} cy={150} r={6} fill={T.coral} />
       <circle className={anim("team-ping")} cx={384} cy={150} r={6} stroke={T.coral} {...line} strokeWidth={2} />
     </g>

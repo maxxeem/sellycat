@@ -649,11 +649,12 @@ function LivePreviewCard({ running, l, locale }: CardProps) {
       </div>
       <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl bg-white text-[#111]">
         <span className="absolute right-2 top-2 z-10"><LiveChip label={l.ui.live} /></span>
-        <div className="h-[86px]"><DealArt deal={deal} /></div>
+        {/* Fits the 178 px inner height of the card with room to spare (the button was cut off before). */}
+        <div className="h-[66px]"><DealArt deal={deal} /></div>
         <div className="p-2.5">
           <p className="truncate text-[12px] font-bold">{title(deal, locale)}</p>
           <p className="mt-0.5 text-[11px] tabular-nums">{chf(deal.priceCents)}</p>
-          <span className="mt-2 flex h-8 items-center justify-center rounded-lg text-[12px] font-semibold" style={{ ...BRAND_T, background: p.bg, color: p.on }}>{l.ui.buy}</span>
+          <span className="mt-1.5 flex h-7 items-center justify-center rounded-lg text-[12px] font-semibold" style={{ ...BRAND_T, background: p.bg, color: p.on }}>{l.ui.buy}</span>
         </div>
       </div>
     </div>

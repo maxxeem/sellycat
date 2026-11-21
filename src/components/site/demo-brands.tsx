@@ -52,7 +52,7 @@ export const DEMO_DEALS: DemoDeal[] = [
   { id: "wein", title: { de: "Weindegustation mit Apéro", en: "Wine tasting with apéro" }, partner: "Weingut Sonnhalde", priceCents: 3500, valueCents: 5500, left: 14, photo: "photo-1506377247377-2a5b3b417ebb", hue: ["#D9C7B8", "#5B1E2B"] },
   { id: "sushi", title: { de: "Sushi-Menü für zwei", en: "Sushi menu for two" }, partner: "Sora Sushi", priceCents: 5900, valueCents: 8800, left: 8, photo: "photo-1607301405418-780ee5e6dd10", hue: ["#F2C3A0", "#1C1C1C"] },
   { id: "yoga", title: { de: "10er-Abo Yoga", en: "Yoga 10-class pass" }, partner: "Studio Atem", priceCents: 15900, valueCents: 22000, left: 20, photo: "photo-1552196563-55cd4e45efb3", hue: ["#EDE6DE", "#6B5A4C"] },
-  { id: "boulder", title: { de: "Bouldern inkl. Schuhmiete", en: "Bouldering incl. shoe rental" }, partner: "Kletterhalle Griff", priceCents: 2200, valueCents: 3400, left: 26, photo: "photo-1696105539018-a73a53770934", hue: ["#F7D046", "#4A4A4A"] },
+  { id: "tennis", title: { de: "Tennisplatz für 2 Stunden", en: "Tennis court for 2 hours" }, partner: "Tennisclub Seeblick", priceCents: 3600, valueCents: 5000, left: 26, photo: "photo-1684443726764-6a236cb33ccb", hue: ["#7FB069", "#2E5E2A"] },
   { id: "pasta", title: { de: "Pasta-Kochkurs", en: "Pasta cooking class" }, partner: "Kochatelier Salz", priceCents: 8900, valueCents: 12900, left: 6, photo: "photo-1612966874574-e0a92ad2bc43", hue: ["#F4D58D", "#9C6B1F"] },
   { id: "konzert", title: { de: "Konzertticket Stehplatz", en: "Concert ticket, standing" }, partner: "Halle Ost", priceCents: 4900, valueCents: 6900, left: 33, photo: "photo-1470229722913-7c0e2dbbafd3", hue: ["#F3B65B", "#2B1A10"] },
   { id: "ski", title: { de: "Skipass Tageskarte", en: "Ski day pass" }, partner: "Skigebiet Weisshorn", priceCents: 5200, valueCents: 7400, left: 40, photo: "photo-1641799540167-44c4865934e9", hue: ["#EEF3F8", "#C0392B"] },
@@ -67,7 +67,8 @@ export const DEMO_DEALS: DemoDeal[] = [
   { id: "ballon", title: { de: "Ballonfahrt bei Sonnenaufgang", en: "Hot-air balloon at sunrise" }, partner: "Ballonteam Aare", priceCents: 24900, valueCents: 32000, left: 3, photo: "photo-1633118325558-c817f0259943", focus: [0.75, 0.4], hue: ["#D7E6F2", "#C0392B"] },
 ];
 
-export const chf = (cents: number) => `CHF ${Number.isInteger(cents / 100) ? `${cents / 100}.–` : (cents / 100).toFixed(2)}`;
+/** Price for the mockups: «CHF 39» or «CHF 39.50» (no dash notation anywhere on the landing). */
+export const chf = (cents: number) => `CHF ${Number.isInteger(cents / 100) ? cents / 100 : (cents / 100).toFixed(2)}`;
 export const discount = (d: DemoDeal) => Math.round((1 - d.priceCents / d.valueCents) * 100);
 
 /** Square crop from the image CDN: one URL per photo (cached once, reused by every card). */
