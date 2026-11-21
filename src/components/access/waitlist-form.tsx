@@ -2,7 +2,7 @@
 
 import { ArrowRight, Building2, Check, Megaphone, MapPin, MoreHorizontal, Sparkles, Store, Users, type LucideIcon } from "lucide-react";
 import { Turnstile } from "@/components/access/turnstile";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { joinWaitlistAction } from "@/app/p/[locale]/(auth)/access-actions";
 import { Input, Notice, buttonClass } from "@/components/ui";
 import { USE_CASES, type UseCase } from "@/lib/access/rules";
@@ -29,11 +29,12 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
   // Every submit uses up the Turnstile token: a new widget (key) per attempt.
   const [attempt, setAttempt] = useState(0);
   const [state, action, pending] = useActionState(joinWaitlistAction, null);
-  // Time the form appeared in the browser (bots submit instantly); written straight into the field.
-  const renderedAt = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (renderedAt.current) renderedAt.current.value = String(Date.now());
-  }, []);
+  // Held in state: a hidden input's DOM value falls back to its defaultValue «0» on every re-render, which
+  // made real people look like bots. The submit button waits until the time is set (page interactive).
+  const [renderedAt, setRenderedAt] = useState(0);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock may only be read in the browser
+  useEffect(() => setRenderedAt(Date.now()), []);
+  const ready = renderedAt > 0;
 
   if (state?.sent)
     return (
@@ -52,12 +53,13 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
   return (
     <form action={action} onSubmit={() => setAttempt((a) => a + 1)} className="flex flex-col gap-5 text-left" data-testid="waitlist-form">
       <input type="hidden" name="locale" value={locale} />
-      <input type="hidden" name="rendered_at" ref={renderedAt} defaultValue="0" />
+      <input type="hidden" name="rendered_at" value={renderedAt} readOnly />
       {/* Honeypot: invisible for people, tempting for bots. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        {/* A name and label no autofill recognises (a «Fax» field was filled by browsers, turning people into bots). */}
         <label>
-          Fax
-          <input type="text" name="fax" tabIndex={-1} autoComplete="off" />
+          Leave empty
+          <input type="text" name="sc_hp" tabIndex={-1} autoComplete="off" data-1p-ignore data-lpignore="true" />
         </label>
       </div>
 
@@ -109,7 +111,7 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
       </label>
       {turnstileKey ? <Turnstile key={attempt} siteKey={turnstileKey} locale={locale} theme="auto" /> : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
-      <button type="submit" disabled={pending} className={`${buttonClass.primary} group w-full gap-2 py-3.5 text-base ${compact ? "" : "sm:mx-auto sm:w-auto sm:px-10"}`} data-testid="waitlist-submit">
+      <button type="submit" disabled={pending || !ready} className={`${buttonClass.primary} group w-full gap-2 py-3.5 text-base ${compact ? "" : "sm:mx-auto sm:w-auto sm:px-10"}`} data-testid="waitlist-submit">
         {pending ? t.common.loading : w.submit}
         {pending ? null : <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden />}
       </button>

@@ -1,6 +1,6 @@
 "use server";
 
-import { looksLikeBot, waitlistSchema } from "@/lib/access/rules";
+import { botSignal, waitlistSchema } from "@/lib/access/rules";
 import { checkCode, clientIp, confirmWaitlist, joinWaitlist, verifyTurnstile } from "@/lib/access/server";
 
 export type CodeState = { ok: true; code: string } | { ok: false; error: "codeInvalid" } | null;
@@ -15,7 +15,12 @@ export async function checkCodeAction(_: CodeState, form: FormData): Promise<Cod
 
 /** Waitlist form (landing page and /signup). Bots and duplicates get the same "check your inbox". */
 export async function joinWaitlistAction(_: WaitlistState, form: FormData): Promise<WaitlistState> {
-  if (looksLikeBot({ honeypot: String(form.get("fax") ?? ""), renderedAt: Number(form.get("rendered_at")) })) return { sent: true };
+  // Bots get the same answer as people, but every drop is logged (a silent drop hid real signups).
+  const bot = botSignal({ honeypot: String(form.get("sc_hp") ?? ""), renderedAt: Number(form.get("rendered_at")) });
+  if (bot) {
+    console.warn("[waitlist] dropped as bot:", bot);
+    return { sent: true };
+  }
   const raw = Object.fromEntries(form);
   const parsed = waitlistSchema.safeParse({
     email: raw.email ?? "",

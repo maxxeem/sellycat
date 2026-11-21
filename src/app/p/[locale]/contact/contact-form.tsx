@@ -1,7 +1,7 @@
 "use client";
 
 import { Turnstile } from "@/components/access/turnstile";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Field, Input, Notice, buttonClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { sendContactMessage } from "./actions";
@@ -12,11 +12,12 @@ export function ContactForm({ turnstileKey }: { turnstileKey: string | null }) {
   // Every submit uses up the Turnstile token: a new widget (key) per attempt.
   const [attempt, setAttempt] = useState(0);
   const [state, action, pending] = useActionState(sendContactMessage, null);
-  // When the form appeared in the browser (bots submit at once); written straight into the field.
-  const renderedAt = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (renderedAt.current) renderedAt.current.value = String(Date.now());
-  }, []);
+  // Held in state: a hidden input's DOM value falls back to its defaultValue «0» on every re-render, which
+  // made real people look like bots. The submit button waits until the time is set (page interactive).
+  const [renderedAt, setRenderedAt] = useState(0);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock may only be read in the browser
+  useEffect(() => setRenderedAt(Date.now()), []);
+  const ready = renderedAt > 0;
 
   if (state?.ok)
     return (
@@ -28,12 +29,13 @@ export function ContactForm({ turnstileKey }: { turnstileKey: string | null }) {
   return (
     <form action={action} onSubmit={() => setAttempt((a) => a + 1)} className="flex flex-col gap-4" data-testid="contact-form">
       <input type="hidden" name="locale" value={locale} />
-      <input type="hidden" name="rendered_at" ref={renderedAt} defaultValue="0" />
+      <input type="hidden" name="rendered_at" value={renderedAt} readOnly />
       {/* Honeypot: invisible for people, tempting for bots. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        {/* A name and label no autofill recognises (a «Fax» field was filled by browsers, turning people into bots). */}
         <label>
-          Fax
-          <input type="text" name="fax" tabIndex={-1} autoComplete="off" />
+          Leave empty
+          <input type="text" name="sc_hp" tabIndex={-1} autoComplete="off" data-1p-ignore data-lpignore="true" />
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -59,7 +61,7 @@ export function ContactForm({ turnstileKey }: { turnstileKey: string | null }) {
       </p>
       {turnstileKey ? <Turnstile key={attempt} siteKey={turnstileKey} locale={locale} theme="light" /> : null}
       {state && !state.ok ? <Notice tone="error">{c.errors[state.error]}</Notice> : null}
-      <button type="submit" disabled={pending} className={`${buttonClass.primary} self-start`} data-testid="contact-submit">
+      <button type="submit" disabled={pending || !ready} className={`${buttonClass.primary} self-start`} data-testid="contact-submit">
         {pending ? t.common.loading : c.submit}
       </button>
     </form>

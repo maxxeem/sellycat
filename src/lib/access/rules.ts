@@ -114,11 +114,21 @@ export const waitlistSchema = z.object({
 });
 export type WaitlistInput = z.infer<typeof waitlistSchema>;
 
-/** Bot signals: the hidden field was filled, or the form came back faster than a human types. */
-export function looksLikeBot(i: { honeypot: string; renderedAt: number; now?: number }): boolean {
+export type BotSignal = "honeypot" | "no-time" | "too-fast" | "stale";
+
+/**
+ * Bot signals: the hidden field was filled, the form carries no render time, or it came back faster
+ * than a human types. A render time in the future (the visitor's clock runs ahead of ours) is no
+ * signal: Turnstile and the rate limits still apply.
+ */
+export function botSignal(i: { honeypot: string; renderedAt: number; now?: number }): BotSignal | null {
   const now = i.now ?? Date.now();
-  if (i.honeypot.trim() !== "") return true;
-  if (!Number.isFinite(i.renderedAt) || i.renderedAt <= 0) return true;
+  if (i.honeypot.trim() !== "") return "honeypot";
+  if (!Number.isFinite(i.renderedAt) || i.renderedAt <= 0) return "no-time";
   const elapsed = now - i.renderedAt;
-  return elapsed < 2500 || elapsed > 24 * 3600_000;
+  if (elapsed >= 0 && elapsed < 2500) return "too-fast";
+  if (elapsed > 24 * 3600_000) return "stale";
+  return null;
 }
+
+export const looksLikeBot = (i: { honeypot: string; renderedAt: number; now?: number }) => botSignal(i) !== null;

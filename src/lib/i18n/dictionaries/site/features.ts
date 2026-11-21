@@ -9,7 +9,7 @@ export const en = {
   slide: "{n} of {total}",
   goTo: "Show feature {n} of {total}",
   items: {
-    brand: { title: "Your own brand", text: "Logo, colours, font: your shop looks like you." },
+    brand: { title: "Your own shop", text: "Logo, colours, font: your shop looks like you." },
     domain: { title: "Your own domain", text: "Your address, SSL included. We check the DNS record." },
     money: { title: "Money straight to you", text: "Buyers pay through Stripe straight into your account." },
     pdf: { title: "PDF voucher", text: "In the inbox seconds after purchase, with QR, barcode or number code." },
@@ -31,7 +31,7 @@ export const de: Widen<typeof en> = {
   slide: "{n} von {total}",
   goTo: "Funktion {n} von {total} anzeigen",
   items: {
-    brand: { title: "Eigene Marke", text: "Logo, Farben, Schrift: Dein Shop sieht aus wie du." },
+    brand: { title: "Eigener Shop", text: "Logo, Farben, Schrift: Dein Shop sieht aus wie du." },
     domain: { title: "Eigene Domain", text: "Deine Adresse, SSL inklusive. Den DNS-Eintrag prüfen wir." },
     money: { title: "Geld direkt an dich", text: "Käufer zahlen über Stripe direkt auf dein Konto." },
     pdf: { title: "PDF-Gutschein", text: "Sekunden nach dem Kauf im Postfach, mit QR-, Bar- oder Zahlencode." },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CODE_ALPHABET, codeLink, codeRequired, codeState, generateCode, isValidCode, looksLikeBot, normaliseCode, normaliseWebsite, signupCta, waitlistSchema } from "./rules";
+import { CODE_ALPHABET, codeLink, codeRequired, codeState, generateCode, isValidCode, botSignal, looksLikeBot, normaliseCode, normaliseWebsite, signupCta, waitlistSchema } from "./rules";
 
 describe("signup modes", () => {
   it("maps each mode to its landing CTA", () => {
@@ -75,6 +75,10 @@ describe("waitlist", () => {
     const now = 1_000_000_000;
     expect(looksLikeBot({ honeypot: "", renderedAt: now - 10_000, now })).toBe(false);
     expect(looksLikeBot({ honeypot: "x", renderedAt: now - 10_000, now })).toBe(true);
+    expect(botSignal({ honeypot: "", renderedAt: 0, now })).toBe("no-time");
+    expect(botSignal({ honeypot: "", renderedAt: now - 1000, now })).toBe("too-fast");
+    // A visitor clock running ahead is no bot signal.
+    expect(botSignal({ honeypot: "", renderedAt: now + 30_000, now })).toBeNull();
     expect(looksLikeBot({ honeypot: "", renderedAt: now - 500, now })).toBe(true);
     expect(looksLikeBot({ honeypot: "", renderedAt: Number.NaN, now })).toBe(true);
   });

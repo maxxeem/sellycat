@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { looksLikeBot } from "@/lib/access/rules";
+import { botSignal } from "@/lib/access/rules";
 import { clientIp, mailFrom, networkOf, rateLimit, verifyTurnstile } from "@/lib/access/server";
 import { countryFromRequest } from "@/lib/billing/currency-server";
 import { esc } from "@/lib/mail/templates";
@@ -25,7 +25,12 @@ const schema = z.object({
  * CONTACT_EMAIL (default hello@sellycat.com) with the sender as Reply-To.
  */
 export async function sendContactMessage(_: ContactFormState, form: FormData): Promise<ContactFormState> {
-  if (looksLikeBot({ honeypot: String(form.get("fax") ?? ""), renderedAt: Number(form.get("rendered_at")) })) return { ok: true };
+  // Bots get the same answer as people, but every drop is logged (a silent drop hid real signups).
+  const bot = botSignal({ honeypot: String(form.get("sc_hp") ?? ""), renderedAt: Number(form.get("rendered_at")) });
+  if (bot) {
+    console.warn("[contact] dropped as bot:", bot);
+    return { ok: true };
+  }
   const parsed = schema.safeParse({
     name: form.get("name") ?? "",
     email: form.get("email") ?? "",
