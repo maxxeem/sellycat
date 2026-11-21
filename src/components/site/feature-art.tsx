@@ -12,14 +12,16 @@ import type { ReactNode } from "react";
 export const FEATURE_KEYS = ["brand", "domain", "money", "pdf", "wallet", "scan", "stock", "partners", "analytics", "team"] as const;
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
+/* Light palette (the stages sit in light cards): white panels on a warm mist, warm greys for lines from
+   faint (n1) to strong (light = the darkest accent line), coral as the one accent. */
 const T = {
-  bg0: "#221613", // site-raise
-  bg1: "#1a1a1a", // site-surface
-  bg2: "#111111", // site-ground
-  n1: "#3a3330",
-  n2: "#5a4d48",
-  n3: "#857570",
-  light: "#d9d2ce",
+  bg0: "#fff1ec", // site-raise (light)
+  bg1: "#ffffff", // panels
+  bg2: "#f7f3f1", // recessed fills
+  n1: "#ddd3ce",
+  n2: "#bcafa9",
+  n3: "#8f817b",
+  light: "#4a3f3b",
   coral: "#ff4b23",
   ink: "#111111",
 };

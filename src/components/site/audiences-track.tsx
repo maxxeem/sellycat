@@ -11,15 +11,16 @@ type Photo = Pick<DemoDeal, "id" | "photo" | "focus">;
 const deal = (id: string): Photo => DEMO_DEALS.find((d) => d.id === id) ?? DEMO_DEALS[0];
 
 /**
- * One calm photo per audience, in the order of `labels.tiles` (Unsplash License): a radio studio
- * microphone, a club's golf course, a city balloon ride, a set restaurant table, colour swatches.
+ * One calm photo per audience, in the order of `labels.tiles` (Unsplash License), each with large quiet
+ * areas: a microphone against a warm wall, a golf course, a balloon in the sky, a coffee cup from above,
+ * paper samples in soft tones.
  */
 const PHOTOS: Photo[] = [
-  { id: "aud-media", photo: "photo-1688039763740-9036cb5d566e", focus: [0.45, 0.45] },
+  { id: "aud-media", photo: "photo-1585347110520-7a8a5c77af09", focus: [0.22, 0.35] },
   deal("golf"),
   deal("ballon"),
-  { id: "aud-hospitality", photo: "photo-1669310095420-8cd109dba5cb" },
-  { id: "aud-agency", photo: "photo-1608231261603-42c08866e163" },
+  { id: "aud-hospitality", photo: "photo-1458819714733-e5ab3d536722", focus: [0.5, 0.72] },
+  { id: "aud-agency", photo: "photo-1740324974144-046b3538e89e", focus: [0.5, 0.3] },
 ];
 
 /**

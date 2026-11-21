@@ -605,7 +605,7 @@ function FormatsMock({ narrow, running, still, l, locale }: MockProps) {
 
 /* ---------- Cards (small loops, 340 × 210) ---------- */
 
-const CARD = "site-dark h-full overflow-hidden rounded-2xl border border-white/10 bg-site-surface p-4 text-white";
+const CARD = "h-full overflow-hidden rounded-2xl border border-fg/10 bg-white p-4 text-fg shadow-[0_1px_2px_rgb(17_17_17/0.04)]";
 
 /** Three brand kits (logo, colours, font sample); the active one is highlighted in turn. */
 function BrandKitCard({ running }: CardProps) {
@@ -613,10 +613,10 @@ function BrandKitCard({ running }: CardProps) {
   return (
     <div className={`${CARD} flex flex-col justify-center gap-2`}>
       {DEMO_BRANDS.map((b, i) => (
-        <div key={b.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-[background-color,box-shadow] duration-500 ${i === active ? "bg-white/[0.08] ring-1 ring-coral" : "bg-white/[0.03]"}`}>
+        <div key={b.id} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-[background-color,box-shadow] duration-500 ${i === active ? "bg-fg/[0.08] ring-1 ring-coral" : "bg-fg/[0.03]"}`}>
           <span className="flex min-w-0 flex-1 items-center rounded-lg bg-white px-2 py-1"><BrandMark brand={b} size={16} /></span>
-          <span className="h-5 w-5 rounded-md ring-1 ring-white/20" style={{ background: b.primary }} />
-          <span className="h-5 w-5 rounded-md ring-1 ring-white/20" style={{ background: b.surface }} />
+          <span className="h-5 w-5 rounded-md ring-1 ring-fg/20" style={{ background: b.primary }} />
+          <span className="h-5 w-5 rounded-md ring-1 ring-fg/20" style={{ background: b.surface }} />
           <span className="w-8 text-center text-[17px] font-bold" style={{ fontFamily: b.font }}>Aa</span>
         </div>
       ))}
@@ -640,12 +640,12 @@ function LivePreviewCard({ running, l, locale }: CardProps) {
   const deal = DEMO_DEALS[3];
   return (
     <div className={`${CARD} flex gap-3`}>
-      <div className="flex w-[104px] shrink-0 flex-col gap-2 rounded-xl bg-white/[0.04] p-2.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">{l.brands.primary}</span>
+      <div className="flex w-[104px] shrink-0 flex-col gap-2 rounded-xl bg-fg/[0.04] p-2.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-fg/50">{l.brands.primary}</span>
         <div className="grid grid-cols-3 gap-1.5">
-          {PICKS.map((c, i) => <span key={c.bg} className={`h-6 rounded-md transition-shadow duration-300 ${i === pick ? "ring-2 ring-coral ring-offset-2 ring-offset-site-surface" : "ring-1 ring-white/15"}`} style={{ background: c.bg }} />)}
+          {PICKS.map((c, i) => <span key={c.bg} className={`h-6 rounded-md transition-shadow duration-300 ${i === pick ? "ring-2 ring-coral ring-offset-2 ring-offset-site-surface" : "ring-1 ring-fg/15"}`} style={{ background: c.bg }} />)}
         </div>
-        <span className="mt-auto font-mono text-[11px] text-white/70">{p.bg}</span>
+        <span className="mt-auto font-mono text-[11px] text-fg/70">{p.bg}</span>
       </div>
       <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl bg-white text-[#111]">
         <span className="absolute right-2 top-2 z-10"><LiveChip label={l.ui.live} /></span>
@@ -672,16 +672,16 @@ function CertCard({ running, still, l }: CardProps) {
   return (
     <div className={`${CARD} flex flex-col justify-center`}>
       <div className="flex items-center gap-3">
-        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors duration-500 ${step >= 1 ? "bg-coral text-on-coral" : "bg-white/10 text-white/50"}`}><ShieldCheck className="h-5 w-5" /></span>
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors duration-500 ${step >= 1 ? "bg-coral text-on-coral" : "bg-fg/10 text-fg/50"}`}><ShieldCheck className="h-5 w-5" /></span>
         <span className="min-w-0">
           <span className="flex items-center gap-1.5 font-mono text-[13px]"><Lock className="h-3.5 w-3.5 text-coral-text" />{t.host}</span>
-          <span className="text-[11px] text-white/50">HTTPS · TLS</span>
+          <span className="text-[11px] text-fg/50">HTTPS · TLS</span>
         </span>
       </div>
       <div className="mt-4 flex flex-col gap-2">
         {rows.map((r, i) => (
-          <span key={r.k} className={`flex items-center justify-between rounded-xl bg-white/[0.05] px-3 py-2.5 text-[12px] transition-opacity duration-500 ${step >= i + 2 ? "opacity-100" : "opacity-30"}`}>
-            <span className="text-white/60">{r.k}</span>
+          <span key={r.k} className={`flex items-center justify-between rounded-xl bg-fg/[0.05] px-3 py-2.5 text-[12px] transition-opacity duration-500 ${step >= i + 2 ? "opacity-100" : "opacity-30"}`}>
+            <span className="text-fg/60">{r.k}</span>
             <span className="flex items-center gap-1.5 font-medium"><Check className="h-3.5 w-3.5 text-coral-text" />{r.v}</span>
           </span>
         ))}
@@ -704,7 +704,7 @@ function SenderCard({ running, still, l }: CardProps) {
       </div>
       <div className="mt-3 flex items-center gap-2 text-[11px]">
         {["SPF", "DKIM"].map((k, i) => (
-          <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium transition-colors duration-500 ${step >= i + 1 ? "bg-coral/15 text-coral-text" : "bg-white/[0.06] text-white/40"}`}>
+          <span key={k} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium transition-colors duration-500 ${step >= i + 1 ? "bg-coral/15 text-coral-text" : "bg-fg/[0.06] text-fg/40"}`}>
             {step >= i + 1 ? <Check className="h-3 w-3" /> : null}{k}
           </span>
         ))}
@@ -723,8 +723,8 @@ function WindowCard({ running, still, l }: CardProps) {
   const track = 276;
   return (
     <div className={`${CARD} flex flex-col justify-center`}>
-      <div className="flex justify-between text-[11px] text-white/50"><span>{t.from} · 1.12.</span><span>{t.to} · 24.12.</span></div>
-      <div className="relative mt-2 h-2 rounded-full bg-white/10" style={{ width: track }}>
+      <div className="flex justify-between text-[11px] text-fg/50"><span>{t.from} · 1.12.</span><span>{t.to} · 24.12.</span></div>
+      <div className="relative mt-2 h-2 rounded-full bg-fg/10" style={{ width: track }}>
         <span className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-coral/40 transition-transform duration-700" style={{ transform: `scaleX(${step / 14})` }} />
         <span className="absolute -top-1.5 left-0 transition-transform duration-700" style={{ transform: `translateX(${(step / 14) * track}px)` }}>
           <span className="block h-5 w-1 -translate-x-1/2 rounded-full bg-coral" />
@@ -732,7 +732,7 @@ function WindowCard({ running, still, l }: CardProps) {
         </span>
       </div>
       <div className="mt-9 grid grid-cols-12 gap-1.5">
-        {Array.from({ length: STOCK }, (_, i) => <span key={i} className={`h-6 rounded-md transition-opacity duration-500 ${i < sold ? "bg-white/10 opacity-60" : "bg-coral"}`} />)}
+        {Array.from({ length: STOCK }, (_, i) => <span key={i} className={`h-6 rounded-md transition-opacity duration-500 ${i < sold ? "bg-fg/10 opacity-60" : "bg-coral"}`} />)}
       </div>
       <p className="mt-2.5 text-[12px] font-medium">{sold >= STOCK ? t.soldOut : fill(l.ui.left, STOCK - sold)}</p>
     </div>
@@ -749,7 +749,7 @@ function TermsCard({ running, still, l }: CardProps) {
       <Head2>{t.termsHead}</Head2>
       <div className="flex flex-col gap-1.5">
         {t.terms.map((term, i) => (
-          <span key={term} className={`flex items-center gap-2.5 rounded-xl bg-white/[0.05] px-3 py-2 text-[12px] transition-[opacity,transform] duration-500 ${i < step ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"}`}>
+          <span key={term} className={`flex items-center gap-2.5 rounded-xl bg-fg/[0.05] px-3 py-2 text-[12px] transition-[opacity,transform] duration-500 ${i < step ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"}`}>
             <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-coral text-on-coral"><Check className="h-2.5 w-2.5" strokeWidth={3} /></span>
             <span className="truncate">{term}</span>
           </span>
@@ -760,7 +760,7 @@ function TermsCard({ running, still, l }: CardProps) {
 }
 
 function Head2({ children }: { children: ReactNode }) {
-  return <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/50">{children}</p>;
+  return <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-fg/50">{children}</p>;
 }
 
 /** Deterministic example pool codes (no Math.random: server and client render the same list). */
@@ -777,10 +777,10 @@ function PoolCard({ running, l }: CardProps) {
   const offset = useTicker(running, 1500) % (POOL.length - 4);
   return (
     <div className={`${CARD} flex flex-col`}>
-      <div className="flex items-center justify-between"><Head2>{t.pool}</Head2><span className="-mt-2 text-[11px] tabular-nums text-white/60">{POOL_FREE - offset} {t.free}</span></div>
+      <div className="flex items-center justify-between"><Head2>{t.pool}</Head2><span className="-mt-2 text-[11px] tabular-nums text-fg/60">{POOL_FREE - offset} {t.free}</span></div>
       <div className="flex flex-col gap-1">
         {POOL.slice(offset, offset + 4).map((code, i) => (
-          <span key={code} className={`tour-pop flex items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[12px] ${i === 0 ? "bg-coral text-on-coral" : "bg-white/[0.05] text-white/80"}`}>
+          <span key={code} className={`tour-pop flex items-center justify-between rounded-lg px-3 py-1.5 font-mono text-[12px] ${i === 0 ? "bg-coral text-on-coral" : "bg-fg/[0.05] text-fg/80"}`}>
             {code}
             {i === 0 ? <span className="font-sans text-[10.5px] font-semibold">→ {t.assigned}</span> : null}
           </span>
@@ -810,7 +810,7 @@ function PdfWalletCard({ running, still, l, locale }: CardProps) {
       <div className="relative h-[170px] w-[132px] shrink-0 overflow-hidden rounded-xl p-2.5 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.8)]" style={{ background: b.primary, color: b.onPrimary }}>
         <p className="flex items-center gap-1 text-[9px] font-semibold opacity-90"><Wallet className="h-3 w-3" />{b.name}</p>
         <p className="mt-2 text-[11.5px] font-bold leading-tight">{title(deal, locale)}</p>
-        <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[9.5px] font-semibold transition-colors duration-500 ${redeemed ? "bg-black/30" : "bg-white/25"}`}>
+        <span className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[9.5px] font-semibold transition-colors duration-500 ${redeemed ? "bg-black/30" : "bg-fg/25"}`}>
           <span key={redeemed ? "r" : "v"} className="stour-fade inline-block">{redeemed ? t.redeemed : t.valid}</span>
         </span>
         <span className={`absolute bottom-2.5 left-1/2 -translate-x-1/2 rounded bg-white p-1 transition-opacity duration-500 ${redeemed ? "opacity-40" : ""}`}><QrSymbol size={50} /></span>

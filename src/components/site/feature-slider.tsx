@@ -323,7 +323,7 @@ export function FeatureSlider({ labels }: { labels: Labels }) {
   );
 }
 
-/** Stage with a coral glow at the bottom over the raised ink, as in the reference design. */
+/** Light stage: a soft coral glow at the bottom over warm mist. */
 const STAGE_BG: CSSProperties = {
   background: "radial-gradient(circle at 50% 120%, rgb(var(--coral-rgb) / 0.16), transparent 55%), linear-gradient(180deg, var(--site-raise), var(--site-surface))",
 };
@@ -338,7 +338,7 @@ function FeatureCard({ id, title, text, index }: { id: FeatureKey; title: string
       style={{ "--fa-delay": `${-(index * 0.9)}s` } as CSSProperties}
       className="flex h-full flex-col overflow-hidden rounded-[26px] border border-site-line bg-site-surface transition duration-300 ease-out hover:-translate-y-0.5 hover:border-coral/55 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] focus-visible:border-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral motion-reduce:transform-none motion-reduce:transition-none"
     >
-      <div className="site-dark relative h-[170px] shrink-0 overflow-hidden border-b border-site-line sm:h-[190px]" style={STAGE_BG} data-testid="feature-stage">
+      <div className="relative h-[170px] shrink-0 overflow-hidden border-b border-site-line sm:h-[190px]" style={STAGE_BG} data-testid="feature-stage">
         {/* Inline illustration, so its animated elements can pause off screen and react to hover. */}
         <div className="feature-art-inline absolute inset-0 [&>svg]:h-full [&>svg]:w-full" data-testid="feature-art">
           <FeatureArt id={id} />
