@@ -42,14 +42,17 @@ export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de
         <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <ScanPhone a={a} locale={locale} />
         </div>
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-start-1" data-testid="scan-points">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-start-1 lg:grid-cols-1" data-testid="scan-points">
           {a.points.map((p, i) => {
             const Icon = POINT_ICONS[i] ?? ShieldCheck;
             return (
-              <li key={i} className="flex min-w-0 items-center gap-3 rounded-2xl bg-white/[0.04] px-3.5 py-3.5 ring-1 ring-white/10">
+              <li key={i} className="flex min-w-0 items-center gap-3 rounded-2xl bg-white/[0.04] px-3.5 py-3 ring-1 ring-white/10">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-coral/10 text-coral-text ring-1 ring-coral/30"><Icon className="h-4 w-4" aria-hidden /></span>
-                {/* One line per point (texts are kept short for the narrowest box). */}
-                <span className="min-w-0 truncate text-[14px] font-semibold text-white sm:text-[15px]">{p.title}</span>
+                {/* Title and one short sentence, each on one line (texts are kept short for the narrowest box). */}
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[14px] font-semibold text-white sm:text-[15px]">{p.title}</span>
+                  <span className="truncate text-[13px] text-white/60">{p.text}</span>
+                </span>
               </li>
             );
           })}
