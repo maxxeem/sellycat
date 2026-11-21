@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import onLight from "../../../public/brand/sellycat-on-light-1024.png";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n/context";
 import { LOCALE_COOKIE, LOCALES, LOCALE_LABEL } from "@/lib/i18n/locales";
 
@@ -57,7 +56,8 @@ function LanguageSegmented({ onChosen }: { onChosen?: () => void }) {
 }
 
 /**
- * Landing header (ported from the reference landing): logo left; right login, pricing, Help Center and language.
+ * Landing header (ported from the reference landing): logo left; right login, pricing and Help Center (the
+ * language switcher lives in the footer, as on every Sellycat page).
  * On phones those fold into a sheet; login stays next to the menu button.
  */
 export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
@@ -107,7 +107,6 @@ export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
         <Link href="/help" className={ghost} data-testid="help-center">
           {l.helpCenter}
         </Link>
-        <LanguageSwitcher />
       </div>
       <div ref={root} className="flex items-center gap-2 sm:hidden">
         <Link href="/login" className={`${pill} h-8 border border-coral/80 px-3 font-semibold text-coral-text active:bg-coral/10`} data-testid="header-login-mobile">

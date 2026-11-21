@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Class-based dark mode (next-themes sets <html class="dark">). */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Class-based dark mode (next-themes sets <html class="dark">). The landing page (`.site`) is always light,
+   so `dark:` styles never apply inside it (e.g. the logo keeps its on-light file there). */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.site, .site *)));
 
 /*
  * Sellycat design tokens – single source of truth for Sellycat's own surfaces
