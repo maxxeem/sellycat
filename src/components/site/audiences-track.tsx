@@ -3,39 +3,20 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Dictionary } from "@/lib/i18n";
-import { Fill } from "./demo-kit";
-import { BrandMark, DEMO_BRANDS, DEMO_DEALS, DealArt, chf, discount, type DemoBrand, type DemoDeal } from "./demo-brands";
-import "./audiences.css";
+import { DEMO_DEALS, DealArt, type DemoDeal } from "./demo-brands";
 
 type Labels = Dictionary["site"]["audiences"];
-type Locale = "de" | "en";
-const HOVER_DELAY_MS = 350;
-
-/** Only one preview plays at a time: starting a new one stops the previous. */
-let stopActive: (() => void) | null = null;
-
-/** Two more fictional customers for this row (invented names and colours, no real brands). */
-const RETAIL: DemoBrand = { id: "retail", name: "Lindenhof Markt", domain: "gutscheine.lindenhof-markt.ch", primary: "#1D4ED8", onPrimary: "#FFFFFF", surface: "#F1F5FF", ink: "#0B1A3A", font: "system-ui, sans-serif", radius: 12, mark: "circle" };
-const AGENCY: DemoBrand = { id: "agency", name: "Studio Nordlicht", domain: "shops.studio-nordlicht.ch", primary: "#C0266D", onPrimary: "#FFFFFF", surface: "#FFF1F7", ink: "#3B0A22", font: "Inter, system-ui, sans-serif", radius: 14, mark: "wave" };
 
 const deal = (id: string): DemoDeal => DEMO_DEALS.find((d) => d.id === id) ?? DEMO_DEALS[0];
-const [RADIO, CITY, CLUB] = DEMO_BRANDS;
 
-/** One shop look per audience, in the order of `labels.tiles`. */
-const LOOKS: { brand: DemoBrand; deals: DemoDeal[]; clients?: DemoBrand[] }[] = [
-  { brand: RADIO, deals: ["kino", "brunch", "see", "pizza", "spa"].map(deal) },
-  { brand: CLUB, deals: ["velo", "buch", "pizza", "brunch", "kino"].map(deal) },
-  { brand: CITY, deals: ["alp", "see", "spa", "kino", "brunch"].map(deal) },
-  { brand: RETAIL, deals: ["buch", "brunch", "velo", "pizza", "see"].map(deal) },
-  { brand: AGENCY, deals: ["spa", "pizza", "alp", "velo", "buch"].map(deal), clients: [RADIO, CITY, CLUB] },
-];
+/** One calm deal photo per audience, in the order of `labels.tiles`. */
+const PHOTOS: DemoDeal[] = ["konzert", "golf", "ballon", "gipfeli", "museum"].map(deal);
 
 /**
- * Audiences as one wide row of 9:16 tiles (edges cut off, arrows top right on desktop). With a mouse,
- * resting on a tile for HOVER_DELAY_MS plays its loop (the mini shop scrolls, a deal pops); leaving
- * returns to the still poster.
+ * Audiences as one wide row of 9:16 tiles (edges cut off, arrows top right on desktop): one deal photo
+ * per tile, the audience and one line in large type over a dark gradient.
  */
-export function AudiencesTrack({ labels, locale }: { labels: Labels; locale: Locale }) {
+export function AudiencesTrack({ labels }: { labels: Labels }) {
   const track = useRef<HTMLUListElement>(null);
   const [edge, setEdge] = useState({ start: true, end: false });
   const update = () => {
@@ -77,10 +58,10 @@ export function AudiencesTrack({ labels, locale }: { labels: Labels; locale: Loc
       <div className="inspiration-viewport" data-testid="audiences-track">
         <ul ref={track} className="inspiration-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {labels.tiles.map((tile, i) => {
-            const look = LOOKS[i % LOOKS.length];
+            const photo = PHOTOS[i % PHOTOS.length];
             return (
-              <li key={look.brand.id} className="w-[62vw] max-w-[300px] shrink-0 snap-start sm:w-[240px] lg:w-[280px]">
-                <AudienceTile name={tile.name} text={tile.text} look={look} labels={labels} locale={locale} />
+              <li key={tile.name} className="w-[62vw] max-w-[300px] shrink-0 snap-start sm:w-[240px] lg:w-[280px]">
+                <AudienceTile name={tile.name} text={tile.text} photo={photo} />
               </li>
             );
           })}
@@ -90,99 +71,18 @@ export function AudiencesTrack({ labels, locale }: { labels: Labels; locale: Loc
   );
 }
 
-function AudienceTile({ name, text, look, labels, locale }: { name: string; text: string; look: (typeof LOOKS)[number]; labels: Labels; locale: Locale }) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [previewing, setPreviewing] = useState(false);
-
-  const stop = () => {
-    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
-    setPreviewing(false);
-    if (stopActive === stop) stopActive = null;
-  };
-  const start = () => {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    timer.current = setTimeout(() => {
-      stopActive?.();
-      stopActive = stop;
-      setPreviewing(true);
-    }, HOVER_DELAY_MS);
-  };
-  useEffect(() => stop, []); // eslint-disable-line react-hooks/exhaustive-deps
-
+function AudienceTile({ name, text, photo }: { name: string; text: string; photo: DemoDeal }) {
   return (
-    <div className="aud-tile group block" data-preview={previewing ? "1" : "0"} onMouseEnter={start} onMouseLeave={stop} data-testid={`audience-${look.brand.id}`}>
-      <span className="relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10 transition duration-300 group-hover:ring-fg/25">
-        <span className="absolute inset-0 block transition duration-500 group-hover:scale-[1.03]">
-          <Fill width={300}><MiniShop look={look} labels={labels} locale={locale} /></Fill>
-        </span>
-        <span className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-4 pb-4 pt-20">
-          <span className="text-[15px] font-semibold leading-tight text-white">{name}</span>
-          <span className="overflow-hidden text-xs leading-snug text-white/75 [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [display:-webkit-box]">{text}</span>
-        </span>
+    <div className="group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10" data-testid={`audience-${photo.id}`}>
+      {/* The photo slowly leans in on hover (transform only; still with reduced motion). */}
+      <span className="absolute inset-0 block transition-transform duration-[1400ms] ease-out motion-safe:group-hover:scale-[1.05]">
+        <DealArt deal={photo} />
       </span>
-    </div>
-  );
-}
-
-/** A fictional customer's shop on a phone screen (300 px design width): header, top deal, deal grid. */
-function MiniShop({ look, labels, locale }: { look: (typeof LOOKS)[number]; labels: Labels; locale: Locale }) {
-  const { brand, deals, clients } = look;
-  const [top, ...rest] = deals;
-  const r = brand.radius;
-  return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: brand.surface, color: brand.ink, fontFamily: brand.font }}>
-      <div className="aud-scroll">
-        {clients ? (
-          <div className="flex items-center justify-between px-4 pt-4 text-[11px] font-semibold" style={{ color: brand.ink }}>
-            <span className="opacity-60">{labels.mock.shops.replace("{n}", String(clients.length))}</span>
-            <span className="flex gap-1.5">
-              {clients.map((c) => (
-                <span key={c.id} className="h-5 w-5 rounded-md ring-2 ring-white" style={{ background: c.primary, borderRadius: c.mark === "circle" ? 999 : 6 }} />
-              ))}
-            </span>
-          </div>
-        ) : null}
-        <div className="flex items-center justify-between px-4 pb-3 pt-4">
-          <BrandMark brand={brand} size={22} />
-          <span className="flex flex-col gap-[3px]" aria-hidden>
-            {[0, 1, 2].map((k) => <span key={k} className="block h-[2px] w-4 rounded-full" style={{ background: brand.ink, opacity: 0.6 }} />)}
-          </span>
-        </div>
-        <div className="mx-4 overflow-hidden bg-white shadow-[0_6px_20px_-10px_rgba(0,0,0,0.25)]" style={{ borderRadius: r }}>
-          <div className="relative h-[150px]">
-            <DealArt deal={{ ...top, id: `${brand.id}-${top.id}` }} />
-            <span className="absolute left-2.5 top-2.5 px-2 py-0.5 text-[11px] font-bold" style={{ background: brand.primary, color: brand.onPrimary, borderRadius: Math.min(r, 999) }}>{labels.mock.top}</span>
-            <span className="absolute right-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-bold" style={{ color: brand.ink }}>-{discount(top)}%</span>
-          </div>
-          <div className="p-3">
-            <p className="text-[11px] opacity-60">{top.partner}</p>
-            <p className="text-[16px] font-bold leading-tight">{top.title[locale]}</p>
-            <p className="mt-1.5 flex items-baseline gap-2 text-[13px]">
-              <span className="font-bold" style={{ color: brand.primary }}>{chf(top.priceCents)}</span>
-              <span className="line-through opacity-50">{chf(top.valueCents)}</span>
-              <span className="ml-auto text-[11px] opacity-60">{labels.mock.left.replace("{n}", String(top.left))}</span>
-            </p>
-          </div>
-        </div>
-        <div className="mx-4 mt-3 grid grid-cols-2 gap-3 pb-6">
-          {rest.map((d, k) => (
-            <div key={d.id} className={`relative overflow-hidden bg-white shadow-[0_6px_20px_-12px_rgba(0,0,0,0.25)] ${k === 0 ? "aud-pop" : ""}`} style={{ borderRadius: r }}>
-              <div className="h-[78px]"><DealArt deal={{ ...d, id: `${brand.id}-${d.id}` }} /></div>
-              <div className="p-2">
-                <p className="text-[12px] font-bold leading-tight [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [display:-webkit-box] overflow-hidden">{d.title[locale]}</p>
-                <p className="mt-1 text-[12px] font-bold" style={{ color: brand.primary }}>{chf(d.priceCents)}</p>
-              </div>
-              {k === 0 ? <span className="aud-ring pointer-events-none absolute inset-0" style={{ borderRadius: r, boxShadow: `inset 0 0 0 2px ${brand.primary}` }} /> : null}
-              {k === 0 ? (
-                <span className="aud-badge absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: brand.primary, color: brand.onPrimary }}>
-                  {labels.mock.left.replace("{n}", String(Math.min(3, d.left)))}
-                </span>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* A deep, even gradient over the lower half: the type always sits on a calm, dark ground. */}
+      <span className="absolute inset-x-0 bottom-0 flex h-[58%] flex-col justify-end gap-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-5 sm:p-6">
+        <span className="text-balance text-xl font-semibold leading-tight tracking-[-0.01em] text-white lg:text-2xl">{name}</span>
+        <span className="text-pretty text-sm leading-snug text-white/80 lg:text-[15px]">{text}</span>
+      </span>
     </div>
   );
 }

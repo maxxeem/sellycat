@@ -101,7 +101,7 @@ export default async function HomePage({ params }: PageProps<"/p/[locale]">) {
           <Bands labels={t.site.bands} locale={locale} />
           <StoryTour labels={t.site.tour} locale={locale} />
         </section>
-        <StatementBand before={t.site.statement.before} brand={t.site.statement.brand} after={t.site.statement.after} locale={locale} />
+        <StatementBand before={t.site.statement.before} brand={t.site.statement.brand} after={t.site.statement.after} locale={locale} buy={t.site.bands.ui.buy} />
         <ScrollGlow>
           <div className="site-section mx-auto max-w-6xl px-5 sm:px-8">
             <div className="site-head">
@@ -113,7 +113,7 @@ export default async function HomePage({ params }: PageProps<"/p/[locale]">) {
         </ScrollGlow>
         <FeatureSlider labels={t.site.features} />
         <AppShowcase labels={t.site.scan} locale={locale} />
-        <Audiences labels={t.site.audiences} locale={locale} />
+        <Audiences labels={t.site.audiences} />
         <Suspense fallback={<div className="site-section min-h-[60rem]" id="preise" />}>
           <PricingSection t={t} locale={locale} cta={cta} />
         </Suspense>

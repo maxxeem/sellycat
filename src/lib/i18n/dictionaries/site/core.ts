@@ -9,7 +9,7 @@ export const en = {
     title: "Sellycat – your own deal shop with vouchers in the wallet",
     description: "Launch a deal shop in your own look on your own domain. Payments go straight to you via Stripe, buyers get their voucher instantly as a PDF and in Apple or Google Wallet.",
     ogTitle: "Turn deals into your own business",
-    ogClaim: "Your deal shop. Your brand. Your money.",
+    ogClaim: "Instant revenue with digital vouchers.",
   },
   nav: {
     menu: "Menu",
@@ -24,13 +24,13 @@ export const en = {
     start: "Get started",
   },
   hero: {
-    claim: "Sell deals. In your own shop.",
-    subtitle: "Launch your deal shop in your own look, on your own domain. The money lands straight in your account, buyers get their voucher instantly as a PDF and in their wallet.",
+    claim: "Instant revenue with digital vouchers.",
+    subtitle: "Launch your own deal shop with Sellycat. Sell offers as digital vouchers and deliver them fully automatically.",
   },
   statement: {
     before: "",
     brand: "Sellycat",
-    after: " turns deals into a business of your own: your shop, your brand, your till. And vouchers people are happy to show.",
+    after: " is the most efficient way to sell online. From order to delivery it takes only seconds.",
   },
   stats: {
     title: "In numbers",
@@ -92,7 +92,7 @@ export const de: Widen<typeof en> = {
     title: "Sellycat – dein eigener Deal-Shop mit Gutscheinen im Wallet",
     description: "Starte einen Deal-Shop im eigenen Look auf deiner Domain. Das Geld geht über Stripe direkt an dich, Käufer erhalten den Gutschein sofort als PDF und in Apple oder Google Wallet.",
     ogTitle: "Aus Deals wird dein Geschäft",
-    ogClaim: "Dein Deal-Shop. Deine Marke. Dein Geld.",
+    ogClaim: "Sofort Umsatz mit digitalen Gutscheinen.",
   },
   nav: {
     menu: "Menü",
@@ -107,13 +107,13 @@ export const de: Widen<typeof en> = {
     start: "Jetzt starten",
   },
   hero: {
-    claim: "Deals verkaufen. Im eigenen Shop.",
-    subtitle: "Starte deinen Deal-Shop im eigenen Look und auf deiner Domain. Das Geld landet direkt auf deinem Konto, Käufer erhalten den Gutschein sofort als PDF und im Wallet.",
+    claim: "Sofort Umsatz mit digitalen Gutscheinen.",
+    subtitle: "Starte mit Sellycat deinen eigenen Deal-Shop. Verkaufe Angebote als digitale Gutscheine und versende sie vollautomatisch.",
   },
   statement: {
     before: "",
     brand: "Sellycat",
-    after: " macht aus Deals ein eigenes Geschäft: dein Shop, deine Marke, deine Kasse. Und Gutscheine, die man gern vorzeigt.",
+    after: " ist die effizienteste Form, einen Onlineverkauf durchzuführen. Von der Bestellung bis zur Auslieferung dauert es nur Sekunden.",
   },
   stats: {
     title: "In Zahlen",

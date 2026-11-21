@@ -9,8 +9,12 @@ type Labels = Dictionary["site"]["bands"];
 type Locale = "de" | "en";
 type BandDeal = { deal: DemoDeal; brand: DemoBrand };
 
-/** Every example deal belongs to one of the fictional shops (the same software, three customers). */
-const CARDS: BandDeal[] = DEMO_DEALS.map((deal, i) => ({ deal, brand: DEMO_BRANDS[i % DEMO_BRANDS.length] }));
+/**
+ * Every example deal belongs to one of the fictional shops (the same software, three customers). The deal
+ * in the phone is left out, and each row holds different deals (12 cards ≈ 3000 px), so no photo shows
+ * twice on screen.
+ */
+const CARDS: BandDeal[] = DEMO_DEALS.slice(1).map((deal, i) => ({ deal, brand: DEMO_BRANDS[i % DEMO_BRANDS.length] }));
 
 /**
  * First block under the hero (ported 1:1 from the reference bands): deal cards of fictional shops drift in
@@ -84,7 +88,8 @@ export function Bands({ labels, locale }: { labels: Labels; locale: Locale }) {
       </div>
       {/* Phones and reduced motion: the same deals as a static two-column grid. */}
       <ul className="band-grid grid grid-cols-2 gap-3" data-testid="bands-grid" aria-hidden>
-        {CARDS.map((c, i) => <Card key={c.deal.id} card={c} uid={`grid-${i}`} index={i} labels={labels} locale={locale} />)}
+        {/* Phones: eight cards are enough to show the idea; the page stays short. */}
+        {CARDS.slice(0, 8).map((c, i) => <Card key={c.deal.id} card={c} uid={`grid-${i}`} index={i} labels={labels} locale={locale} />)}
       </ul>
     </div>
   );

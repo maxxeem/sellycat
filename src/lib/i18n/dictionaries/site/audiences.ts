@@ -6,7 +6,6 @@ export const en = {
   subtitle: "One platform, many senders: every shop wears the brand of whoever is selling.",
   prev: "Previous",
   next: "Next",
-  mock: { top: "Top deal", left: "{n} left", shops: "{n} shops" },
   tiles: [
     { name: "Media houses & radio stations", text: "Listener deals in the station's look, promoted on your own channels." },
     { name: "Associations & clubs", text: "Member benefits from partner businesses, settlement included." },
@@ -22,7 +21,6 @@ export const de: Widen<typeof en> = {
   subtitle: "Eine Software, viele Absender: Jeder Shop trägt die Marke dessen, der verkauft.",
   prev: "Zurück",
   next: "Weiter",
-  mock: { top: "Top-Deal", left: "Noch {n}", shops: "{n} Shops" },
   tiles: [
     { name: "Medienhäuser & Radiosender", text: "Hörer-Deals im Look des Senders, beworben im eigenen Programm." },
     { name: "Verbände & Vereine", text: "Mitgliedervorteile von Partnerbetrieben, mit Abrechnung." },
