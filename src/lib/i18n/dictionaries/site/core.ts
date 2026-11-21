@@ -111,9 +111,9 @@ export const de: Widen<typeof en> = {
     subtitle: "Starte mit Sellycat deinen eigenen Deal-Shop. Verkaufe Angebote als digitale Gutscheine und versende sie vollautomatisch.",
   },
   statement: {
-    before: "",
+    before: "Mit ",
     brand: "Sellycat",
-    after: " ist die effizienteste Form, einen Onlineverkauf durchzuführen. Von der Bestellung bis zur Auslieferung dauert es nur Sekunden.",
+    after: " ist jede Bestellung Sekunden nach dem Kauf ausgeliefert.",
   },
   stats: {
     title: "In Zahlen",
