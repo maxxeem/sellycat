@@ -3,25 +3,27 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Dictionary } from "@/lib/i18n";
-import { DEMO_DEALS, DealArt, type DemoDeal } from "./demo-brands";
 
 type Labels = Dictionary["site"]["audiences"];
 
-type Photo = Pick<DemoDeal, "id" | "photo" | "focus">;
-const deal = (id: string): Photo => DEMO_DEALS.find((d) => d.id === id) ?? DEMO_DEALS[0];
+type Photo = { id: string; photo: string; focus?: [number, number] };
 
 /**
- * One calm photo per audience, in the order of `labels.tiles` (Unsplash License), each with large quiet
- * areas: a microphone against a warm wall, a golf course, a balloon in the sky, a coffee cup from above,
- * paper samples in soft tones.
+ * One portrait per audience, in the order of `labels.tiles` (Unsplash License): a single, consistent
+ * look (people in warm daylight, half-length, smiling), so the row reads as one shoot: a radio host,
+ * two club members, a couple in an old town, a shop owner, an agency team member.
  */
 const PHOTOS: Photo[] = [
-  { id: "aud-media", photo: "photo-1585347110520-7a8a5c77af09", focus: [0.22, 0.35] },
-  deal("golf"),
-  deal("ballon"),
-  { id: "aud-hospitality", photo: "photo-1458819714733-e5ab3d536722", focus: [0.5, 0.72] },
-  { id: "aud-agency", photo: "photo-1740324974144-046b3538e89e", focus: [0.5, 0.3] },
+  { id: "aud-media", photo: "photo-1581368129682-e2d66324045b", focus: [0.45, 0.35] },
+  { id: "aud-clubs", photo: "photo-1790271478791-f98675a9e3f3", focus: [0.5, 0.35] },
+  { id: "aud-city", photo: "photo-1701232663736-f8dd560e5090", focus: [0.5, 0.35] },
+  { id: "aud-retail", photo: "photo-1580653353065-8cf0a92ff154", focus: [0.5, 0.35] },
+  { id: "aud-agency", photo: "photo-1603202662706-62ead3176b8f", focus: [0.6, 0.35] },
 ];
+
+/** Portrait crop (9:16) from the image CDN around the focal point, in two sizes for 1x/2x screens. */
+const portrait = (p: Photo, w: number) =>
+  `https://images.unsplash.com/${p.photo}?w=${w}&h=${Math.round((w * 16) / 9)}&fit=crop${p.focus ? `&crop=focalpoint&fp-x=${p.focus[0]}&fp-y=${p.focus[1]}` : ""}&q=72&auto=format`;
 
 /**
  * Audiences as one wide row of 9:16 tiles (edges cut off, arrows top right on desktop): one deal photo
@@ -87,7 +89,8 @@ function AudienceTile({ name, text, photo }: { name: string; text: string; photo
     <div className="group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10" data-testid={`audience-${photo.id}`}>
       {/* The photo slowly leans in on hover (transform only; still with reduced motion). */}
       <span className="absolute inset-0 block transition-transform duration-[1400ms] ease-out motion-safe:group-hover:scale-[1.05]">
-        <DealArt deal={photo} />
+        {/* eslint-disable-next-line @next/next/no-img-element -- fixed CDN crops in two sizes */}
+        <img src={portrait(photo, 300)} srcSet={`${portrait(photo, 300)} 300w, ${portrait(photo, 600)} 600w`} sizes="(min-width: 1024px) 280px, (min-width: 640px) 240px, 62vw" alt="" loading="lazy" decoding="async" draggable={false} className="block h-full w-full object-cover" />
       </span>
       {/* A deep, even gradient over the lower half: the type always sits on a calm, dark ground. */}
       <span className="absolute inset-x-0 bottom-0 flex h-[58%] flex-col justify-end gap-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-5 sm:p-6">
