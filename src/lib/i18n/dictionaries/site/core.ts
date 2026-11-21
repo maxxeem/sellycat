@@ -25,12 +25,12 @@ export const en = {
   },
   hero: {
     claim: "Instant revenue with digital vouchers.",
-    subtitle: "Your own deal shop. Sell, deliver, redeem: all on autopilot.",
+    subtitle: "Launch your own deal shop with Sellycat. Sell offers as digital vouchers and deliver them fully automatically.",
   },
   statement: {
     before: "With ",
     brand: "Sellycat",
-    after: ", the voucher arrives before the phone is back in the pocket.",
+    after: ", every order is delivered within seconds of purchase.",
   },
   stats: {
     title: "In numbers",
@@ -108,12 +108,12 @@ export const de: Widen<typeof en> = {
   },
   hero: {
     claim: "Sofort Umsatz mit digitalen Gutscheinen.",
-    subtitle: "Dein eigener Deal-Shop. Verkaufen, ausliefern, einlösen: alles automatisch.",
+    subtitle: "Starte mit Sellycat deinen eigenen Deal-Shop. Verkaufe Angebote als digitale Gutscheine und versende sie vollautomatisch.",
   },
   statement: {
     before: "Mit ",
     brand: "Sellycat",
-    after: " ist der Gutschein da, bevor das Handy wieder in der Tasche ist.",
+    after: " ist jede Bestellung Sekunden nach dem Kauf ausgeliefert.",
   },
   stats: {
     title: "In Zahlen",
