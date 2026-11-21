@@ -1,9 +1,11 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { headers } from "next/headers";
+import { after } from "next/server";
+import { getDictionary } from "@/lib/i18n";
 import { LEGAL_VERSION } from "@/lib/legal/docs";
 import { platformMailDomain, sendMail } from "@/lib/mail/mailgun";
-import { platformBrand, waitlistConfirmMail } from "@/lib/mail/templates";
+import { platformBrand, waitlistConfirmMail, waitlistTeamMail } from "@/lib/mail/templates";
 import { apexUrl } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isValidCode, normaliseCode, type WaitlistInput } from "./rules";
@@ -134,15 +136,33 @@ export async function joinWaitlist(input: WaitlistInput): Promise<void> {
     confirm_token_hash: hashToken(token),
     confirm_sent_at: new Date().toISOString(),
   };
-  const { error } = existing ? await db.from("waitlist").update(row).eq("id", existing.id) : await db.from("waitlist").insert(row);
+  const { data: saved, error } = existing ? await db.from("waitlist").update(row).eq("id", existing.id).select("id").single() : await db.from("waitlist").insert(row).select("id").single();
   if (error) {
     console.error("[waitlist] save", error.message);
     return;
   }
   const site = apexUrl();
+  // Only a new address tells the team; a repeated, still unconfirmed signup just gets a new opt-in mail.
+  if (!existing) after(() => notifyTeamOfWaitlist(input, `${site}/login?next=${encodeURIComponent(`/admin/access/waitlist/${saved.id}`)}`));
   const mail = waitlistConfirmMail({ brand: platformBrand(input.locale, site), name: input.name, url: `${site}/waitlist/confirm?token=${token}` });
   const sent = await sendMail({ domain: platformMailDomain(), from: mailFrom(), to: input.email, replyTo: replyTo(), subject: mail.subject, html: mail.html, text: mail.text, tag: "waitlist-confirm" });
   if (!sent.ok) console.error("[waitlist] confirm mail", sent.error);
+}
+
+/** Team notice for a new waitlist entry: WAITLIST_NOTIFY_EMAIL, else SUPPORT_EMAIL, else hello@sellycat.com. */
+async function notifyTeamOfWaitlist(input: WaitlistInput, url: string): Promise<void> {
+  const to = process.env.WAITLIST_NOTIFY_EMAIL || process.env.SUPPORT_EMAIL || "hello@sellycat.com";
+  const mail = waitlistTeamMail({
+    brand: platformBrand("de", apexUrl()),
+    email: input.email,
+    name: input.name,
+    company: input.company,
+    useCase: input.useCase ? getDictionary("de").access.waitlist.useCases[input.useCase] : null,
+    locale: input.locale,
+    url,
+  });
+  const sent = await sendMail({ domain: platformMailDomain(), from: mailFrom(), to, replyTo: input.email, subject: mail.subject, html: mail.html, text: mail.text, tag: "waitlist-team" });
+  if (!sent.ok) console.error("[waitlist] team mail", sent.error);
 }
 
 /** Double opt-in: true when the token matched an unconfirmed entry (one-time). */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esc, giftMail, myLinkMail, orderMail, type MailBrand } from "./templates";
+import { esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
 
 const brand: MailBrand = { shopName: "Velo <Deals>", locale: "de", primary: "#ff4b23", logoUrl: "https://x.supabase.co/logo.svg", shopUrl: "https://velo.sellycat.com" };
 const v = { title: "Service-Paket", partner: "Velo Huber", code: "ABCD-EFGH-JKMN", valueCents: 5000, currency: "CHF", validUntil: "2027-06-30T21:59:59Z", link: "https://velo.sellycat.com/v/tok" };
@@ -36,5 +36,17 @@ describe("mail templates", () => {
   });
   it("my-link mail carries the link", () => {
     expect(myLinkMail({ brand, url: "https://velo.sellycat.com/my/abc" }).html).toContain("https://velo.sellycat.com/my/abc");
+  });
+});
+
+describe("waitlistTeamMail", () => {
+  it("names the entry, escapes input and links to the staff page", () => {
+    const m = waitlistTeamMail({ brand, email: "a@b.ch", name: null, company: "<Kino> AG", useCase: "Agentur", locale: "de", url: "https://sellycat.com/login?next=x" });
+    expect(m.subject).toContain("<Kino> AG");
+    expect(m.html).toContain("&lt;Kino&gt; AG");
+    expect(m.html).not.toContain("<Kino>");
+    expect(m.text).toContain("E-Mail: a@b.ch");
+    expect(m.text).toContain("Name: –");
+    expect(m.text).toContain("https://sellycat.com/login?next=x");
   });
 });

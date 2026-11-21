@@ -310,6 +310,29 @@ ${i.after ? `<p style="margin:0;font-size:14px;color:#52525b;">${esc(i.after)}</
   };
 }
 
+/** To the team: someone joined the waitlist (internal, German like the support team mail). */
+export function waitlistTeamMail(i: { brand: MailBrand; email: string; name: string | null; company: string | null; useCase: string | null; locale: string; url: string }): Mail {
+  const head = `Neu auf der Warteliste: ${i.company || i.name || i.email}`;
+  const rows: Array<[string, string]> = [
+    ["E-Mail", i.email],
+    ["Name", i.name || "–"],
+    ["Firma", i.company || "–"],
+    ["Branche", i.useCase || "–"],
+    ["Sprache", i.locale.toUpperCase()],
+  ];
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 12px;font-size:20px;line-height:1.3;">${esc(head)}</h1>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px;font-size:14px;">${rows
+      .map(([k, v]) => `<tr><td style="padding:2px 16px 2px 0;color:#71717a;">${esc(k)}</td><td style="padding:2px 0;">${esc(v)}</td></tr>`)
+      .join("")}</table>
+<p style="margin:0 0 16px;font-size:14px;color:#52525b;">Die Bestätigungsmail (Double-Opt-in) ist an die Adresse unterwegs.</p>
+${button(i.brand, i.url, "Im Staff-Bereich öffnen")}`,
+    "Sellycat Warteliste",
+  );
+  return { subject: subjectLine(head), html, text: [head, "", ...rows.map(([k, v]) => `${k}: ${v}`), "", i.url].join("\n") };
+}
+
 /** Double opt-in after joining the waitlist. */
 export function waitlistConfirmMail(i: { brand: MailBrand; name: string | null; url: string }): Mail {
   const a = getDictionary(i.brand.locale).access.mail;
