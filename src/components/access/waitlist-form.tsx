@@ -1,15 +1,27 @@
 "use client";
 
+import { ArrowRight, Building2, Check, Megaphone, MapPin, MoreHorizontal, Sparkles, Store, Users, type LucideIcon } from "lucide-react";
 import { Turnstile } from "@/components/access/turnstile";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { joinWaitlistAction } from "@/app/p/[locale]/(auth)/access-actions";
-import { Field, Input, Notice, Select, buttonClass } from "@/components/ui";
-import { USE_CASES } from "@/lib/access/rules";
+import { Input, Notice, buttonClass } from "@/components/ui";
+import { USE_CASES, type UseCase } from "@/lib/access/rules";
 import { useI18n } from "@/lib/i18n/context";
 
+const CHIP_ICONS: Record<UseCase, LucideIcon> = {
+  media: Megaphone,
+  association: Users,
+  city_tourism: MapPin,
+  retail_gastro: Store,
+  agency: Sparkles,
+  other: MoreHorizontal,
+};
+
 /**
- * Waitlist form (landing page and /signup). Spam protection: a hidden honeypot field, the time
- * since render, rate limits on the server and Cloudflare Turnstile when a site key is set.
+ * Waitlist form (landing page and /signup), kept short on purpose: what describes you (tappable chips,
+ * optional), email, company (optional), consent. Name, website and message are no longer asked; the
+ * server still accepts them. Spam protection: a hidden honeypot field, the time since render, rate
+ * limits on the server and Cloudflare Turnstile when a site key is set.
  */
 export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: string | null; compact?: boolean }) {
   const { t, locale } = useI18n();
@@ -25,16 +37,20 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
 
   if (state?.sent)
     return (
-      <div role="status" className="flex flex-col gap-2 rounded-card border border-line bg-surface-2 p-5 text-left" data-testid="waitlist-sent">
-        <p className="text-lg font-semibold">{w.sentTitle}</p>
-        <p className="text-sm text-muted">{w.sentText}</p>
+      <div role="status" className="flex flex-col items-center gap-3 rounded-card border border-line bg-surface-2 px-5 py-8 text-center" data-testid="waitlist-sent">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--accent)] text-[var(--on-accent,#111)]">
+          <Check className="h-6 w-6" strokeWidth={3} aria-hidden />
+        </span>
+        <p className="text-xl font-semibold">{w.sentTitle}</p>
+        <p className="max-w-sm text-sm text-muted">
+          {w.sentText} {w.sentNext}
+        </p>
       </div>
     );
   const error = state && !state.sent ? w[state.error] : null;
-  const opt = (label: string) => `${label} (${w.optional})`;
 
   return (
-    <form action={action} onSubmit={() => setAttempt((a) => a + 1)} className="flex flex-col gap-4 text-left" data-testid="waitlist-form">
+    <form action={action} onSubmit={() => setAttempt((a) => a + 1)} className="flex flex-col gap-5 text-left" data-testid="waitlist-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="rendered_at" ref={renderedAt} defaultValue="0" />
       {/* Honeypot: invisible for people, tempting for bots. */}
@@ -44,47 +60,58 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
           <input type="text" name="fax" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
-      <Field label={w.email}>
-        <Input name="email" type="email" autoComplete="email" required maxLength={254} data-testid="waitlist-email" />
-      </Field>
-      <div className={`grid gap-4 ${compact ? "" : "sm:grid-cols-2"}`}>
-        <Field label={opt(w.name)}>
-          <Input name="name" autoComplete="name" maxLength={120} />
-        </Field>
-        <Field label={opt(w.company)}>
-          <Input name="company" autoComplete="organization" maxLength={120} />
-        </Field>
-        <Field label={opt(w.website)} error={state && !state.sent && state.error === "websiteInvalid" ? w.websiteInvalid : undefined}>
-          <Input name="website" inputMode="url" autoComplete="url" maxLength={200} placeholder="firma.ch" />
-        </Field>
-        <Field label={opt(w.useCase)}>
-          <Select name="useCase" defaultValue="" aria-label={w.useCase}>
-            <option value="">{w.useCaseNone}</option>
-            {USE_CASES.map((u) => (
-              <option key={u} value={u}>
-                {w.useCases[u]}
-              </option>
-            ))}
-          </Select>
-        </Field>
+
+      <ul className={`flex flex-wrap gap-x-4 gap-y-1.5 text-sm font-medium ${compact ? "" : "justify-center"}`} data-testid="waitlist-perks">
+        {w.perks.map((p) => (
+          <li key={p} className="flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-[var(--accent)]" strokeWidth={3} aria-hidden />
+            {p}
+          </li>
+        ))}
+      </ul>
+
+      <fieldset className="flex flex-col gap-2.5">
+        <legend className={`mb-2.5 w-full text-sm font-semibold ${compact ? "" : "text-center"}`}>{w.pick}</legend>
+        <div className={`flex flex-wrap gap-2 ${compact ? "" : "justify-center"}`} data-testid="waitlist-chips">
+          {USE_CASES.map((u) => {
+            const Icon = CHIP_ICONS[u];
+            return (
+              <label
+                key={u}
+                className="flex cursor-pointer select-none items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-sm font-medium transition hover:border-[var(--accent)] has-[:checked]:border-[var(--accent)] has-[:checked]:bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--accent)]"
+              >
+                <input type="radio" name="useCase" value={u} className="sr-only" />
+                <Icon className="h-4 w-4" aria-hidden />
+                {w.chips[u]}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <div className={`grid gap-3 ${compact ? "" : "sm:grid-cols-2"}`}>
+        <Input name="email" type="email" autoComplete="email" required maxLength={254} placeholder={w.emailPlaceholder} aria-label={w.email} data-testid="waitlist-email" />
+        <div className="relative">
+          <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
+          <Input name="company" autoComplete="organization" maxLength={120} placeholder={w.companyPlaceholder} aria-label={w.company} className="pl-9" />
+        </div>
       </div>
-      <Field label={opt(w.message)} hint={w.messageHint}>
-        <textarea name="message" rows={3} maxLength={1000} className="w-full rounded-input border border-line bg-surface-2 px-3 py-2.5 text-base sm:text-sm" />
-      </Field>
+
       <label className="flex items-start gap-2 text-sm text-muted">
-        <input type="checkbox" name="consent" required className="mt-1 size-4 shrink-0 accent-[var(--accent)]" data-testid="waitlist-consent" />
+        <input type="checkbox" name="consent" required className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" data-testid="waitlist-consent" />
         <span>
-          {w.consentBefore}
+          {w.consentShort}
           <a href="/legal/privacy" target="_blank" className="font-semibold text-ink underline">
             {w.consentLink}
           </a>
-          {w.consentAfter}
+          {w.consentShortAfter}
         </span>
       </label>
       {turnstileKey ? <Turnstile key={attempt} siteKey={turnstileKey} locale={locale} theme="auto" /> : null}
-      {error && state && !state.sent && state.error !== "websiteInvalid" ? <Notice tone="error">{error}</Notice> : null}
-      <button type="submit" disabled={pending} className={`${buttonClass.primary} self-start`} data-testid="waitlist-submit">
+      {error ? <Notice tone="error">{error}</Notice> : null}
+      <button type="submit" disabled={pending} className={`${buttonClass.primary} group w-full gap-2 py-3.5 text-base ${compact ? "" : "sm:mx-auto sm:w-auto sm:px-10"}`} data-testid="waitlist-submit">
         {pending ? t.common.loading : w.submit}
+        {pending ? null : <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden />}
       </button>
     </form>
   );

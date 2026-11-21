@@ -77,7 +77,7 @@ export const en = {
   },
   waitlist: {
     title: "Get on the waitlist",
-    intro: "We are opening Sellycat step by step. Leave your details and we will send you your personal invitation.",
+    intro: "We are opening Sellycat step by step. Save your spot in 20 seconds, your invitation comes by email.",
     haveCode: "Already got an invitation?",
     redeem: "Redeem your code",
   },
@@ -160,7 +160,7 @@ export const de: Widen<typeof en> = {
   },
   waitlist: {
     title: "Auf die Warteliste",
-    intro: "Wir öffnen Sellycat Schritt für Schritt. Hinterlass deine Angaben, wir schicken dir deine persönliche Einladung.",
+    intro: "Wir öffnen Sellycat Schritt für Schritt. Sichere dir in 20 Sekunden deinen Platz, die Einladung kommt per E-Mail.",
     haveCode: "Schon eine Einladung erhalten?",
     redeem: "Code einlösen",
   },
