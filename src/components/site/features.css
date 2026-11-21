@@ -1,66 +1,37 @@
 /*
- * Keyframes of the feature illustrations (feature-art.tsx). One or two animated elements per motif,
- * transform/opacity only, 6–8 s, infinite. Pausing outside the viewport, the per-card delay
- * (--fa-delay) and the reduced-motion stop live in site.css (`.feature-art-inline .fa-anim`); that rule
- * overrides any per-class delay, so staggering within a motif sits in the keyframe windows. Everything
- * here only applies with motion allowed: the SVG as drawn is the still frame.
+ * Keyframes of the feature illustrations (feature-art.tsx): exactly one gentle movement per motif,
+ * transform/opacity only, slow (5–8 s). Pausing outside the viewport, the per-card delay (--fa-delay)
+ * and the reduced-motion stop live in site.css (`.feature-art-inline .fa-anim`). Everything here only
+ * applies with motion allowed: the SVG as drawn is the still frame.
  */
 @media (prefers-reduced-motion: no-preference) {
-  /* Brand: selection ring hops to the light swatch, logo and button follow. */
-  .fa-brand-ring { animation: fa-brand-ring 7s ease-in-out infinite; }
-  @keyframes fa-brand-ring { 0%, 38% { transform: translateY(0); } 48%, 88% { transform: translateY(45px); } 98%, 100% { transform: translateY(0); } }
-  .fa-brand-tint { animation: fa-brand-tint 7s ease-in-out infinite; }
-  @keyframes fa-brand-tint { 0%, 40% { opacity: 1; } 50%, 88% { opacity: 0; } 98%, 100% { opacity: 1; } }
+  .fa-brand-ring { animation: fa-brand-ring 7.5s ease-in-out infinite; }
+  @keyframes fa-brand-ring { 0%, 22% { transform: translateX(0); } 33%, 55% { transform: translateX(50px); } 66%, 88% { transform: translateX(100px); } 100% { transform: translateX(0); } }
 
-  /* Domain: the address types itself in, then the lock pops up. */
   .fa-domain-type { transform-box: fill-box; transform-origin: left center; animation: fa-domain-type 6s ease-in-out infinite; }
-  @keyframes fa-domain-type { 0% { transform: scaleX(0.06); } 34%, 90% { transform: scaleX(1); } 100% { transform: scaleX(0.06); } }
-  .fa-domain-lock { transform-box: fill-box; transform-origin: center; animation: fa-domain-lock 6s ease-in-out infinite; }
-  @keyframes fa-domain-lock { 0%, 36% { opacity: 0; transform: scale(0.6); } 44% { opacity: 1; transform: scale(1.15); } 50%, 88% { opacity: 1; transform: scale(1); } 96%, 100% { opacity: 0; transform: scale(0.6); } }
+  @keyframes fa-domain-type { 0% { transform: scaleX(0.05); } 35%, 85% { transform: scaleX(1); } 100% { transform: scaleX(0.05); } }
 
-  /* Money: a coin runs along the Stripe rail into the account, the balance grows. */
-  .fa-money-coin { animation: fa-money-coin 6s ease-in-out infinite; }
-  @keyframes fa-money-coin { 0% { transform: translateX(0); opacity: 0; } 8% { opacity: 1; } 50% { transform: translateX(188px); opacity: 1; } 58%, 100% { transform: translateX(188px); opacity: 0; } }
-  .fa-money-balance { transform-box: fill-box; transform-origin: left center; animation: fa-money-balance 6s ease-in-out infinite; }
-  @keyframes fa-money-balance { 0%, 48% { transform: scaleX(0.35); } 62%, 90% { transform: scaleX(0.75); } 100% { transform: scaleX(0.35); } }
+  .fa-money-coin { animation: fa-money-coin 5s ease-in-out infinite; }
+  @keyframes fa-money-coin { 0% { transform: translateX(0); opacity: 0; } 10% { opacity: 1; } 60% { transform: translateX(136px); opacity: 1; } 72%, 100% { transform: translateX(136px); opacity: 0; } }
 
-  /* PDF: the voucher slides out of the envelope and back in. */
-  .fa-pdf-page { animation: fa-pdf-page 7s ease-in-out infinite; }
-  @keyframes fa-pdf-page { 0%, 6% { transform: translateY(95px); } 36%, 80% { transform: translateY(0); } 100% { transform: translateY(95px); } }
+  .fa-pdf-doc { animation: fa-pdf-doc 6s ease-in-out infinite; }
+  @keyframes fa-pdf-doc { 0%, 100% { transform: translateY(4px); } 50% { transform: translateY(-6px); } }
 
-  /* Wallet: the pass drops into the stack, then shows its update check. */
-  .fa-wallet-pass { animation: fa-wallet-pass 7s ease-in-out infinite; }
-  @keyframes fa-wallet-pass { 0% { transform: translateY(-90px); opacity: 0; } 12% { opacity: 1; } 36%, 86% { transform: translateY(0); opacity: 1; } 96%, 100% { transform: translateY(0); opacity: 0; } }
-  .fa-wallet-check { transform-box: fill-box; transform-origin: center; animation: fa-wallet-check 7s ease-in-out infinite; }
-  @keyframes fa-wallet-check { 0%, 52% { opacity: 0; transform: scale(0.5); } 60% { opacity: 1; transform: scale(1.15); } 66%, 86% { opacity: 1; transform: scale(1); } 94%, 100% { opacity: 0; transform: scale(1); } }
+  .fa-wallet-pass { animation: fa-wallet-pass 6s ease-in-out infinite; }
+  @keyframes fa-wallet-pass { 0% { transform: translateY(-46px); opacity: 0; } 20%, 85% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(0); opacity: 0; } }
 
-  /* Scan: the line sweeps the code twice, then the check confirms. */
-  .fa-scan-line { animation: fa-scan-line 6s ease-in-out infinite; }
-  @keyframes fa-scan-line { 0% { transform: translateY(0); opacity: 1; } 20% { transform: translateY(84px); } 40% { transform: translateY(0); opacity: 1; } 46%, 90% { transform: translateY(0); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-  .fa-scan-ok { transform-box: fill-box; transform-origin: center; animation: fa-scan-ok 6s ease-in-out infinite; }
-  @keyframes fa-scan-ok { 0%, 42% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; transform: scale(1.12); } 56%, 88% { opacity: 1; transform: scale(1); } 96%, 100% { opacity: 0; transform: scale(0.5); } }
+  .fa-scan-line { animation: fa-scan-line 4s ease-in-out infinite; }
+  @keyframes fa-scan-line { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(89px); } }
 
-  /* Stock: the bar runs low while the dial counts down. */
-  .fa-stock-bar { transform-box: fill-box; transform-origin: left center; animation: fa-stock-bar 8s ease-in-out infinite; }
-  @keyframes fa-stock-bar { 0% { transform: scaleX(1); } 70%, 90% { transform: scaleX(0.18); } 100% { transform: scaleX(1); } }
-  .fa-stock-hand { transform-box: view-box; transform-origin: 420px 150px; animation: fa-stock-hand 8s linear infinite; }
-  @keyframes fa-stock-hand { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+  .fa-stock-hand { transform-origin: 300px 150px; animation: fa-stock-hand 8s linear infinite; }
+  @keyframes fa-stock-hand { to { transform: rotate(360deg); } }
 
-  /* Partners: rows are ticked off one by one, the total grows with them. */
-  .fa-settle-tick { animation: fa-settle-tick 7s ease-in-out infinite; }
-  @keyframes fa-settle-tick { 0%, 14% { transform: translateY(0); opacity: 1; } 22%, 34% { transform: translateY(30px); } 42%, 54% { transform: translateY(60px); } 62%, 80% { transform: translateY(90px); opacity: 1; } 88% { transform: translateY(90px); opacity: 0; } 94% { transform: translateY(0); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-  .fa-settle-total { transform-box: fill-box; transform-origin: right center; animation: fa-settle-total 7s ease-in-out infinite; }
-  @keyframes fa-settle-total { 0% { transform: scaleX(0.2); } 70%, 88% { transform: scaleX(1); } 100% { transform: scaleX(0.2); } }
+  .fa-partners-total { transform-box: fill-box; transform-origin: left center; animation: fa-partners-total 6s ease-in-out infinite; }
+  @keyframes fa-partners-total { 0%, 10% { transform: scaleX(0.08); } 55%, 88% { transform: scaleX(1); } 100% { transform: scaleX(0.08); } }
 
-  /* Analytics: the revenue line draws itself (clip wipe), the bars grow from the baseline. */
-  .fa-analytics-reveal { transform-box: fill-box; transform-origin: left center; animation: fa-analytics-reveal 7s ease-in-out infinite; }
-  @keyframes fa-analytics-reveal { 0% { transform: scaleX(0); } 60%, 90% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
-  .fa-analytics-bars { transform-box: fill-box; transform-origin: center bottom; animation: fa-analytics-bars 7s ease-in-out infinite; }
-  @keyframes fa-analytics-bars { 0% { transform: scaleY(0.15); } 55%, 90% { transform: scaleY(1); } 100% { transform: scaleY(0.15); } }
+  .fa-analytics-bar { transform-box: fill-box; transform-origin: center bottom; animation: fa-analytics-bar 6s ease-in-out infinite; }
+  @keyframes fa-analytics-bar { 0%, 8% { transform: scaleY(0.35); } 50%, 85% { transform: scaleY(1); } 100% { transform: scaleY(0.35); } }
 
-  /* Team: an event pulse travels to the endpoint, which pings on arrival. */
-  .fa-team-pulse { animation: fa-team-pulse 6s ease-in-out infinite; }
-  @keyframes fa-team-pulse { 0% { transform: translateX(0); opacity: 0; } 8% { opacity: 1; } 40% { transform: translateX(80px); opacity: 1; } 46%, 100% { transform: translateX(80px); opacity: 0; } }
-  .fa-team-ping { transform-box: fill-box; transform-origin: center; animation: fa-team-ping 6s ease-out infinite; }
-  @keyframes fa-team-ping { 0%, 40% { transform: scale(0.5); opacity: 0; } 44% { opacity: 0.9; } 72% { transform: scale(2.2); opacity: 0; } 100% { transform: scale(2.2); opacity: 0; } }
+  .fa-team-ping { transform-box: fill-box; transform-origin: center; animation: fa-team-ping 2.8s ease-out infinite; }
+  @keyframes fa-team-ping { 0% { transform: scale(1); opacity: 0.9; } 70%, 100% { transform: scale(3.2); opacity: 0; } }
 }
