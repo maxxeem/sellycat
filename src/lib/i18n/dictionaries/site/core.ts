@@ -40,7 +40,7 @@ export const en = {
     card: "Number {n} of {total}",
   },
   pricing: {
-    title: "Pricing that grows with you",
+    title: "Our plans",
     subtitle: "Start free, pay only per sale. Bigger plans lower the share.",
     monthly: "Monthly",
     yearly: "Yearly",
@@ -123,7 +123,7 @@ export const de: Widen<typeof en> = {
     card: "Zahl {n} von {total}",
   },
   pricing: {
-    title: "Preise, die mitwachsen",
+    title: "Unsere Angebote",
     subtitle: "Kostenlos starten, nur pro Verkauf bezahlen. Grössere Pläne senken den Anteil.",
     monthly: "Monatlich",
     yearly: "Jährlich",
