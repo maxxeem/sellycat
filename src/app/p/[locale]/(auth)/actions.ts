@@ -165,16 +165,22 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
   const { data: free } = await db.rpc("slug_available", { p_slug: slug });
   if (!free) return { error: "slugTaken", field: "slug" };
 
-  if (codeRequired(mode) && !staff) {
+  // A code counts in every mode (plan, trial, coupon); without one only open signup (or staff) passes.
+  if (code || (codeRequired(mode) && !staff)) {
     if (!code) return { error: "codeRequired", field: "code" };
-    // The account exists already (Google): claim, attach and confirm the use in one go.
-    const use = (await db.rpc("claim_invite_code", { p_code: code, p_email: user.email })).data ?? null;
-    if (!use) {
-      await countCodeFailure();
-      return { error: "codeInvalid", field: "code" };
+    // A use confirmed on an earlier try that found no shop yet (slug taken meanwhile) is reused,
+    // so a retry never spends a second slot (a one-time code would otherwise lock the person out).
+    const { data: held } = await db.from("invite_code_uses").select("id").eq("user_id", user.id).eq("status", "confirmed").is("tenant_id", null).limit(1).maybeSingle();
+    if (!held) {
+      // The account exists already (Google): claim, attach and confirm the use in one go.
+      const use = (await db.rpc("claim_invite_code", { p_code: code, p_email: user.email })).data ?? null;
+      if (!use) {
+        await countCodeFailure();
+        return { error: "codeInvalid", field: "code" };
+      }
+      await db.rpc("attach_invite_user", { p_use: use, p_user: user.id });
+      await db.rpc("confirm_invite_use", { p_user: user.id });
     }
-    await db.rpc("attach_invite_user", { p_use: use, p_user: user.id });
-    await db.rpc("confirm_invite_use", { p_user: user.id });
   }
 
   await supabase.auth.updateUser({ data: { locale, terms_version: LEGAL_VERSION, terms_accepted_at: new Date().toISOString() } });
