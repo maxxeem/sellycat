@@ -23,7 +23,7 @@ const BRAND = DEMO_BRANDS[0];
 const DEAL = DEMO_DEALS[0];
 /** Stock bar: the deal's original quantity (fictional), so «7 left» fills a small part of the bar. */
 const STOCK = 40;
-const CODE = "PFOTE-7K2M-Q9XA";
+const CODE = "LUMEN-7K2M-Q9XA";
 const COUNTDOWN_START = 2 * 86400 + 9 * 3600 + 41 * 60 + 12;
 
 const fill = (text: string, values: Record<string, string | number>) => text.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));

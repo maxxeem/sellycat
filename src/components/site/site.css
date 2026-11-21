@@ -74,8 +74,8 @@
 .ambient-c { animation: ambient-c 28s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .drift-a, .drift-b, .ambient-a, .ambient-b, .ambient-c { animation: none; } }
 
-/* Bands (bands.tsx): two endless rows, upper to the right, lower to the left; below 640 px and with
-   reduced motion the rows are hidden and a static grid shows. */
+/* Bands (bands.tsx): two endless rows, upper to the right, lower to the left, the phone standing still in
+   front, on every screen size; with reduced motion the rows are hidden and a static grid shows. */
 .band-viewport { position: relative; overflow: hidden; width: var(--fs-vw, 100vw); margin-left: calc(50% - var(--fs-vw, 100vw) / 2); }
 .band-viewport::before, .band-viewport::after { content: ""; position: absolute; top: 0; bottom: 0; width: 8%; z-index: 1; pointer-events: none; }
 .band-viewport::before { left: 0; background: linear-gradient(to right, var(--site-ground), transparent); }
@@ -97,7 +97,6 @@
 /* Light page: a narrower, softer veil, so the photos beside the phone keep their colour. */
 .site:not(.site-dark) .band-veil { background: radial-gradient(closest-side, rgb(var(--ground-rgb) / 0.95), rgb(var(--ground-rgb) / 0.7) 30%, rgb(var(--ground-rgb) / 0.2) 50%, transparent 62%); }
 .band-grid { display: none; }
-@media (max-width: 639px) { .band-rows, .band-centre { display: none; } .band-grid { display: grid; padding-inline: 1.25rem; } .band-grid .band-card { width: auto; } }
 @media (prefers-reduced-motion: reduce) { .band-kenburns { animation: none; } .band-rows, .band-centre { display: none; } .band-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding-inline: var(--fs-inset, 2rem); max-width: 72rem; margin-inline: auto; } .band-grid .band-card { width: auto; } }
 
 /* Numbers (stat boxes): quiet glass with a faint coral glow at the top edge, lifted slightly on hover. */

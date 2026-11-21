@@ -20,7 +20,7 @@ const CARDS: BandDeal[] = DEMO_DEALS.slice(1).map((deal, i) => ({ deal, brand: D
  * First block under the hero (ported 1:1 from the reference bands): deal cards of fictional shops drift in
  * two slow bands — the upper one to the right, the lower one to the left — behind a large phone that
  * stands still in the middle and plays the «purchase → voucher» case. Nothing pauses on hover (the cards
- * are not interactive); `prefers-reduced-motion` and phones get a static two-column grid instead. Each
+ * are not interactive); `prefers-reduced-motion` gets a static grid instead. Each
  * band is rendered twice for a seamless loop. The cards are decorative examples (no links); the sense of
  * the block is the sr-only summary. The section heading is rendered by the parent.
  */
@@ -61,9 +61,6 @@ export function Bands({ labels, locale }: { labels: Labels; locale: Locale }) {
   return (
     <div ref={root} className="band-stage relative" data-testid="bands">
       <p className="sr-only">{labels.summary}</p>
-      <div className="mb-24 flex justify-center px-5 lg:hidden">
-        <PhoneBuyDemo labels={labels} locale={locale} className="w-[250px]" />
-      </div>
       <div className="band-rows flex flex-col gap-5" data-running={inView ? "1" : "0"} aria-hidden>
         {rows.map((row, r) => {
           // The loop shifts by one copy: a copy must be at least as wide as the widest viewport we serve (3400 px),
@@ -79,16 +76,16 @@ export function Bands({ labels, locale }: { labels: Labels; locale: Locale }) {
           );
         })}
       </div>
-      {/* The still element in the middle: a large phone with the purchase case, on a soft veil (desktop). */}
-      <div className="band-centre pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block" aria-hidden>
+      {/* The still element in the middle: a large phone with the purchase case, on a soft veil; the bands run
+          behind it on every screen size, as on desktop. */}
+      <div className="band-centre pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden>
         <span className="band-veil absolute left-1/2 top-1/2 h-[190%] w-[400%] -translate-x-1/2 -translate-y-1/2 rounded-full" />
         <div ref={phone} className="band-phone relative rounded-[3rem] bg-site-ground/40 p-3 backdrop-blur-sm">
           <PhoneBuyDemo labels={labels} locale={locale} />
         </div>
       </div>
-      {/* Phones and reduced motion: the same deals as a static two-column grid. */}
+      {/* Reduced motion only: the same deals as a static grid (eight cards show the idea). */}
       <ul className="band-grid grid grid-cols-2 gap-3" data-testid="bands-grid" aria-hidden>
-        {/* Phones: eight cards are enough to show the idea; the page stays short. */}
         {CARDS.slice(0, 8).map((c, i) => <Card key={c.deal.id} card={c} uid={`grid-${i}`} index={i} labels={labels} locale={locale} />)}
       </ul>
     </div>
