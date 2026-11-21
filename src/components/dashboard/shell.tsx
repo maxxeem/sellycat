@@ -4,16 +4,18 @@ import { getSessionUser } from "@/lib/auth/session";
 import { getCurrentTenant, getMyTenants } from "@/lib/auth/tenants";
 import { Skeleton } from "@/components/ui";
 import { ShellFrame } from "./shell-frame";
+import { getStaffUser } from "@/lib/platform/staff";
 
 export async function DashboardShell({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  const [tenants, current] = await Promise.all([getMyTenants(), getCurrentTenant()]);
+  const [tenants, current, staff] = await Promise.all([getMyTenants(), getCurrentTenant(), getStaffUser()]);
   return (
     <ShellFrame
       user={{ name: user.name, email: user.email }}
       tenants={tenants.map((t) => ({ id: t.id, name: t.name }))}
       current={current ? { id: current.id, name: current.name, slug: current.slug, role: current.role } : null}
+      isStaff={Boolean(staff)}
     >
       {children}
     </ShellFrame>

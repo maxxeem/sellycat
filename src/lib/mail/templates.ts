@@ -362,3 +362,62 @@ export function voucherAccessMail(i: { brand: MailBrand; code: string; minutes: 
     text: [r.mailHeading, "", fmt(r.mailIntro, { shop: i.brand.shopName }), "", i.code, "", fmt(r.mailValid, { minutes: String(i.minutes) }), r.mailIgnore].join("\n"),
   };
 }
+
+/** Steps of the welcome mail, in order, with the dashboard page each one opens. */
+export const WELCOME_STEPS = [
+  { key: "design", path: "/dashboard/design" },
+  { key: "legal", path: "/dashboard/settings" },
+  { key: "payments", path: "/dashboard/payments" },
+  { key: "deal", path: "/dashboard/deals/new" },
+  { key: "share", path: "/dashboard" },
+] as const;
+
+/** To a new customer after the shop was created: first steps, each with a direct link. */
+export function welcomeMail(i: { brand: MailBrand; name: string; shopName: string; shopUrl: string; siteUrl: string }): Mail {
+  const t = getDictionary(i.brand.locale);
+  const w = t.onboardingMail;
+  const steps = WELCOME_STEPS.map((s, n) => ({ n: n + 1, title: w.steps[s.key].title, text: fmt(w.steps[s.key].text, { shop: i.shopUrl.replace(/^https?:\/\//, "") }), url: `${i.siteUrl}${s.path}` }));
+  const rows = steps
+    .map(
+      (s) => `<tr><td style="padding:12px 0;border-top:1px solid #e4e4e7;vertical-align:top;width:36px;"><span style="display:inline-block;width:26px;height:26px;border-radius:999px;background:${i.brand.primary};color:${readableOn(i.brand.primary)};font-weight:700;font-size:14px;line-height:26px;text-align:center;">${s.n}</span></td>
+<td style="padding:12px 0;border-top:1px solid #e4e4e7;"><a href="${esc(s.url)}" style="font-weight:700;color:#111111;text-decoration:none;">${esc(s.title)} →</a><br><span style="font-size:14px;color:#52525b;">${esc(s.text)}</span></td></tr>`,
+    )
+    .join("");
+  const hello = i.name ? fmt(w.helloName, { name: i.name }) : w.hello;
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(fmt(w.welcomeHeading, { shop: i.shopName }))}</h1>
+<p style="margin:0 0 4px;">${esc(hello)}</p>
+<p style="margin:0 0 16px;">${esc(w.welcomeIntro)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 4px;">${rows}</table>
+${button(i.brand, `${i.siteUrl}/dashboard`, w.toDashboard)}
+<p style="margin:0;font-size:14px;color:#52525b;">${esc(w.help)} <a href="${esc(`${i.siteUrl}/help`)}" style="color:#111111;font-weight:600;">${esc(w.helpLink)}</a></p>`,
+    esc(w.footer),
+  );
+  return {
+    subject: subjectLine(fmt(w.welcomeSubject, { shop: i.shopName })),
+    html,
+    text: [fmt(w.welcomeHeading, { shop: i.shopName }), "", hello, w.welcomeIntro, "", ...steps.map((s) => `${s.n}. ${s.title}: ${s.text}\n   ${s.url}`), "", `${w.toDashboard}: ${i.siteUrl}/dashboard`, `${w.help} ${i.siteUrl}/help`].join("\n"),
+  };
+}
+
+/** After a paid plan was booked: thanks, what the plan unlocks, where invoices are. */
+export function subscriptionMail(i: { brand: MailBrand; name: string; shopName: string; planName: string; siteUrl: string }): Mail {
+  const w = getDictionary(i.brand.locale).onboardingMail;
+  const hello = i.name ? fmt(w.helloName, { name: i.name }) : w.hello;
+  const html = layout(
+    i.brand,
+    `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(fmt(w.planHeading, { plan: i.planName }))}</h1>
+<p style="margin:0 0 4px;">${esc(hello)}</p>
+<p style="margin:0 0 12px;">${esc(fmt(w.planIntro, { plan: i.planName, shop: i.shopName }))}</p>
+<p style="margin:0 0 12px;">${esc(w.planNext)}</p>
+${button(i.brand, `${i.siteUrl}/dashboard/billing`, w.toBilling)}
+<p style="margin:0;font-size:14px;color:#52525b;">${esc(w.planInvoices)}</p>`,
+    esc(w.footer),
+  );
+  return {
+    subject: subjectLine(fmt(w.planSubject, { plan: i.planName })),
+    html,
+    text: [fmt(w.planHeading, { plan: i.planName }), "", hello, fmt(w.planIntro, { plan: i.planName, shop: i.shopName }), w.planNext, "", `${w.toBilling}: ${i.siteUrl}/dashboard/billing`, w.planInvoices].join("\n"),
+  };
+}

@@ -41,8 +41,8 @@ export function TeamManager(props: { members: TeamMember[]; invites: TeamInvite[
             const roles = TEAM_ROLES.filter((r) => r === m.role || canChangeRole({ actor: props.myRole, actorId: props.me, targetId: m.userId, from: m.role, to: r, owners }));
             const removable = canRemove({ actor: props.myRole, actorId: props.me, targetId: m.userId, role: m.role, owners });
             return (
-              <li key={m.userId} className="flex flex-wrap items-center gap-3 py-3">
-                <div className="min-w-0 flex-1">
+              <li key={m.userId} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+                <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
                   <p className="truncate font-semibold">
                     {m.name || m.email} {mine ? <Badge tone="coral">{s.you}</Badge> : null}
                   </p>

@@ -79,16 +79,16 @@ async function Vouchers({ t, locale, searchParams }: { t: Dictionary; locale: st
       {!vouchers?.length ? (
         <EmptyState title={v.empty} />
       ) : (
-        <Table>
+        <Table fit>
           <thead>
             <tr className="text-left">
               <th className={thClass}>{v.code}</th>
               <th className={`${thClass} hidden md:table-cell`}>{v.deal}</th>
               <th className={`${thClass} hidden lg:table-cell`}>{v.buyer}</th>
               <th className={`${thClass} hidden sm:table-cell`}>{v.validUntil}</th>
-              <th className={`${thClass} text-right`}>{v.value}</th>
+              <th className={`${thClass} hidden text-right sm:table-cell`}>{v.value}</th>
               <th className={thClass}>{v.status}</th>
-              <th className={thClass}></th>
+              <th className={`${thClass} hidden sm:table-cell`}></th>
             </tr>
           </thead>
           <tbody>
@@ -96,7 +96,12 @@ async function Vouchers({ t, locale, searchParams }: { t: Dictionary; locale: st
               const shown = shownVoucherStatus(row);
               return (
                 <tr key={row.id} className="hover:bg-surface">
-                  <td className={`${tdClass} whitespace-nowrap font-mono font-semibold`}>{row.code}</td>
+                  <td className={`${tdClass} whitespace-nowrap font-mono font-semibold`}>
+                    <a href={`${base}/v/${row.token}`} target="_blank" rel="noreferrer" className="hover:underline">
+                      {row.code}
+                    </a>
+                    <span className="mt-0.5 block max-w-[10rem] truncate font-sans text-xs font-normal text-muted md:hidden">{row.title}</span>
+                  </td>
                   <td className={`${tdClass} hidden max-w-56 truncate md:table-cell`}>{row.title}</td>
                   <td className={`${tdClass} hidden max-w-56 truncate lg:table-cell`}>
                     <Link href={`/dashboard/orders/${row.orders.id}`} className="hover:underline">
@@ -104,7 +109,7 @@ async function Vouchers({ t, locale, searchParams }: { t: Dictionary; locale: st
                     </Link>
                   </td>
                   <td className={`${tdClass} hidden whitespace-nowrap text-muted sm:table-cell`}>{row.valid_until ? dateTime(row.valid_until, locale).slice(0, 10) : "–"}</td>
-                  <td className={`${tdClass} whitespace-nowrap text-right`}>
+                  <td className={`${tdClass} hidden whitespace-nowrap text-right sm:table-cell`}>
                     {row.value_cents ? (
                       <>
                         {formatMoney(row.remaining_cents ?? 0, row.orders.currency, locale)}
@@ -117,7 +122,7 @@ async function Vouchers({ t, locale, searchParams }: { t: Dictionary; locale: st
                   <td className={tdClass}>
                     <Badge tone={VOUCHER_TONE[shown]}>{t.shop.voucherStatus[shown]}</Badge>
                   </td>
-                  <td className={`${tdClass} whitespace-nowrap text-right`}>
+                  <td className={`${tdClass} hidden whitespace-nowrap text-right sm:table-cell`}>
                     <a href={`${base}/v/${row.token}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-muted hover:text-ink">
                       {v.open}
                     </a>

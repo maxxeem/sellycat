@@ -66,15 +66,15 @@ async function Orders({ t, locale, searchParams }: { t: Dictionary; locale: stri
       {!orders?.length ? (
         <EmptyState title={t.orders.empty} description={t.orders.emptyHint} />
       ) : (
-        <Table>
+        <Table fit>
           <thead>
             <tr className="text-left">
               <th className={thClass}>{t.orders.number}</th>
-              <th className={thClass}>{t.orders.date}</th>
-              <th className={thClass}>{t.orders.buyer}</th>
+              <th className={`${thClass} hidden sm:table-cell`}>{t.orders.date}</th>
+              <th className={`${thClass} hidden sm:table-cell`}>{t.orders.buyer}</th>
               <th className={`${thClass} hidden md:table-cell`}>{t.orders.items}</th>
               <th className={`${thClass} text-right`}>{t.orders.amount}</th>
-              <th className={thClass}></th>
+              <th className={`${thClass} hidden sm:table-cell`}></th>
             </tr>
           </thead>
           <tbody>
@@ -84,12 +84,21 @@ async function Orders({ t, locale, searchParams }: { t: Dictionary; locale: stri
                   <Link href={`/dashboard/orders/${o.id}`} className="font-mono font-semibold hover:underline">
                     {o.number}
                   </Link>
+                  {/* Phones: date and buyer under the number instead of own columns. */}
+                  <span className="mt-0.5 block max-w-[9.5rem] truncate text-xs text-muted sm:hidden">
+                    {dateTime(o.created_at, locale)} · {o.email}
+                  </span>
                 </td>
-                <td className={`${tdClass} whitespace-nowrap text-muted`}>{dateTime(o.created_at, locale)}</td>
-                <td className={`${tdClass} max-w-56 truncate`}>{o.name ? `${o.name} · ${o.email}` : o.email}</td>
+                <td className={`${tdClass} hidden whitespace-nowrap text-muted sm:table-cell`}>{dateTime(o.created_at, locale)}</td>
+                <td className={`${tdClass} hidden max-w-56 truncate sm:table-cell`}>{o.name ? `${o.name} · ${o.email}` : o.email}</td>
                 <td className={`${tdClass} hidden max-w-72 truncate md:table-cell`}>{o.order_items.map((i) => `${i.qty} × ${i.title}`).join(", ")}</td>
-                <td className={`${tdClass} whitespace-nowrap text-right font-semibold`}>{formatMoney(o.amount_cents, o.currency, locale)}</td>
-                <td className={tdClass}>
+                <td className={`${tdClass} whitespace-nowrap text-right font-semibold`}>
+                  {formatMoney(o.amount_cents, o.currency, locale)}
+                  <span className="mt-1 block sm:hidden">
+                    <Badge tone={ORDER_TONE[o.status]}>{t.orders.status[o.status]}</Badge>
+                  </span>
+                </td>
+                <td className={`${tdClass} hidden sm:table-cell`}>
                   <Badge tone={ORDER_TONE[o.status]}>{t.orders.status[o.status]}</Badge>
                 </td>
               </tr>

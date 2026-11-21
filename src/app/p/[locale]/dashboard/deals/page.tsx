@@ -49,21 +49,21 @@ async function DealList({ t, locale, searchParams }: { t: Dictionary; locale: Lo
     <>
       <DealFilters q={q} status={status} sort={sort} counts={listCounts(deals, q, now)} />
       {!shown.length ? <p className="rounded-card border border-dashed border-line p-8 text-center text-sm text-muted">{t.deals.list.noResults}</p> : null}
-    <ul className="grid gap-3" data-testid="deal-list">
+    <ul className="grid grid-cols-1 gap-3" data-testid="deal-list">
       {shown.map((d) => {
         const status = dealStatus(d, now);
         const pool = d.code_source === "pool" && d.state !== "ended" ? poolLevel(d.pool_free, d.sold_qty) : "ok";
         const cover = [...(d.deal_images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
         return (
-          <li key={d.id}>
-            <Link href={`/dashboard/deals/${d.id}`} className="flex items-center gap-4 rounded-card border border-line bg-surface-2 p-3 shadow-card transition hover:border-ink">
-              <span className="h-16 w-24 shrink-0 overflow-hidden rounded-input bg-surface">
+          <li key={d.id} className="min-w-0">
+            <Link href={`/dashboard/deals/${d.id}`} className="flex items-center gap-3 rounded-card border border-line bg-surface-2 p-3 shadow-card transition hover:border-ink sm:gap-4">
+              <span className="h-14 w-14 shrink-0 overflow-hidden rounded-input bg-surface sm:h-16 sm:w-24">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {cover ? <img src={cover.url} alt="" className="h-full w-full object-cover" /> : null}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{d.title}</span>
-                <span className="block truncate text-sm text-muted">
+                <span className="line-clamp-2 text-xs text-muted sm:line-clamp-1 sm:text-sm">
                   {[
                     d.partners?.name,
                     formatMoney(d.price_cents, info?.currency ?? "CHF", locale),

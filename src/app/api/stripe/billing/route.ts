@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { applySubscription, tenantIdFor } from "@/lib/billing/apply";
 import { billingWebhookSecret, stripeConfigured } from "@/lib/billing/stripe";
 import { getStripe } from "@/lib/payments/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
+import { sendSubscriptionMail } from "@/lib/mail/onboarding";
 
 /**
  * Stripe Billing webhook (events of the platform account itself, not of connected accounts):
@@ -50,7 +51,10 @@ async function handle(event: Stripe.Event): Promise<string | null> {
       const session = event.data.object;
       if (session.mode !== "subscription" || !session.subscription) return null;
       const sub = await getStripe().subscriptions.retrieve(typeof session.subscription === "string" ? session.subscription : session.subscription.id);
-      return applySubscription(sub);
+      const tenantId = await applySubscription(sub);
+      // A newly booked plan: thank-you mail once the response is out.
+      if (tenantId) after(() => sendSubscriptionMail(tenantId).catch((e) => console.error("[subscription mail]", e instanceof Error ? e.message : e)));
+      return tenantId;
     }
     case "customer.subscription.created":
     case "customer.subscription.updated":

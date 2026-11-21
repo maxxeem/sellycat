@@ -60,11 +60,11 @@ async function Log({ t, locale }: { t: Dictionary; locale: string }) {
       {!rows?.length ? (
         <EmptyState title={v.logEmpty} />
       ) : (
-        <Table>
+        <Table fit>
           <thead>
             <tr className="text-left">
               <th className={thClass}>{v.when}</th>
-              <th className={thClass}>{v.code}</th>
+              <th className={`${thClass} hidden sm:table-cell`}>{v.code}</th>
               <th className={`${thClass} hidden md:table-cell`}>{v.deal}</th>
               <th className={`${thClass} hidden sm:table-cell`}>{v.by}</th>
               <th className={`${thClass} text-right`}>{v.amount}</th>
@@ -74,8 +74,11 @@ async function Log({ t, locale }: { t: Dictionary; locale: string }) {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className={r.undone_at ? "text-muted line-through" : "hover:bg-surface"}>
-                <td className={`${tdClass} whitespace-nowrap`}>{dateTime(r.created_at, locale)}</td>
-                <td className={`${tdClass} whitespace-nowrap font-mono`}>{r.vouchers?.code}</td>
+                <td className={`${tdClass} whitespace-nowrap`}>
+                  {dateTime(r.created_at, locale)}
+                  <span className="mt-0.5 block font-mono text-xs text-muted sm:hidden">{r.vouchers?.code}</span>
+                </td>
+                <td className={`${tdClass} hidden whitespace-nowrap font-mono sm:table-cell`}>{r.vouchers?.code}</td>
                 <td className={`${tdClass} hidden max-w-56 truncate md:table-cell`}>{r.vouchers?.title}</td>
                 <td className={`${tdClass} hidden max-w-40 truncate sm:table-cell`}>{name(r.user_id)}</td>
                 <td className={`${tdClass} whitespace-nowrap text-right`}>{r.amount_cents ? formatMoney(r.amount_cents, r.vouchers?.orders?.currency ?? "CHF", locale) : "–"}</td>

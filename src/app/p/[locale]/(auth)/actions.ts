@@ -11,6 +11,8 @@ import { registerDomain } from "@/lib/vercel/domains";
 import { LEGAL_VERSION } from "@/lib/legal/docs";
 import { codeRequired, normaliseCode } from "@/lib/access/rules";
 import { clientIp, countCodeFailure, networkOf, rateLimit } from "@/lib/access/server";
+import { after } from "next/server";
+import { sendWelcomeMail } from "@/lib/mail/onboarding";
 
 /** Error/notice keys map to the `auth` dictionary on the client. */
 export type AuthState = { error?: string; notice?: string; field?: string } | null;
@@ -124,6 +126,7 @@ export async function provisionFromSignup(): Promise<void> {
       // Links the code (plan, trial, coupon) and marks the waitlist entry as registered.
       await db.rpc("finish_invite_signup", { p_user: userId, p_tenant: tenantId });
       await registerDomain(`${candidate}.${root}`);
+      after(() => sendWelcomeMail(tenantId).catch((e) => console.error("[welcome mail]", e instanceof Error ? e.message : e)));
       return;
     }
     if (!error.message.includes("duplicate")) return;
@@ -190,6 +193,7 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
     if (!error) {
       await db.rpc("finish_invite_signup", { p_user: user.id, p_tenant: tenantId });
       await registerDomain(`${candidate}.${root}`);
+      after(() => sendWelcomeMail(tenantId).catch((e) => console.error("[welcome mail]", e instanceof Error ? e.message : e)));
       redirect("/dashboard");
     }
     if (!error.message.includes("duplicate")) return { error: error.message.includes("paused") ? "codeRequired" : "linkInvalid", field: error.message.includes("paused") ? "code" : undefined };

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, Check, CreditCard, ExternalLink, Handshake, Palette, Receipt, Scale, Tag, Ticket, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, CreditCard, Handshake, Palette, Receipt, Scale, Tag, Ticket, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Storefront } from "@phosphor-icons/react/dist/ssr";
 import { Badge, buttonClass } from "@/components/ui";
 import { fmt, type Dictionary } from "@/lib/i18n";
 import { ORDER_TONE, dateTime, type OrderStatus } from "@/lib/dashboard/order-ui";
@@ -67,7 +68,7 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
           </div>
           <div className="grid grid-cols-2 gap-2 *:w-full *:px-2 sm:flex sm:flex-wrap sm:*:w-auto sm:*:px-4 [&>*:last-child]:col-span-2">
             <a href={shopUrl} target="_blank" rel="noreferrer" className={buttonClass.secondary}>
-              {t.dashboard.openShop} <ExternalLink className="h-4 w-4" aria-hidden />
+              <Storefront className="h-4 w-4" aria-hidden /> {t.dashboard.openShop}
             </a>
             <CopyLink url={shopUrl} label={h.copyLink} done={h.copied} />
             <NewDealButton />

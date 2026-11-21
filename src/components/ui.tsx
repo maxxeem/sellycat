@@ -97,15 +97,16 @@ export function EmptyState({ title, description, action }: { title: string; desc
   );
 }
 
-export function Table({ children }: { children: ReactNode }) {
+/** Bordered table; scrolls sideways when too wide. `fit`: no minimum width (columns adapt to phones). */
+export function Table({ children, fit = false }: { children: ReactNode; fit?: boolean }) {
   return (
     <div className="w-full max-w-full overflow-x-auto rounded-card border border-line bg-surface-2">
-      <table className="w-full min-w-[560px] text-left text-sm">{children}</table>
+      <table className={`w-full text-left text-sm ${fit ? "" : "min-w-[560px]"}`}>{children}</table>
     </div>
   );
 }
-export const thClass = "px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted";
-export const tdClass = "border-t border-line px-4 py-3 align-middle";
+export const thClass = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted sm:px-4";
+export const tdClass = "border-t border-line px-3 py-3 align-middle sm:px-4";
 
 export function TextLink({ href, children }: { href: string; children: ReactNode }) {
   return (

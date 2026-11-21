@@ -423,3 +423,13 @@ Wunsch Jan: Wer den QR-Code eines Gutscheins mit der Handykamera scannt, sieht n
 ## 32. Anmeldung mit Google (21.11.2026)
 
 «Mit Google anmelden» auf Login und «Mit Google registrieren» auf der Registrierung (Supabase OAuth, Rückkehr über `/auth/continue`). Der Knopf erscheint nur, wenn Google in Supabase Auth eingeschaltet ist. Konten ohne Shop (erste Google-Anmeldung) kommen auf `/welcome`: Shop-Name, Adresse, AGB-Zustimmung (Version in den User-Metadaten) und, solange die Registrierung nicht offen ist, der Einladungscode (gleiche Regeln wie bei der E-Mail-Registrierung; Staff ausgenommen). Gleiche E-Mail mit Passwort und Google wird von Supabase zu einem Konto verknüpft. Einrichtung: Google-OAuth-Client (Google Cloud) und Provider in Supabase, siehe `docs/LAUNCH.md`.
+
+## 33. Dashboard mobil, Kontomenü, Profil, Staff, Hilfe-Bilder, Kunden-Mails (21.11.2026)
+
+- **Mobil**: Alle Dashboard-Seiten auf 375 px geprüft (automatisch auf Überlauf, Hauptseiten optisch). Behoben: Deals-Liste (Einträge wuchsen mit dem Text über den Rand), Team-Zeilen, Bestellungen/Gutscheine/Einlösungen ohne seitliches Scrollen (Nebeninfos unter der Hauptspalte, schmalere Abstände). Detaillierte Tabellen (Abrechnungen, Gebühren, Auswertungen) scrollen weiterhin seitlich.
+- **Kopf der Übersicht**: «Shop öffnen» und «Link kopieren» mit Icon zuerst, Shop-Icon (Storefront) statt Pfeil.
+- **Seitenleiste unten**: nur noch eine Zeile (Avatar, Name, E-Mail). Klick öffnet das Kontomenü: Profil & Konto, Wechseln zu (alle eigenen Shops, für Staff zusätzlich Sellycat Admin), Hell/Dunkel, Abmelden. Sprache wanderte ins Profil.
+- **Profil & Konto** (`/dashboard/profile`): Name, Sprache, Design, Passwort ändern/festlegen, Google verbinden/trennen (Trennen nur mit Passwort als zweiter Anmeldung), Konto löschen (nicht für Inhaber eines Shops und nicht für Staff).
+- **Staff-Dashboard**: gleiche Seitenleiste wie Kunden (Icons, gleiche Hervorhebung, mobil als Schublade), Kontomenü mit Wechsel in die eigenen Shops.
+- **Hilfe-Center**: alle 17 Artikel mit einem Screenshot der passenden Dashboard-Seite (DE/EN), personenbezogene Daten ersetzt.
+- **Mails**: Willkommen mit fünf ersten Schritten (Design, Rechtstexte, Stripe, erster Deal, teilen) nach der Shop-Erstellung; Dank nach dem Abo-Kauf. DE/EN, Absender Sellycat.

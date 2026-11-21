@@ -3,28 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { BookOpen, Buildings, ChartLineUp, ClockCounterClockwise, House, Key, Lifebuoy, Tag, Tray, type IconProps } from "@phosphor-icons/react";
+import type { ComponentType } from "react";
 import { DashboardMenu } from "./menu";
+import { AccountMenu } from "./account-menu";
+import { useI18n } from "@/lib/i18n/context";
 import type { MemberRole } from "@/lib/auth/roles";
 import { Logo } from "@/components/brand";
-import { LanguageSwitcher } from "@/components/language-switcher";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useI18n } from "@/lib/i18n/context";
-import { logout, switchTenant } from "@/app/p/[locale]/dashboard/actions";
-import { Select } from "@/components/select";
 
 type Props = {
   user: { name: string; email: string };
   tenants: Array<{ id: string; name: string }>;
   current: { id: string; name: string; slug: string; role?: MemberRole } | null;
   children: ReactNode;
-  /** Staff admin reuses the frame with its own menu. */
-  nav?: Array<{ href: string; label: string }>;
+  /** Staff admin reuses the frame with its own menu (icon by key, components cannot cross from the server). */
+  nav?: Array<{ href: string; label: string; icon?: StaffIcon }>;
   homeHref?: string;
+  /** May switch to the Sellycat admin (and back). */
+  isStaff?: boolean;
 };
 
+const STAFF_ICONS = { home: House, tenants: Buildings, analytics: ChartLineUp, plans: Tag, requests: Tray, support: Lifebuoy, help: BookOpen, access: Key, audit: ClockCounterClockwise } satisfies Record<string, ComponentType<IconProps>>;
+export type StaffIcon = keyof typeof STAFF_ICONS;
+
 /** Sidebar layout (drawer on phones), modelled on SwypeCast's admin shell. */
-export function ShellFrame({ user, tenants, current, children, nav, homeHref = "/dashboard" }: Props) {
+export function ShellFrame({ user, tenants, current, children, nav, homeHref = "/dashboard", isStaff = false }: Props) {
   const { t } = useI18n();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -35,47 +39,30 @@ export function ShellFrame({ user, tenants, current, children, nav, homeHref = "
       <Link href={homeHref} className="mb-4 px-2 py-1" onClick={() => setOpen(false)}>
         <Logo width={160} />
       </Link>
-      {tenants.length > 1 && current ? (
-        <Select aria-label={t.dashboard.switchShop} defaultValue={current.id} onChange={(e) => switchTenant(e.target.value)} className="mb-3 font-semibold">
-          {tenants.map((tn) => (
-            <option key={tn.id} value={tn.id}>
-              {tn.name}
-            </option>
-          ))}
-        </Select>
-      ) : current ? (
-        <p className="mb-3 truncate px-2 text-sm font-semibold">{current.name}</p>
-      ) : null}
+      {current || nav ? <p className="mb-3 truncate px-3 text-xs font-bold uppercase tracking-wider text-muted">{nav ? t.account.staff : current?.name}</p> : null}
       {nav ? (
-        nav.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            prefetch={false}
-            onClick={() => setOpen(false)}
-            aria-current={active(item.href) ? "page" : undefined}
-            className={`rounded-input px-3 py-2 text-sm font-semibold transition ${active(item.href) ? "bg-accent text-on-accent" : "text-muted hover:bg-surface hover:text-ink"}`}
-          >
-            {item.label}
-          </Link>
-        ))
+        nav.map((item) => {
+          const Icon = item.icon ? STAFF_ICONS[item.icon] : null;
+          const on = active(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              onClick={() => setOpen(false)}
+              aria-current={on ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-input px-3 py-2 text-sm font-medium transition ${on ? "bg-accent/10 font-semibold text-accent-text" : "text-muted hover:bg-surface hover:text-ink"}`}
+            >
+              {Icon ? <Icon size={19} weight="light" className="shrink-0 opacity-80" aria-hidden /> : null}
+              {item.label}
+            </Link>
+          );
+        })
       ) : (
         <DashboardMenu isActive={active} onNavigate={() => setOpen(false)} role={current?.role} />
       )}
-      <div className="mt-auto flex flex-col gap-3 border-t border-line pt-4">
-        <div className="px-2 text-sm">
-          <p className="truncate font-semibold">{user.name}</p>
-          <p className="truncate text-xs text-muted">{user.email}</p>
-        </div>
-        <div className="flex items-center gap-2 px-2">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </div>
-        <form action={logout}>
-          <button type="submit" className="flex w-full items-center gap-2 rounded-input px-3 py-2 text-sm font-semibold text-muted hover:bg-surface hover:text-ink">
-            <LogOut className="h-4 w-4" aria-hidden /> {t.common.logout}
-          </button>
-        </form>
+      <div className="mt-auto border-t border-line pt-3">
+        <AccountMenu user={user} tenants={tenants} currentId={current?.id ?? null} isStaff={isStaff} inStaff={Boolean(nav)} onNavigate={() => setOpen(false)} />
       </div>
     </nav>
   );
