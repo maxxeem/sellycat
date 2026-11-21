@@ -26,12 +26,6 @@ export function LoginForm({ google = false }: { google?: boolean }) {
   const { error } = useMessage(state);
   return (
     <form action={action} className="flex flex-col gap-4">
-      {google ? (
-        <>
-          <GoogleButton label={t.auth.googleLogin} next={next || "/dashboard"} />
-          <OrDivider label={t.auth.or} />
-        </>
-      ) : null}
       <input type="hidden" name="next" value={next} />
       <Field label={t.common.email}>
         <Input name="email" type="email" autoComplete="email" required data-testid="login-email" />
@@ -46,6 +40,12 @@ export function LoginForm({ google = false }: { google?: boolean }) {
       <Link href="/forgot" className={`${linkClass} text-sm`}>
         {t.auth.forgot}
       </Link>
+      {google ? (
+        <>
+          <OrDivider label={t.auth.or} />
+          <GoogleButton label={t.auth.googleLogin} next={next || "/dashboard"} />
+        </>
+      ) : null}
     </form>
   );
 }
@@ -99,13 +99,6 @@ export function SignupForm({ root, code = "", onChangeCode, google = false }: { 
   const shownSlug = slugTouched ? slug : slugify(name);
   return (
     <form action={action} className="flex flex-col gap-4">
-      {/* With Google the shop is set up on /welcome after the sign-in (a code travels along). */}
-      {google ? (
-        <>
-          <GoogleButton label={t.auth.googleSignup} next={code ? `/welcome?code=${encodeURIComponent(code)}` : "/welcome"} />
-          <OrDivider label={t.auth.or} />
-        </>
-      ) : null}
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="code" value={code} />
       {code ? (
@@ -156,6 +149,13 @@ export function SignupForm({ root, code = "", onChangeCode, google = false }: { 
       <button type="submit" disabled={pending} className={buttonClass.primary}>
         {pending ? t.common.loading : t.auth.signupSubmit}
       </button>
+      {/* With Google the shop is set up on /welcome after the sign-in (a code travels along). */}
+      {google ? (
+        <>
+          <OrDivider label={t.auth.or} />
+          <GoogleButton label={t.auth.googleSignup} next={code ? `/welcome?code=${encodeURIComponent(code)}` : "/welcome"} />
+        </>
+      ) : null}
     </form>
   );
 }
