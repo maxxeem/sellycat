@@ -52,6 +52,13 @@
   --glow2-rgb: 64 40 34;
   color: #fff;
 }
+/* Redeeming band: a warm espresso instead of plain Ink, so the light, coral-tinted page sinks into it softly. */
+.site-dark.scan-band {
+  --site-ground: #1f1714;
+  --site-surface: #2a201c;
+  --site-line: #3a2c27;
+  --ground-rgb: 31 23 20;
+}
 @media (min-width: 1024px) { .site { --site-gap: 6.5rem; --site-head-gap: 3rem; --site-block: 2.5rem; } }
 .site-section { padding-block: var(--site-gap); }
 .site-head { margin-bottom: var(--site-head-gap); }

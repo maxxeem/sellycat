@@ -8,9 +8,9 @@ export const en = {
   /** Accessible name of a step tab; {title} = the step's title. */
   show: "Show step: {title}",
   items: [
-    { title: "Set up your shop", text: "Logo, colours and your own domain: the shop looks like your brand, not like ours." },
-    { title: "Create a deal", text: "Pick a partner, set price, stock and sales window, publish." },
-    { title: "Sell & redeem", text: "Money goes straight to your account via Stripe, vouchers are redeemed with a phone camera." },
+    { title: "Set up your shop", text: "Logo, colours, your own domain." },
+    { title: "Create a deal", text: "Set the price and publish." },
+    { title: "Sell & redeem", text: "Paid via Stripe, redeemed by camera." },
   ],
   /** Accessible description of each laptop screen (the mockup itself is decorative). */
   screens: [
@@ -73,9 +73,9 @@ export const de: Widen<typeof en> = {
   tabs: "Schritte",
   show: "Schritt zeigen: {title}",
   items: [
-    { title: "Shop einrichten", text: "Logo, Farben und deine eigene Domain: Der Shop sieht aus wie deine Marke, nicht wie unsere." },
-    { title: "Deal anlegen", text: "Partner wählen, Preis, Stückzahl und Verkaufszeitraum festlegen, veröffentlichen." },
-    { title: "Verkaufen & einlösen", text: "Das Geld geht über Stripe direkt auf dein Konto, eingelöst wird per Handykamera." },
+    { title: "Shop einrichten", text: "Logo, Farben, eigene Domain." },
+    { title: "Deal anlegen", text: "Preis festlegen und veröffentlichen." },
+    { title: "Verkaufen & einlösen", text: "Geld via Stripe, Einlösen per Kamera." },
   ],
   screens: [
     "Beispiel-Dashboard: Ein Logo wird hochgeladen, eine Markenfarbe gewählt und die Domain deals.deine-firma.ch eingetragen; die Live-Vorschau übernimmt den neuen Look.",

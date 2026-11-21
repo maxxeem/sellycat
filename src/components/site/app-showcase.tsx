@@ -18,16 +18,16 @@ const POINT_ICONS = [MonitorSmartphone, ChartPie, ShieldCheck, ListChecks];
 export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de" | "en" }) {
   const root = useDarkening();
   return (
-    <section ref={root} id="einloesen" className="site-dark site-section relative scroll-mt-20 text-white" data-testid="scan-section">
+    <section ref={root} id="einloesen" className="site-dark scan-band site-section relative scroll-mt-20 text-white" data-testid="scan-section">
       {/*
         Fade to black: while this section travels to the middle of the screen, a black veil over the whole
         viewport rises (--dark 0 → 0.92) and everything else on the page sinks into it, only this section stays
         lit; past the middle it lifts again. Fixed and above every other section (z-20, the page wrapper is the
         stacking context), this section's own layers sit above it. Only opacity changes.
       */}
-      <div className="pointer-events-none fixed inset-0 z-20 bg-black" style={VEIL} aria-hidden />
+      <div className="pointer-events-none fixed inset-0 z-20 bg-site-ground" style={VEIL} aria-hidden />
       {/* On the light page the section is its own Ink band (soft top edge, solid bottom: the coral audiences band follows), so the text reads before the veil rises. */}
-      <div className="pointer-events-none absolute inset-x-0 -top-24 bottom-0 z-20 bg-site-ground [mask-image:linear-gradient(to_bottom,transparent,#000_18%)]" aria-hidden />
+      <div className="pointer-events-none absolute inset-x-0 -top-24 bottom-0 z-20 bg-site-ground [mask-image:linear-gradient(to_bottom,transparent,#000_30%)]" aria-hidden />
       {/* In the dark, a faint coral grid comes up behind the content, fading out to the edges. */}
       <div className="pointer-events-none absolute inset-x-0 -inset-y-24 z-[21]" style={GRID} aria-hidden />
       {/* One grid, four parts: on phones intro, phone, points, note one after another; from lg the phone stands on the right across all rows. */}
@@ -72,7 +72,7 @@ export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de
  * highest when its centre crosses the centre of the screen, falling as it leaves. A smoothstep makes the
  * dimming start and end gently; reduced motion keeps the page as it is.
  */
-const DARK_MAX = 0.92;
+const DARK_MAX = 0.88;
 const VEIL: React.CSSProperties = { opacity: "var(--dark, 0)", willChange: "opacity" };
 const GRID_LINE = "rgb(var(--coral-rgb) / 0.07)";
 const GRID: React.CSSProperties = {

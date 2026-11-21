@@ -59,8 +59,8 @@ export function StepsShowcase({ labels }: { labels: Labels }) {
                   {i + 1}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[15px] font-semibold leading-tight lg:text-base">{s.title}</span>
-                  <span className={`mt-1 block text-xs leading-snug lg:text-[13px] ${on ? "text-on-coral/80" : "text-fg/55"}`}>{s.text}</span>
+                  <span className="block truncate text-[15px] font-semibold leading-tight lg:text-base">{s.title}</span>
+                  <span className={`mt-1 block truncate text-xs leading-snug lg:text-[13px] ${on ? "text-on-coral/80" : "text-fg/55"}`}>{s.text}</span>
                 </span>
               </button>
             );
