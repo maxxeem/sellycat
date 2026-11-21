@@ -28,9 +28,9 @@ export const en = {
     subtitle: "Launch your own deal shop with Sellycat. Sell offers as digital vouchers and deliver them fully automatically.",
   },
   statement: {
-    before: "",
+    before: "With ",
     brand: "Sellycat",
-    after: " is the most efficient way to sell online. From order to delivery it takes only seconds.",
+    after: ", every order is delivered within seconds of purchase.",
   },
   stats: {
     title: "In numbers",
