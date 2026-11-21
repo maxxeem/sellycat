@@ -7,8 +7,8 @@ import { AudiencesTrack } from "./audiences-track";
  */
 export function Audiences({ labels }: { labels: Dictionary["site"]["audiences"] }) {
   return (
-    // A full-width coral band right after the dark redeeming band; pricing below is white again. Text on coral is Ink.
-    <section id="fuer-wen" className="relative z-[23] bg-coral text-on-coral" data-testid="audiences">
+    // White again right after the dark redeeming band (a clear edge, no fade). z-[23] keeps it above the redeem veil.
+    <section id="fuer-wen" className="relative z-[23] bg-site-ground" data-testid="audiences">
       <div className="site-section mx-auto max-w-6xl px-5 sm:px-8">
         <AudiencesTrack labels={labels} />
       </div>

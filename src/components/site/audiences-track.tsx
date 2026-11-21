@@ -7,10 +7,20 @@ import { DEMO_DEALS, DealArt, type DemoDeal } from "./demo-brands";
 
 type Labels = Dictionary["site"]["audiences"];
 
-const deal = (id: string): DemoDeal => DEMO_DEALS.find((d) => d.id === id) ?? DEMO_DEALS[0];
+type Photo = Pick<DemoDeal, "id" | "photo" | "focus">;
+const deal = (id: string): Photo => DEMO_DEALS.find((d) => d.id === id) ?? DEMO_DEALS[0];
 
-/** One calm deal photo per audience, in the order of `labels.tiles`. */
-const PHOTOS: DemoDeal[] = ["konzert", "golf", "ballon", "gipfeli", "museum"].map(deal);
+/**
+ * One calm photo per audience, in the order of `labels.tiles` (Unsplash License): a radio studio
+ * microphone, a club's golf course, a city balloon ride, a set restaurant table, colour swatches.
+ */
+const PHOTOS: Photo[] = [
+  { id: "aud-media", photo: "photo-1688039763740-9036cb5d566e", focus: [0.45, 0.45] },
+  deal("golf"),
+  deal("ballon"),
+  { id: "aud-hospitality", photo: "photo-1669310095420-8cd109dba5cb" },
+  { id: "aud-agency", photo: "photo-1608231261603-42c08866e163" },
+];
 
 /**
  * Audiences as one wide row of 9:16 tiles (edges cut off, arrows top right on desktop): one deal photo
@@ -42,13 +52,13 @@ export function AudiencesTrack({ labels }: { labels: Labels }) {
     const w = tile ? tile.getBoundingClientRect().width + 16 : el.clientWidth * 0.6;
     el.scrollBy({ left: dir * w * 2, behavior: "smooth" });
   };
-  const arrow = "flex h-11 w-11 items-center justify-center rounded-full border border-on-coral/25 bg-white/20 text-on-coral transition duration-300 hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
+  const arrow = "flex h-11 w-11 items-center justify-center rounded-full border border-fg/15 bg-site-surface/90 text-fg/80 transition duration-300 hover:border-coral hover:text-coral-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
   return (
     <>
       <div className="site-head flex items-end justify-between gap-6">
         <div>
           <h2>{labels.title}</h2>
-          <p className="!text-on-coral/85">{labels.subtitle}</p>
+          <p>{labels.subtitle}</p>
         </div>
         <div className="hidden shrink-0 gap-2 lg:flex" data-testid="audiences-arrows">
           <button type="button" onClick={() => step(-1)} aria-disabled={edge.start} tabIndex={edge.start ? -1 : 0} aria-label={labels.prev} className={arrow} data-testid="audiences-prev"><ArrowLeft className="h-5 w-5" /></button>
@@ -71,9 +81,9 @@ export function AudiencesTrack({ labels }: { labels: Labels }) {
   );
 }
 
-function AudienceTile({ name, text, photo }: { name: string; text: string; photo: DemoDeal }) {
+function AudienceTile({ name, text, photo }: { name: string; text: string; photo: Photo }) {
   return (
-    <div className="group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-black/10 shadow-[0_24px_50px_-24px_rgba(17,17,17,0.45)]" data-testid={`audience-${photo.id}`}>
+    <div className="group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10" data-testid={`audience-${photo.id}`}>
       {/* The photo slowly leans in on hover (transform only; still with reduced motion). */}
       <span className="absolute inset-0 block transition-transform duration-[1400ms] ease-out motion-safe:group-hover:scale-[1.05]">
         <DealArt deal={photo} />
