@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Globe, LifeBuoy, Menu, Tag, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Globe, LifeBuoy, Menu, Tag, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -55,9 +55,72 @@ function LanguageSegmented({ onChosen }: { onChosen?: () => void }) {
   );
 }
 
+/** Desktop header: the language as a short pill («DE ▾») with a small menu, as on the reference landing. */
+function LanguagePill() {
+  const { locale, t } = useI18n();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={root} className="relative" data-testid="header-language">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${t.common.language}: ${LOCALE_LABEL[locale]}`}
+        className={`${ghost} gap-1.5 pl-3 pr-2 text-[11px] font-semibold uppercase tracking-[0.12em] ${open ? "border-fg/20 bg-fg/[0.08] text-fg" : ""}`}
+      >
+        {locale}
+        <ChevronDown className={`h-3 w-3 text-fg/50 transition ${open ? "rotate-180" : ""}`} aria-hidden />
+      </button>
+      {open ? (
+        <ul role="listbox" aria-label={t.common.language} className="absolute right-0 top-full z-40 mt-2 min-w-[10rem] overflow-hidden rounded-2xl border border-fg/10 bg-site-sheet/95 p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.15)] backdrop-blur-2xl">
+          {LOCALES.map((l) => (
+            <li key={l} role="option" aria-selected={l === locale}>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  if (l === locale) return;
+                  document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
+                  router.refresh();
+                }}
+                className={`flex w-full items-center justify-between gap-4 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-fg/[0.06] ${l === locale ? "text-fg" : "text-fg/65"}`}
+                data-testid={`header-lang-${l}`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="w-6 text-[10px] font-semibold uppercase tracking-[0.12em] text-fg/40">{l}</span>
+                  {LOCALE_LABEL[l]}
+                </span>
+                {l === locale ? <Check className="h-4 w-4 text-coral-text" aria-hidden /> : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 /**
- * Landing header (ported from the reference landing): logo left; right login, pricing and Help Center (the
- * language switcher lives in the footer, as on every Sellycat page).
+ * Landing header (ported from the reference landing): logo left; right login, pricing, Help Center and the
+ * language as a short pill (also in the footer, as on every Sellycat page).
  * On phones those fold into a sheet; login stays next to the menu button.
  */
 export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
@@ -107,6 +170,7 @@ export function SiteHeaderBar({ l }: { l: SiteHeaderLabels }) {
         <Link href="/help" className={ghost} data-testid="help-center">
           {l.helpCenter}
         </Link>
+        <LanguagePill />
       </div>
       <div ref={root} className="flex items-center gap-2 sm:hidden">
         <Link href="/login" className={`${pill} h-8 border border-coral/80 px-3 font-semibold text-coral-text active:bg-coral/10`} data-testid="header-login-mobile">
