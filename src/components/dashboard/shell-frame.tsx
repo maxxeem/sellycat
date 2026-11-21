@@ -8,7 +8,7 @@ import { BookOpen, Buildings, ChartLineUp, ClockCounterClockwise, House, Key, Li
 import type { ComponentType } from "react";
 import { DashboardMenu } from "./menu";
 import { AccountMenu } from "./account-menu";
-import { useI18n } from "@/lib/i18n/context";
+import { WorkspaceSwitcher } from "./workspace-switcher";
 import type { MemberRole } from "@/lib/auth/roles";
 import { Logo } from "@/components/brand";
 
@@ -29,7 +29,6 @@ export type StaffIcon = keyof typeof STAFF_ICONS;
 
 /** Sidebar layout (drawer on phones), modelled on SwypeCast's admin shell. */
 export function ShellFrame({ user, tenants, current, children, nav, homeHref = "/dashboard", isStaff = false }: Props) {
-  const { t } = useI18n();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const active = (href: string) => (href === homeHref ? pathname === href : pathname === href || pathname.startsWith(`${href}/`));
@@ -39,7 +38,7 @@ export function ShellFrame({ user, tenants, current, children, nav, homeHref = "
       <Link href={homeHref} className="mb-4 px-2 py-1" onClick={() => setOpen(false)}>
         <Logo width={160} />
       </Link>
-      {current || nav ? <p className="mb-3 truncate px-3 text-xs font-bold uppercase tracking-wider text-muted">{nav ? t.account.staff : current?.name}</p> : null}
+      <WorkspaceSwitcher tenants={tenants} currentId={current?.id ?? null} isStaff={isStaff} inStaff={Boolean(nav)} />
       {nav ? (
         nav.map((item) => {
           const Icon = item.icon ? STAFF_ICONS[item.icon] : null;

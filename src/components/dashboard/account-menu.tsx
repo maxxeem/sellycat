@@ -86,11 +86,12 @@ export function AccountMenu({
                 );
               })}
               {isStaff ? (
-                <Link href="/admin" role="menuitem" className={item} onClick={() => (setOpen(false), onNavigate?.())}>
+                // A full page load: the admin is a separate area behind its own checks (staff, MFA).
+                <a href="/admin" role="menuitem" className={item} onClick={() => (setOpen(false), onNavigate?.())}>
                   <ShieldCheck className="h-4 w-4 text-muted" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{a.staff}</span>
                   {inStaff ? <Check className="h-4 w-4 text-accent-text" aria-hidden /> : null}
-                </Link>
+                </a>
               ) : null}
             </>
           ) : null}
