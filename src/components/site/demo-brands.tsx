@@ -1,7 +1,8 @@
 /**
  * Fictional example brands and deals for the landing page animations. Invented shop and partner names,
  * no real logos. Deal photos are professional photographs from Unsplash (Unsplash License: free for
- * commercial use, no attribution required), served by Unsplash's image CDN in one size per photo.
+ * commercial use, no attribution required), served by Unsplash's image CDN in one size per photo; a few
+ * are our own square WebP files in public/site/deals/ (800 px).
  * Colours here are the fictional shops' own brand colours inside the mockups, not Sellycat's palette.
  */
 
@@ -12,7 +13,7 @@ export type DemoDeal = {
   priceCents: number;
   valueCents: number;
   left: number;
-  /** Unsplash photo id (images.unsplash.com/<photo>). */
+  /** Unsplash photo id (images.unsplash.com/<photo>), or a square image of our own under /site/deals/ (starts with «/»). */
   photo: string;
   /** Focal point (0–1) for the square crop and object-position, where the subject is off-centre. */
   focus?: [number, number];
@@ -47,8 +48,8 @@ export const DEMO_DEALS: DemoDeal[] = [
   { id: "alp", title: { de: "Tageskarte Bergbahn", en: "Mountain railway day pass" }, partner: "Bergbahn Falkenalp", priceCents: 4500, valueCents: 7200, left: 23, photo: "photo-1635711517978-3b0ff0a53550", focus: [0.78, 0.45], hue: ["#8EC5FC", "#2F5D8A"] },
   { id: "spa", title: { de: "Spa-Abend mit Sauna", en: "Spa evening with sauna" }, partner: "Spa Lindengarten", priceCents: 5900, valueCents: 9000, left: 12, photo: "photo-1488345979593-09db0f85545f", hue: ["#BFD9E6", "#2E5E78"] },
   { id: "kino", title: { de: "2 Kinotickets mit Popcorn", en: "2 cinema tickets with popcorn" }, partner: "Kino Aurora", priceCents: 2900, valueCents: 4400, left: 41, photo: "photo-1702308954905-341065817003", hue: ["#E9DCC6", "#2E3E52"] },
-  { id: "velo", title: { de: "Velo-Service komplett", en: "Full bike service" }, partner: "Velowerk Nord", priceCents: 6900, valueCents: 11000, left: 5, photo: "photo-1675798225739-d8919b7a23f7", hue: ["#E8EFD9", "#4A5A2A"] },
-  { id: "buch", title: { de: "Büchergutschein CHF 50", en: "Book voucher CHF 50" }, partner: "Buchladen Seitenwind", priceCents: 4000, valueCents: 5000, left: 18, photo: "photo-1621347891240-e856b95ec627", hue: ["#F4EFE8", "#B5532E"] },
+  { id: "velo", title: { de: "Velo-Service komplett", en: "Full bike service" }, partner: "Velowerk Nord", priceCents: 6900, valueCents: 11000, left: 5, photo: "/site/deals/velo.webp", hue: ["#E8CDAF", "#B8520C"] },
+  { id: "buch", title: { de: "Büchergutschein CHF 50", en: "Book voucher CHF 50" }, partner: "Buchladen Seitenwind", priceCents: 4000, valueCents: 5000, left: 18, photo: "/site/deals/buch.webp", hue: ["#E6E0D2", "#1F5B5E"] },
   { id: "pizza", title: { de: "Pizza-Abend für vier", en: "Pizza night for four" }, partner: "Pizzeria Fortuna", priceCents: 4900, valueCents: 8000, left: 9, photo: "photo-1579751626657-72bc17010498", focus: [0.5, 0.6], hue: ["#F2A65A", "#3A2A20"] },
   { id: "see", title: { de: "Stand-up-Paddle 2 Stunden", en: "Stand-up paddle, 2 hours" }, partner: "Seebad Mira", priceCents: 2500, valueCents: 4000, left: 30, photo: "photo-1778209031600-7d29fbe649a9", hue: ["#9FD3C7", "#1E5A54"] },
   { id: "wein", title: { de: "Weindegustation mit Apéro", en: "Wine tasting with apéro" }, partner: "Weingut Sonnhalde", priceCents: 3500, valueCents: 5500, left: 14, photo: "photo-1506377247377-2a5b3b417ebb", hue: ["#D9C7B8", "#5B1E2B"] },
@@ -59,8 +60,8 @@ export const DEMO_DEALS: DemoDeal[] = [
   { id: "konzert", title: { de: "Konzertticket Stehplatz", en: "Concert ticket, standing" }, partner: "Halle Ost", priceCents: 4900, valueCents: 6900, left: 33, photo: "photo-1470229722913-7c0e2dbbafd3", hue: ["#F3B65B", "#2B1A10"] },
   { id: "ski", title: { de: "Skipass Tageskarte", en: "Ski day pass" }, partner: "Skigebiet Weisshorn", priceCents: 5200, valueCents: 7400, left: 40, photo: "photo-1641799540167-44c4865934e9", hue: ["#EEF3F8", "#C0392B"] },
   { id: "hotel", title: { de: "Übernachtung mit Frühstück", en: "Night with breakfast" }, partner: "Hotel Lindenblick", priceCents: 14900, valueCents: 21000, left: 4, photo: "photo-1549638441-b787d2e11f14", hue: ["#F1EEE9", "#8A7E70"] },
-  { id: "blumen", title: { de: "Blumenstrauss nach Saison", en: "Seasonal bouquet" }, partner: "Blumen Mohn", priceCents: 3900, valueCents: 5500, left: 11, photo: "photo-1602136303098-f5aa2b9c9df9", hue: ["#FBE7DC", "#B5576C"] },
-  { id: "glace", title: { de: "Glace-Pass für 5 Kugeln", en: "Ice cream pass, 5 scoops" }, partner: "Gelateria Nuvola", priceCents: 1500, valueCents: 2250, left: 52, photo: "photo-1554843515-4a8a288effab", hue: ["#F2E4D8", "#8B2E1E"] },
+  { id: "blumen", title: { de: "Blumenstrauss nach Saison", en: "Seasonal bouquet" }, partner: "Blumen Mohn", priceCents: 3900, valueCents: 5500, left: 11, photo: "/site/deals/blumen.webp", hue: ["#F6E1E6", "#B24A72"] },
+  { id: "glace", title: { de: "Glace-Pass für 5 Kugeln", en: "Ice cream pass, 5 scoops" }, partner: "Gelateria Nuvola", priceCents: 1500, valueCents: 2250, left: 52, photo: "/site/deals/glace.webp", hue: ["#FFF4DE", "#0A6FA8"] },
   { id: "burger", title: { de: "Burger-Menü für zwei", en: "Burger menu for two" }, partner: "Grillwerk", priceCents: 3900, valueCents: 5800, left: 17, photo: "photo-1757834787931-ddd70f3379a5", hue: ["#E8B36A", "#3B2414"] },
   { id: "museum", title: { de: "Museumspass für zwei", en: "Museum pass for two" }, partner: "Kunsthaus am Fluss", priceCents: 2800, valueCents: 4000, left: 45, photo: "photo-1496889196885-5ddcec5eef4d", hue: ["#ECECEC", "#6E6E6E"] },
   { id: "cocktail", title: { de: "Cocktailkurs am Abend", en: "Evening cocktail class" }, partner: "Bar Mondschein", priceCents: 6500, valueCents: 9500, left: 9, photo: "photo-1470337458703-46ad1756a187", hue: ["#E9B872", "#2A2118"] },
@@ -75,7 +76,9 @@ export const discount = (d: DemoDeal) => Math.round((1 - d.priceCents / d.valueC
 
 /** Square crop from the image CDN: one URL per photo (cached once, reused by every card). */
 export const dealPhotoUrl = (deal: Pick<DemoDeal, "photo" | "focus">, size = 640) =>
-  `https://images.unsplash.com/${deal.photo}?w=${size}&h=${size}&fit=crop${deal.focus ? `&crop=focalpoint&fp-x=${deal.focus[0]}&fp-y=${deal.focus[1]}` : ""}&q=70&auto=format`;
+  deal.photo.startsWith("/")
+    ? deal.photo
+    : `https://images.unsplash.com/${deal.photo}?w=${size}&h=${size}&fit=crop${deal.focus ? `&crop=focalpoint&fp-x=${deal.focus[0]}&fp-y=${deal.focus[1]}` : ""}&q=70&auto=format`;
 
 /** The deal's photo, filling its box (object-cover around the focal point). Decorative: the card names the deal. */
 export function DealArt({ deal, className = "" }: { deal: Pick<DemoDeal, "id" | "photo" | "focus">; className?: string }) {
