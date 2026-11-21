@@ -7,6 +7,7 @@ import { Field, Input, Notice, buttonClass, linkClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { slugify } from "@/lib/site/hosts";
+import { GoogleButton, OrDivider } from "@/components/google-button";
 import { forgotAction, loginAction, setPasswordAction, signupAction, type AuthState } from "./actions";
 
 function useMessage(state: AuthState) {
@@ -18,13 +19,19 @@ function useMessage(state: AuthState) {
   };
 }
 
-export function LoginForm() {
+export function LoginForm({ google = false }: { google?: boolean }) {
   const { t } = useI18n();
   const next = useSearchParams().get("next") ?? "";
   const [state, action, pending] = useActionState(loginAction, null);
   const { error } = useMessage(state);
   return (
     <form action={action} className="flex flex-col gap-4">
+      {google ? (
+        <>
+          <GoogleButton label={t.auth.googleLogin} next={next || "/dashboard"} />
+          <OrDivider label={t.auth.or} />
+        </>
+      ) : null}
       <input type="hidden" name="next" value={next} />
       <Field label={t.common.email}>
         <Input name="email" type="email" autoComplete="email" required data-testid="login-email" />
@@ -81,7 +88,7 @@ export function SetPasswordForm() {
   );
 }
 
-export function SignupForm({ root, code = "", onChangeCode }: { root: string; code?: string; onChangeCode?: () => void }) {
+export function SignupForm({ root, code = "", onChangeCode, google = false }: { root: string; code?: string; onChangeCode?: () => void; google?: boolean }) {
   const { t, locale } = useI18n();
   const [state, action, pending] = useActionState(signupAction, null);
   const { error, notice } = useMessage(state);
@@ -92,6 +99,13 @@ export function SignupForm({ root, code = "", onChangeCode }: { root: string; co
   const shownSlug = slugTouched ? slug : slugify(name);
   return (
     <form action={action} className="flex flex-col gap-4">
+      {/* With Google the shop is set up on /welcome after the sign-in (a code travels along). */}
+      {google ? (
+        <>
+          <GoogleButton label={t.auth.googleSignup} next={code ? `/welcome?code=${encodeURIComponent(code)}` : "/welcome"} />
+          <OrDivider label={t.auth.or} />
+        </>
+      ) : null}
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="code" value={code} />
       {code ? (

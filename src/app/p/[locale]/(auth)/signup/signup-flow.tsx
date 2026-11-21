@@ -12,12 +12,12 @@ import { SignupForm } from "../forms";
  * /signup by mode: open → form; invite → code first (or straight to the form with a valid
  * ?code=); closed → waitlist, with a code entry for people who got an invitation.
  */
-export function SignupFlow({ mode, root, initialCode, turnstileKey }: { mode: SignupMode; root: string; initialCode: string | null; turnstileKey: string | null }) {
+export function SignupFlow({ mode, root, initialCode, turnstileKey, google = false }: { mode: SignupMode; root: string; initialCode: string | null; turnstileKey: string | null; google?: boolean }) {
   const { t } = useI18n();
   const [code, setCode] = useState<string | null>(initialCode);
   const [view, setView] = useState<"code" | "waitlist">(mode === "paused" ? "waitlist" : "code");
 
-  if (mode === "open" || code) return <SignupForm root={root} code={code ?? ""} onChangeCode={code ? () => setCode(null) : undefined} />;
+  if (mode === "open" || code) return <SignupForm root={root} code={code ?? ""} onChangeCode={code ? () => setCode(null) : undefined} google={google} />;
 
   if (view === "waitlist")
     return (

@@ -9,6 +9,8 @@ import { dealStatus } from "@/lib/shop/deal-status";
 import { shopUrlForSlug } from "@/lib/site/hosts";
 import { createClient } from "@/lib/supabase/server";
 import { HomeView } from "./home-view";
+import { getStaffUser } from "@/lib/platform/staff";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Dashboard" };
 
@@ -39,7 +41,11 @@ function HomeSkeleton() {
 
 async function Home({ t, locale }: { t: Dictionary; locale: string }) {
   const [user, tenant] = await Promise.all([getSessionUser(), getCurrentTenant()]);
-  if (!tenant) return <EmptyState title={t.dashboard.noTenant} />;
+  // An account without a shop (e.g. first Google sign-in) sets one up first; staff keep the notice.
+  if (!tenant) {
+    if (!(await getStaffUser())) redirect("/welcome");
+    return <EmptyState title={t.dashboard.noTenant} />;
+  }
   const supabase = await createClient();
   const now = new Date();
   // Two spans of 30 days: the current one and the one before for the trend.

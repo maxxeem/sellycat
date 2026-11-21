@@ -14,6 +14,7 @@ Ergebnis: **Die Software ist bereit, die Production-Umgebung gibt es noch nicht.
 - ⬜👤 Supabase-Projekt `sellycat-production` anlegen (Region eu-central-1 Frankfurt, Pro-Plan für tägliche Backups/PITR).
 - ⬜ GitHub: Variable `SUPABASE_REF_PRODUCTION`, Secret `SUPABASE_DB_PASSWORD_PRODUCTION` (der Workflow `migrations.yml` spielt bei Push auf `release` alle Migrationen ein).
 - ⬜ Auth-Einstellungen wie Staging: Site URL `https://sellycat.com`, Redirect-URLs nur `https://sellycat.com/**` und `https://*.sellycat.com/**` (keine fremden Wildcards), SMTP über Mailgun, Mail-Vorlagen, Rate-Limits, «Confirm email» an.
+- ⬜ Google-Anmeldung: in Google Cloud einen OAuth-Client (Web) mit Redirect-URI `https://<projekt>.supabase.co/auth/v1/callback` anlegen, Client-ID und -Secret in Supabase → Authentication → Providers → Google eintragen (je für Staging und Production).
 - ⬜ Storage-Buckets kommen aus den Migrationen; prüfen, dass `shop-media` öffentlich und `support` privat ist.
 - ⬜ Erster Staff-Admin (`npm run seed:staging` nur für Staging; Production: Admin von Hand anlegen und in `platform_staff` eintragen, TOTP einrichten).
 

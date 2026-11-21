@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin", "/dashboard", "/auth", "/login", "/signup", "/forgot", "/invite", "/set-password", "/checkout", "/order", "/my", "/v/", "/scan", "/redeem"],
+        disallow: ["/api/", "/admin", "/dashboard", "/auth", "/login", "/signup", "/forgot", "/invite", "/set-password", "/welcome", "/checkout", "/order", "/my", "/v/", "/scan", "/redeem"],
       },
     ],
     sitemap: `${apexUrl()}/sitemap.xml`,

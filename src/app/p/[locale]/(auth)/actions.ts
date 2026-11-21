@@ -129,3 +129,64 @@ export async function provisionFromSignup(): Promise<void> {
     if (!error.message.includes("duplicate")) return;
   }
 }
+
+const welcomeSchema = z.object({
+  shopName: z.string().trim().min(1).max(120),
+  slug: z.string().trim().toLowerCase(),
+  code: z.string().optional().default(""),
+  locale: z.enum(["de", "en"]),
+  accept: z.literal("on"),
+});
+
+/**
+ * /welcome: a signed-in account without a shop (Google sign-in) creates its shop. Same rules as
+ * the email signup: invite code when signup is not open (staff excepted), terms accepted.
+ */
+export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthState> {
+  const parsed = welcomeSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) {
+    const field = String(parsed.error.issues[0]?.path[0] ?? "");
+    return { error: field === "accept" ? "acceptRequired" : field === "slug" ? "slugInvalid" : "linkInvalid", field };
+  }
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth.user;
+  if (!user?.email) return { error: "linkInvalid" };
+  const { data: mine } = await supabase.rpc("my_tenants");
+  if (mine && mine.length > 0) redirect("/dashboard");
+  const { shopName, slug, locale } = parsed.data;
+  const code = normaliseCode(parsed.data.code);
+  const mode = await getSignupMode();
+  const staff = (await supabase.rpc("is_staff")).data === true;
+  if (!(await rateLimit("welcome", networkOf(await clientIp()), 10, 3600))) return { error: "rateLimited" };
+  const check = validateSlug(slug);
+  if (!check.ok) return { error: check.reason === "reserved" ? "slugReserved" : "slugInvalid", field: "slug" };
+  const db = createAdminClient();
+  const { data: free } = await db.rpc("slug_available", { p_slug: slug });
+  if (!free) return { error: "slugTaken", field: "slug" };
+
+  if (codeRequired(mode) && !staff) {
+    if (!code) return { error: "codeRequired", field: "code" };
+    // The account exists already (Google): claim, attach and confirm the use in one go.
+    const use = (await db.rpc("claim_invite_code", { p_code: code, p_email: user.email })).data ?? null;
+    if (!use) {
+      await countCodeFailure();
+      return { error: "codeInvalid", field: "code" };
+    }
+    await db.rpc("attach_invite_user", { p_use: use, p_user: user.id });
+    await db.rpc("confirm_invite_use", { p_user: user.id });
+  }
+
+  await supabase.auth.updateUser({ data: { locale, terms_version: LEGAL_VERSION, terms_accepted_at: new Date().toISOString() } });
+  const root = (siteHost() || DEFAULT_ROOT).split(":")[0];
+  for (const candidate of [slug, `${slug.slice(0, 35)}-${Math.random().toString(36).slice(2, 6)}`]) {
+    const { data: tenantId, error } = await supabase.rpc("create_tenant", { p_name: shopName, p_slug: candidate, p_root: root, p_locale: locale });
+    if (!error) {
+      await db.rpc("finish_invite_signup", { p_user: user.id, p_tenant: tenantId });
+      await registerDomain(`${candidate}.${root}`);
+      redirect("/dashboard");
+    }
+    if (!error.message.includes("duplicate")) return { error: error.message.includes("paused") ? "codeRequired" : "linkInvalid", field: error.message.includes("paused") ? "code" : undefined };
+  }
+  return { error: "slugTaken", field: "slug" };
+}
