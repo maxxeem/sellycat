@@ -26,8 +26,8 @@ export function AppShowcase({ labels: a, locale }: { labels: Labels; locale: "de
         stacking context), this section's own layers sit above it. Only opacity changes.
       */}
       <div className="pointer-events-none fixed inset-0 z-20 bg-black" style={VEIL} aria-hidden />
-      {/* On the light page the section is its own Ink band (soft top and bottom edges), so the text reads before the veil rises. */}
-      <div className="pointer-events-none absolute inset-x-0 -inset-y-24 z-20 bg-site-ground [mask-image:linear-gradient(to_bottom,transparent,#000_18%,#000_82%,transparent)]" aria-hidden />
+      {/* On the light page the section is its own Ink band (soft top edge, solid bottom: the coral audiences band follows), so the text reads before the veil rises. */}
+      <div className="pointer-events-none absolute inset-x-0 -top-24 bottom-0 z-20 bg-site-ground [mask-image:linear-gradient(to_bottom,transparent,#000_18%)]" aria-hidden />
       {/* In the dark, a faint coral grid comes up behind the content, fading out to the edges. */}
       <div className="pointer-events-none absolute inset-x-0 -inset-y-24 z-[21]" style={GRID} aria-hidden />
       {/* One grid, four parts: on phones intro, phone, points, note one after another; from lg the phone stands on the right across all rows. */}

@@ -7,10 +7,10 @@ export const en = {
   prev: "Previous",
   next: "Next",
   tiles: [
-    { name: "Media houses & radio stations", text: "Listener deals in the station's look, promoted on your own channels." },
-    { name: "Associations & clubs", text: "Member benefits from partner businesses, settlement included." },
-    { name: "City & tourism marketing", text: "Experience vouchers for guests and locals alike." },
-    { name: "Retail & hospitality", text: "Your own vouchers and promotions, paid straight into your account." },
+    { name: "Media & radio", text: "Listener deals in your look, promoted on air." },
+    { name: "Clubs & associations", text: "Member benefits from partners, with settlement." },
+    { name: "City & tourism", text: "Experience vouchers for guests and locals." },
+    { name: "Retail & hospitality", text: "Your own vouchers, paid straight to your account." },
     { name: "Agencies", text: "Shops for several clients, each in its own look." },
   ],
 };
@@ -22,10 +22,10 @@ export const de: Widen<typeof en> = {
   prev: "Zurück",
   next: "Weiter",
   tiles: [
-    { name: "Medienhäuser & Radiosender", text: "Hörer-Deals im Look des Senders, beworben im eigenen Programm." },
-    { name: "Verbände & Vereine", text: "Mitgliedervorteile von Partnerbetrieben, mit Abrechnung." },
-    { name: "Stadt- & Tourismusmarketing", text: "Erlebnisgutscheine für Gäste und Einheimische." },
-    { name: "Händler & Gastronomie", text: "Eigene Gutscheine und Aktionen, bezahlt direkt aufs eigene Konto." },
+    { name: "Medien & Radio", text: "Hörer-Deals im eigenen Look, beworben im Programm." },
+    { name: "Verbände & Vereine", text: "Mitgliedervorteile von Partnern, mit Abrechnung." },
+    { name: "Stadt & Tourismus", text: "Erlebnisgutscheine für Gäste und Einheimische." },
+    { name: "Handel & Gastronomie", text: "Eigene Gutscheine, bezahlt direkt aufs Konto." },
     { name: "Agenturen", text: "Shops für mehrere Kunden, jeder im eigenen Look." },
   ],
 };

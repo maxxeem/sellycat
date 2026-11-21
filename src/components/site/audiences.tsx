@@ -7,9 +7,11 @@ import { AudiencesTrack } from "./audiences-track";
  */
 export function Audiences({ labels }: { labels: Dictionary["site"]["audiences"] }) {
   return (
-    // Phones skip this row (like the reference inspiration row): it shows from tablets up.
-    <section id="fuer-wen" className="site-section mx-auto hidden max-w-6xl px-5 sm:px-8 md:block" data-testid="audiences">
-      <AudiencesTrack labels={labels} />
+    // A full-width coral band right after the dark redeeming band; pricing below is white again. Text on coral is Ink.
+    <section id="fuer-wen" className="relative z-[23] bg-coral text-on-coral" data-testid="audiences">
+      <div className="site-section mx-auto max-w-6xl px-5 sm:px-8">
+        <AudiencesTrack labels={labels} />
+      </div>
     </section>
   );
 }

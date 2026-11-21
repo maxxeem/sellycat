@@ -3,7 +3,7 @@ import type { Widen } from "../../widen";
 /** Landing page copy: scan block (English). */
 export const en = {
   eyebrow: "Redeem on velvet paws",
-  title: "Redeem with the phone camera. No app.",
+  title: "Scan to redeem. No app.",
   text: "Your partner scans the voucher with their phone's camera and the check page shows right away whether it's valid. One swipe redeems it, and the buyer's wallet pass follows along.",
   points: [
     { title: "No download, right in the browser" },

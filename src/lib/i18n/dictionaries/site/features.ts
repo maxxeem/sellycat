@@ -14,7 +14,7 @@ export const en = {
     money: { title: "Money straight to you", text: "Buyers pay through Stripe directly into your account. Sellycat only keeps a fee per sale, no detour via us." },
     pdf: { title: "PDF voucher", text: "Right after payment the voucher lands in the inbox as a PDF, with a QR code, barcode or number code." },
     wallet: { title: "Apple & Google Wallet", text: "One tap and the voucher sits in the wallet. Once it is redeemed, the pass updates itself." },
-    scan: { title: "Redeem with the camera", text: "Your partners scan vouchers with their phone camera, right in the browser, no app needed. Partial redemptions included." },
+    scan: { title: "Scan to redeem", text: "Your partners scan vouchers with their phone camera, right in the browser, no app needed. Partial redemptions included." },
     stock: { title: "Quantity & timeframe", text: "Set the stock, the sales window and a limit per order. The countdown and “Only X left” do the rest." },
     partners: { title: "Partners & settlement", text: "Every deal belongs to a partner. Sellycat works out who gets what, per sale or per redemption, and drafts the settlement." },
     analytics: { title: "Analytics", text: "Revenue, vouchers sold and redeemed, and views at a glance. So you can see what is working." },

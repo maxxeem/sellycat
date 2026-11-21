@@ -42,13 +42,13 @@ export function AudiencesTrack({ labels }: { labels: Labels }) {
     const w = tile ? tile.getBoundingClientRect().width + 16 : el.clientWidth * 0.6;
     el.scrollBy({ left: dir * w * 2, behavior: "smooth" });
   };
-  const arrow = "flex h-11 w-11 items-center justify-center rounded-full border border-fg/15 bg-site-surface/90 text-fg/80 transition duration-300 hover:border-coral hover:text-coral-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
+  const arrow = "flex h-11 w-11 items-center justify-center rounded-full border border-on-coral/25 bg-white/20 text-on-coral transition duration-300 hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-coral aria-disabled:pointer-events-none aria-disabled:opacity-30";
   return (
     <>
       <div className="site-head flex items-end justify-between gap-6">
         <div>
           <h2>{labels.title}</h2>
-          <p>{labels.subtitle}</p>
+          <p className="!text-on-coral/85">{labels.subtitle}</p>
         </div>
         <div className="hidden shrink-0 gap-2 lg:flex" data-testid="audiences-arrows">
           <button type="button" onClick={() => step(-1)} aria-disabled={edge.start} tabIndex={edge.start ? -1 : 0} aria-label={labels.prev} className={arrow} data-testid="audiences-prev"><ArrowLeft className="h-5 w-5" /></button>
@@ -73,15 +73,16 @@ export function AudiencesTrack({ labels }: { labels: Labels }) {
 
 function AudienceTile({ name, text, photo }: { name: string; text: string; photo: DemoDeal }) {
   return (
-    <div className="group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-fg/10" data-testid={`audience-${photo.id}`}>
+    <div className="group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl bg-site-surface ring-1 ring-black/10 shadow-[0_24px_50px_-24px_rgba(17,17,17,0.45)]" data-testid={`audience-${photo.id}`}>
       {/* The photo slowly leans in on hover (transform only; still with reduced motion). */}
       <span className="absolute inset-0 block transition-transform duration-[1400ms] ease-out motion-safe:group-hover:scale-[1.05]">
         <DealArt deal={photo} />
       </span>
       {/* A deep, even gradient over the lower half: the type always sits on a calm, dark ground. */}
       <span className="absolute inset-x-0 bottom-0 flex h-[58%] flex-col justify-end gap-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-5 sm:p-6">
-        <span className="text-balance text-xl font-semibold leading-tight tracking-[-0.01em] text-white lg:text-2xl">{name}</span>
-        <span className="text-pretty text-sm leading-snug text-white/80 lg:text-[15px]">{text}</span>
+        {/* Title on one line, text on exactly two (texts are written to fit every tile width). */}
+        <span className="truncate text-lg font-semibold leading-tight tracking-[-0.01em] text-white lg:text-xl" data-testid="audience-title">{name}</span>
+        <span className="line-clamp-2 min-h-[2lh] text-sm leading-snug text-white/85" data-testid="audience-text">{text}</span>
       </span>
     </div>
   );
