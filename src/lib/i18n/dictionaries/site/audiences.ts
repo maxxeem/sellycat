@@ -2,8 +2,8 @@ import type { Widen } from "../../widen";
 
 /** Landing page copy: audiences block (English). Tile order matches the shop looks in audiences-track.tsx. */
 export const en = {
-  title: "Who it's for",
-  subtitle: "One platform, many senders: every shop wears the brand of whoever is selling.",
+  title: "For everyone with something to offer.",
+  subtitle: "Every shop wears the brand of whoever is selling.",
   prev: "Previous",
   next: "Next",
   tiles: [
@@ -17,8 +17,8 @@ export const en = {
 
 /** Landing page copy: audiences block (Deutsch, Schweizer Schreibweise). */
 export const de: Widen<typeof en> = {
-  title: "Für wen",
-  subtitle: "Eine Software, viele Absender: Jeder Shop trägt die Marke dessen, der verkauft.",
+  title: "Für alle, die etwas zu bieten haben.",
+  subtitle: "Jeder Shop trägt die Marke dessen, der verkauft.",
   prev: "Zurück",
   next: "Weiter",
   tiles: [

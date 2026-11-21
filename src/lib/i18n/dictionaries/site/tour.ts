@@ -3,43 +3,43 @@ import type { Widen } from "../../widen";
 /** Landing page copy: tour block (English). */
 export const en = {
   title: "Your shop. Your rules.",
-  subtitle: "Brand, address, sales and vouchers, all set up in the dashboard, without writing a line of code.",
+  subtitle: "Brand, address, sales, vouchers: you set it, Sellycat runs it.",
   nav: "Product tour",
   chapters: [
     {
       label: "Brands",
-      title: "One shop, many brands.",
-      text: "Logo, colours, font and corners: every shop looks like your house, not like ours.",
+      title: "Looks like you.",
+      text: "Logo, colours, font, corners. Your shop wears your brand, not ours.",
       cards: [
-        { title: "Logo, colours, font", text: "Upload your logo, pick your colours and type. Sellycat checks the contrast for you." },
-        { title: "Live preview in the dashboard", text: "Every change shows up in the preview right away, before your buyers see it." },
+        { title: "Logo, colours, font", text: "Upload, pick, done. Sellycat checks the contrast." },
+        { title: "Live preview", text: "You see every change before your buyers do." },
       ],
     },
     {
       label: "Domain",
-      title: "Your domain.",
-      text: "Enter the address, set one DNS record, done. Sellycat checks the record and fetches the certificate itself.",
+      title: "Runs at your address.",
+      text: "Enter the domain, set one DNS record, done. Sellycat fetches the certificate itself.",
       cards: [
-        { title: "Own domain, automatic certificate", text: "HTTPS from the first visit, renewed in the background. No certificate files, no reminders." },
-        { title: "Your own sender address", text: "Voucher mails come from your domain, so buyers know who sent them." },
+        { title: "HTTPS, automatically", text: "From the first visit, renewed in the background." },
+        { title: "Your own sender address", text: "Voucher mails come from your domain." },
       ],
     },
     {
       label: "Control",
-      title: "Full control.",
-      text: "Stock, sales window, countdown and a limit per order. When it’s gone, it says «Sold out», not «Error».",
+      title: "You make the rules.",
+      text: "Stock, sales window, limit per order. When it’s gone, it says «Sold out».",
       cards: [
-        { title: "Stock & sales window", text: "Set how many and from when to when. The shop opens and closes the deal on its own." },
-        { title: "Terms & redemption window", text: "Valid until, weekdays only, partial redemption: the rules travel with every voucher." },
+        { title: "Stock & sales window", text: "The shop opens and closes the deal on its own." },
+        { title: "Terms", text: "Validity, weekdays, partial redemption: they travel with every voucher." },
       ],
     },
     {
       label: "Formats",
-      title: "Voucher formats.",
-      text: "Number code, QR code or barcode, whatever your partners redeem with. Codes you already have work too.",
+      title: "Every code fits.",
+      text: "Number code, QR or barcode, however your partners redeem. Your own codes work too.",
       cards: [
-        { title: "Your own codes or code pools", text: "Let Sellycat generate codes or upload a pool from your partner. Each one is handed out exactly once." },
-        { title: "PDF and Wallet", text: "Every voucher arrives as a PDF by mail and in Apple Wallet or Google Wallet. The pass updates on redemption." },
+        { title: "Own codes or pools", text: "Every code goes out exactly once." },
+        { title: "PDF and Wallet", text: "By email and in the wallet. The pass updates on redemption." },
       ],
     },
   ],
@@ -129,43 +129,43 @@ export const en = {
 /** Landing page copy: tour block (Deutsch, Schweizer Schreibweise). */
 export const de: Widen<typeof en> = {
   title: "Dein Shop. Deine Regeln.",
-  subtitle: "Marke, Adresse, Verkauf und Gutschein, alles im Dashboard eingestellt, ohne eine Zeile Code.",
+  subtitle: "Marke, Adresse, Verkauf, Gutschein: Du stellst ein, Sellycat setzt um.",
   nav: "Produkt-Tour",
   chapters: [
     {
       label: "Marken",
-      title: "Ein Shop, viele Marken.",
-      text: "Logo, Farben, Schrift und Ecken: Jeder Shop sieht aus wie dein Haus, nicht wie unseres.",
+      title: "Sieht aus wie du.",
+      text: "Logo, Farben, Schrift, Ecken. Dein Shop trägt deine Marke, nicht unsere.",
       cards: [
-        { title: "Logo, Farben, Schrift", text: "Logo hochladen, Farben und Schrift wählen. Den Kontrast prüft Sellycat für dich." },
-        { title: "Vorschau live im Dashboard", text: "Jede Änderung siehst du sofort in der Vorschau, bevor sie deine Käufer sehen." },
+        { title: "Logo, Farben, Schrift", text: "Hochladen, wählen, fertig. Den Kontrast prüft Sellycat." },
+        { title: "Live-Vorschau", text: "Du siehst jede Änderung, bevor deine Käufer sie sehen." },
       ],
     },
     {
       label: "Domain",
-      title: "Deine Domain.",
-      text: "Adresse eintragen, einen DNS-Eintrag setzen, fertig. Sellycat prüft den Eintrag und holt das Zertifikat selbst.",
+      title: "Läuft unter deiner Adresse.",
+      text: "Domain eintragen, einen DNS-Eintrag setzen, fertig. Das Zertifikat holt Sellycat selbst.",
       cards: [
-        { title: "Eigene Domain, automatisches Zertifikat", text: "HTTPS ab dem ersten Aufruf, im Hintergrund erneuert. Keine Zertifikatsdateien, keine Erinnerungen." },
-        { title: "Deine eigene Absender-Adresse", text: "Gutschein-Mails kommen von deiner Domain, damit Käufer wissen, von wem sie sind." },
+        { title: "Automatisch HTTPS", text: "Ab dem ersten Aufruf, im Hintergrund erneuert." },
+        { title: "Eigene Absender-Adresse", text: "Gutschein-Mails kommen von deiner Domain." },
       ],
     },
     {
       label: "Kontrolle",
-      title: "Volle Kontrolle.",
-      text: "Stückzahl, Verkaufszeitraum, Countdown und ein Limit pro Bestellung. Ist alles weg, steht «Ausverkauft» da, nicht «Fehler».",
+      title: "Du machst die Regeln.",
+      text: "Stückzahl, Zeitraum, Limit pro Bestellung. Ist alles weg, steht «Ausverkauft» da.",
       cards: [
-        { title: "Stückzahl & Zeitraum", text: "Lege fest, wie viele und von wann bis wann. Der Shop öffnet und schliesst den Deal von selbst." },
-        { title: "Bedingungen & Einlösefenster", text: "Gültig bis, nur unter der Woche, Teileinlösung: Die Regeln reisen mit jedem Gutschein mit." },
+        { title: "Stückzahl & Zeitraum", text: "Der Shop öffnet und schliesst den Deal von selbst." },
+        { title: "Bedingungen", text: "Gültigkeit, Wochentage, Teileinlösung: reisen mit jedem Gutschein mit." },
       ],
     },
     {
       label: "Formate",
-      title: "Gutscheinformate.",
-      text: "Zahlencode, QR-Code oder Barcode, so wie deine Partner einlösen. Auch Codes, die du schon hast, funktionieren.",
+      title: "Jeder Code passt.",
+      text: "Zahlencode, QR oder Barcode, ganz wie deine Partner einlösen. Eigene Codes gehen auch.",
       cards: [
-        { title: "Eigene Codes oder Code-Pools", text: "Lass Sellycat Codes erzeugen oder lade einen Pool deines Partners hoch. Jeder Code geht genau einmal raus." },
-        { title: "PDF und Wallet", text: "Jeder Gutschein kommt als PDF per Mail und in Apple Wallet oder Google Wallet. Der Pass aktualisiert sich bei der Einlösung." },
+        { title: "Eigene Codes oder Pools", text: "Jeder Code geht genau einmal raus." },
+        { title: "PDF und Wallet", text: "Per Mail und im Wallet. Der Pass aktualisiert sich beim Einlösen." },
       ],
     },
   ],

@@ -141,7 +141,7 @@ export function StatementBand({ before, brand, after, locale, buy }: { before: s
       </div>
       <div className="statement-veil pointer-events-none absolute inset-0 -z-[5]" aria-hidden />
       <div className="statement-inner mx-auto flex min-h-[min(72vh,640px)] max-w-4xl items-center px-5 py-[calc(var(--site-gap)*1.6)] text-center sm:px-8 lg:min-h-[min(82vh,780px)]">
-        <p className="text-[1.75rem] font-semibold leading-[1.25] tracking-[-0.02em] text-fg sm:text-4xl lg:text-[3rem] lg:leading-[1.2]">
+        <p className="text-balance text-[1.75rem] font-semibold leading-[1.25] tracking-[-0.02em] text-fg sm:text-4xl lg:text-[3rem] lg:leading-[1.2]">
           {before}
           <span className="text-coral">{brand}</span>
           {after}

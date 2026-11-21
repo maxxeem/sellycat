@@ -2,9 +2,9 @@ import type { Widen } from "../../widen";
 
 /** Landing page copy: scan block (English). */
 export const en = {
-  eyebrow: "Redemption",
-  title: "Scan to redeem. No app.",
-  text: "Your partner scans the voucher with their phone's camera and the check page shows right away whether it's valid. One swipe redeems it, and the buyer's wallet pass follows along.",
+  eyebrow: "Redeem",
+  title: "Scan. Swipe. Redeemed.",
+  text: "Your partner scans with their phone camera and redeems with one swipe. No app, and the buyer's wallet follows along.",
   points: [
     { title: "Right in the browser", text: "Open the camera, scan, done." },
     { title: "Partial redemption", text: "The balance stays on the voucher." },
@@ -34,9 +34,9 @@ export const en = {
 
 /** Landing page copy: scan block (Deutsch, Schweizer Schreibweise). */
 export const de: Widen<typeof en> = {
-  eyebrow: "Einlöseprozess",
-  title: "Einlösen mit der Handykamera. Ohne App.",
-  text: "Dein Partner scannt den Gutschein mit der Kamera seines Handys, die Prüfseite zeigt sofort, ob er gültig ist. Ein Wisch, und er ist eingelöst, auch im Wallet des Käufers.",
+  eyebrow: "Einlösen",
+  title: "Scannen. Wischen. Eingelöst.",
+  text: "Dein Partner scannt mit der Handykamera und löst mit einem Wisch ein. Ohne App, und das Wallet des Käufers zieht mit.",
   points: [
     { title: "Direkt im Browser", text: "Kamera öffnen, scannen, fertig." },
     { title: "Teileinlösung", text: "Das Restguthaben bleibt erhalten." },

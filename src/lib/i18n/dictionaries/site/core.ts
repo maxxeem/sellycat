@@ -25,12 +25,12 @@ export const en = {
   },
   hero: {
     claim: "Instant revenue with digital vouchers.",
-    subtitle: "Launch your own deal shop with Sellycat. Sell offers as digital vouchers and deliver them fully automatically.",
+    subtitle: "Your own deal shop. Sell, deliver, redeem: all on autopilot.",
   },
   statement: {
     before: "With ",
     brand: "Sellycat",
-    after: ", every order is delivered within seconds of purchase.",
+    after: ", the voucher arrives before the phone is back in the pocket.",
   },
   stats: {
     title: "In numbers",
@@ -41,7 +41,7 @@ export const en = {
   },
   pricing: {
     title: "Pricing that grows with you",
-    subtitle: "Start free and only pay a share per sale. Bigger plans lower the share and unlock your own domain.",
+    subtitle: "Start free, pay only per sale. Bigger plans lower the share.",
     monthly: "Monthly",
     yearly: "Yearly",
     save: "Save {pct} %",
@@ -64,11 +64,11 @@ export const en = {
     trial: "{days} days free on paid plans. No card needed to start.",
     faqTitle: "Questions",
     faq: [
-      { q: "Where does the money go?", a: "Straight to your own Stripe account. Sellycat never holds your money; our share is deducted automatically per sale." },
-      { q: "Do buyers need an app?", a: "No. Buyers receive the voucher as a PDF by email and can add it to Apple Wallet or Google Wallet with one tap." },
-      { q: "How do partners redeem a voucher?", a: "With the phone camera: scan the code, check the status, tap «Redeem». It runs in the browser, nothing to install." },
-      { q: "Can I use my own domain?", a: "Yes, on plans with your own domain. You add a DNS record, Sellycat checks it and takes care of the certificate." },
-      { q: "Do I need a developer?", a: "No. Shop, design, deals, partners and payments are set up in the dashboard. For your own systems there is an API." },
+      { q: "Where does the money go?", a: "Straight to your own Stripe account. Our share is deducted automatically per sale." },
+      { q: "Do buyers need an app?", a: "No. The voucher arrives as a PDF by email and goes into Apple or Google Wallet with one tap." },
+      { q: "How do partners redeem a voucher?", a: "With the phone camera: scan, check, swipe. In the browser, no app." },
+      { q: "Can I use my own domain?", a: "Yes, on plans with your own domain. One DNS record is enough, Sellycat fetches the certificate itself." },
+      { q: "Do I need a developer?", a: "No. Everything runs in the dashboard. For your own systems there is an API." },
     ],
   },
   finalCta: {
@@ -108,12 +108,12 @@ export const de: Widen<typeof en> = {
   },
   hero: {
     claim: "Sofort Umsatz mit digitalen Gutscheinen.",
-    subtitle: "Starte mit Sellycat deinen eigenen Deal-Shop. Verkaufe Angebote als digitale Gutscheine und versende sie vollautomatisch.",
+    subtitle: "Dein eigener Deal-Shop. Verkaufen, ausliefern, einlösen: alles automatisch.",
   },
   statement: {
     before: "Mit ",
     brand: "Sellycat",
-    after: " ist jede Bestellung Sekunden nach dem Kauf ausgeliefert.",
+    after: " ist der Gutschein da, bevor das Handy wieder in der Tasche ist.",
   },
   stats: {
     title: "In Zahlen",
@@ -124,7 +124,7 @@ export const de: Widen<typeof en> = {
   },
   pricing: {
     title: "Preise, die mitwachsen",
-    subtitle: "Starte kostenlos und zahle nur einen Anteil pro Verkauf. Grössere Pläne senken den Anteil und schalten deine eigene Domain frei.",
+    subtitle: "Kostenlos starten, nur pro Verkauf bezahlen. Grössere Pläne senken den Anteil.",
     monthly: "Monatlich",
     yearly: "Jährlich",
     save: "{pct} % sparen",
@@ -147,11 +147,11 @@ export const de: Widen<typeof en> = {
     trial: "{days} Tage gratis auf bezahlten Plänen. Zum Starten keine Kreditkarte nötig.",
     faqTitle: "Fragen",
     faq: [
-      { q: "Wohin fliesst das Geld?", a: "Direkt auf dein eigenes Stripe-Konto. Sellycat hält dein Geld nie; unser Anteil wird pro Verkauf automatisch abgezogen." },
-      { q: "Brauchen Käufer eine App?", a: "Nein. Käufer erhalten den Gutschein als PDF per E-Mail und legen ihn mit einem Tipp in Apple Wallet oder Google Wallet ab." },
-      { q: "Wie lösen Partner einen Gutschein ein?", a: "Mit der Handykamera: Code scannen, Status prüfen, auf «Einlösen» tippen. Läuft im Browser, nichts zu installieren." },
-      { q: "Kann ich meine eigene Domain verwenden?", a: "Ja, in den Plänen mit eigener Domain. Du trägst einen DNS-Eintrag ein, Sellycat prüft ihn und kümmert sich um das Zertifikat." },
-      { q: "Brauche ich einen Entwickler?", a: "Nein. Shop, Design, Deals, Partner und Zahlungen richtest du im Dashboard ein. Für eigene Systeme gibt es eine API." },
+      { q: "Wohin fliesst das Geld?", a: "Direkt auf dein eigenes Stripe-Konto. Unser Anteil wird pro Verkauf automatisch abgezogen." },
+      { q: "Brauchen Käufer eine App?", a: "Nein. Der Gutschein kommt als PDF per E-Mail und mit einem Tipp ins Apple oder Google Wallet." },
+      { q: "Wie lösen Partner einen Gutschein ein?", a: "Mit der Handykamera: scannen, prüfen, wischen. Im Browser, ohne App." },
+      { q: "Kann ich meine eigene Domain verwenden?", a: "Ja, in den Plänen mit eigener Domain. Ein DNS-Eintrag genügt, das Zertifikat holt Sellycat selbst." },
+      { q: "Brauche ich einen Entwickler?", a: "Nein. Alles läuft im Dashboard. Für eigene Systeme gibt es eine API." },
     ],
   },
   finalCta: {

@@ -28,7 +28,7 @@ export function Hero({ t, cta }: { t: Dictionary; cta: SignupCta }) {
       </div>
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-5 text-center sm:px-8">
         <h1 className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">{h.claim}</h1>
-        <p className="max-w-xl text-pretty text-lg leading-relaxed text-fg/70 sm:text-xl">{h.subtitle}</p>
+        <p className="max-w-xl text-balance text-lg leading-relaxed text-fg/70 sm:text-xl">{h.subtitle}</p>
         <CtaLink href={cta.href} className={`${primaryBtn} mt-2`} testId="hero-cta">
           {ctaLabel(t, cta)}
         </CtaLink>
