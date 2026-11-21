@@ -112,7 +112,7 @@ function Chip({ tone, children }: { tone: "ok" | "muted" | "coral"; children: Re
 /* ---------- 1 · Set up the shop ---------- */
 
 const SETUP = [3000, 2800, 3600];
-const SWATCHES = ["#111111", BRAND.primary, "#0E7C66", "#F2B705", "#FF4B23"];
+const SWATCHES = ["#111111", BRAND.primary, "#0E7C66", "#F2B705", "#6D3BFF"];
 const DOMAIN = "deals.deine-firma.ch";
 
 function SetupDemo({ l, running, reduced }: SceneProps) {

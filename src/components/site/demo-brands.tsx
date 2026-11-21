@@ -26,6 +26,8 @@ export type DemoBrand = {
   domain: string;
   primary: string;
   onPrimary: string;
+  /** The primary colour as small text on the light surface, where the primary itself is too light (AA). */
+  primaryText?: string;
   surface: string;
   ink: string;
   font: string;
@@ -33,9 +35,9 @@ export type DemoBrand = {
   mark: "wave" | "circle" | "tower";
 };
 
-/** Three customers, three looks: the same shop software, styled per customer. */
+/** Three customers, three looks (the first, shown in the hero and the laptop, in Sellycat's own coral): the same shop software, styled per customer. */
 export const DEMO_BRANDS: DemoBrand[] = [
-  { id: "radio", name: "Lumen Magazin", domain: "deals.lumen-magazin.ch", primary: "#6D3BFF", onPrimary: "#FFFFFF", surface: "#F4F0FF", ink: "#1B1033", font: "Inter, system-ui, sans-serif", radius: 18, mark: "wave" },
+  { id: "radio", name: "Lumen Magazin", domain: "deals.lumen-magazin.ch", primary: "#FF4B23", onPrimary: "#111111", primaryText: "#C7381A", surface: "#FFF4F0", ink: "#1F1311", font: "Inter, system-ui, sans-serif", radius: 18, mark: "wave" },
   { id: "city", name: "Seestadt erleben", domain: "gutscheine.seestadt.ch", primary: "#0E7C66", onPrimary: "#FFFFFF", surface: "#EEF7F4", ink: "#0B2620", font: "Georgia, 'Times New Roman', serif", radius: 6, mark: "tower" },
   { id: "club", name: "Gewerbeverein Nord", domain: "vorteile.gv-nord.ch", primary: "#F2B705", onPrimary: "#111111", surface: "#FFF9E6", ink: "#2A2200", font: "ui-rounded, 'SF Pro Rounded', system-ui, sans-serif", radius: 28, mark: "circle" },
 ];

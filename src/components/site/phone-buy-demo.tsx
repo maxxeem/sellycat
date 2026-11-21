@@ -103,7 +103,7 @@ function Shop({ l, locale, seconds, left, sold, tap, cycle }: { l: Labels; local
           </p>
           {/* Stock: «only n left» with a short bar; in the last scene the number drops by one. */}
           <div className="mt-3">
-            <span className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: BRAND.primary }}>
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: BRAND.primaryText ?? BRAND.primary }}>
               <span className="tour-live h-2 w-2 rounded-full" style={{ background: BRAND.primary }} />
               <span key={left} className={sold ? "demo-in" : undefined} style={sold ? { ["--d" as string]: "500ms" } : undefined}>
                 {fill(u.onlyLeft, { n: left })}
@@ -219,7 +219,7 @@ function Sheet({ scene, cycle, l, locale }: { scene: number; cycle: number; l: L
               </span>
               {opening ? <Finger key={`pay${cycle}`} x={175} y={27} at={1800} /> : null}
             </div>
-            <p className="mt-3 text-center text-[13px] font-medium" style={{ color: BRAND.primary }}>{u.card}</p>
+            <p className="mt-3 text-center text-[13px] font-medium" style={{ color: BRAND.primaryText ?? BRAND.primary }}>{u.card}</p>
             <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] opacity-50">
               <Lock className="h-3 w-3" />
               {fill(u.direct, { shop: BRAND.name })}
