@@ -1,7 +1,7 @@
 "use client";
 
-import Script from "next/script";
-import { useActionState, useEffect, useRef } from "react";
+import { Turnstile } from "@/components/access/turnstile";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Field, Input, Notice, buttonClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { sendContactMessage } from "./actions";
@@ -9,6 +9,8 @@ import { sendContactMessage } from "./actions";
 export function ContactForm({ turnstileKey }: { turnstileKey: string | null }) {
   const { t, locale } = useI18n();
   const c = t.contact;
+  // Every submit uses up the Turnstile token: a new widget (key) per attempt.
+  const [attempt, setAttempt] = useState(0);
   const [state, action, pending] = useActionState(sendContactMessage, null);
   // When the form appeared in the browser (bots submit at once); written straight into the field.
   const renderedAt = useRef<HTMLInputElement>(null);
@@ -24,7 +26,7 @@ export function ContactForm({ turnstileKey }: { turnstileKey: string | null }) {
       </div>
     );
   return (
-    <form action={action} className="flex flex-col gap-4" data-testid="contact-form">
+    <form action={action} onSubmit={() => setAttempt((a) => a + 1)} className="flex flex-col gap-4" data-testid="contact-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="rendered_at" ref={renderedAt} defaultValue="0" />
       {/* Honeypot: invisible for people, tempting for bots. */}
@@ -55,12 +57,7 @@ export function ContactForm({ turnstileKey }: { turnstileKey: string | null }) {
         </a>
         {c.privacyAfter}
       </p>
-      {turnstileKey ? (
-        <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
-          <div className="cf-turnstile" data-sitekey={turnstileKey} data-language={locale} data-theme="light" />
-        </>
-      ) : null}
+      {turnstileKey ? <Turnstile key={attempt} siteKey={turnstileKey} locale={locale} theme="light" /> : null}
       {state && !state.ok ? <Notice tone="error">{c.errors[state.error]}</Notice> : null}
       <button type="submit" disabled={pending} className={`${buttonClass.primary} self-start`} data-testid="contact-submit">
         {pending ? t.common.loading : c.submit}

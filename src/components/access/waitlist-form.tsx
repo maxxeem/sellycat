@@ -1,7 +1,7 @@
 "use client";
 
-import Script from "next/script";
-import { useActionState, useEffect, useRef } from "react";
+import { Turnstile } from "@/components/access/turnstile";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { joinWaitlistAction } from "@/app/p/[locale]/(auth)/access-actions";
 import { Field, Input, Notice, Select, buttonClass } from "@/components/ui";
 import { USE_CASES } from "@/lib/access/rules";
@@ -14,6 +14,8 @@ import { useI18n } from "@/lib/i18n/context";
 export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: string | null; compact?: boolean }) {
   const { t, locale } = useI18n();
   const w = t.access.waitlist;
+  // Every submit uses up the Turnstile token: a new widget (key) per attempt.
+  const [attempt, setAttempt] = useState(0);
   const [state, action, pending] = useActionState(joinWaitlistAction, null);
   // Time the form appeared in the browser (bots submit instantly); written straight into the field.
   const renderedAt = useRef<HTMLInputElement>(null);
@@ -32,7 +34,7 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
   const opt = (label: string) => `${label} (${w.optional})`;
 
   return (
-    <form action={action} className="flex flex-col gap-4 text-left" data-testid="waitlist-form">
+    <form action={action} onSubmit={() => setAttempt((a) => a + 1)} className="flex flex-col gap-4 text-left" data-testid="waitlist-form">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="rendered_at" ref={renderedAt} defaultValue="0" />
       {/* Honeypot: invisible for people, tempting for bots. */}
@@ -79,12 +81,7 @@ export function WaitlistForm({ turnstileKey, compact = false }: { turnstileKey: 
           {w.consentAfter}
         </span>
       </label>
-      {turnstileKey ? (
-        <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
-          <div className="cf-turnstile" data-sitekey={turnstileKey} data-language={locale} data-theme="auto" />
-        </>
-      ) : null}
+      {turnstileKey ? <Turnstile key={attempt} siteKey={turnstileKey} locale={locale} theme="auto" /> : null}
       {error && state && !state.sent && state.error !== "websiteInvalid" ? <Notice tone="error">{error}</Notice> : null}
       <button type="submit" disabled={pending} className={`${buttonClass.primary} self-start`} data-testid="waitlist-submit">
         {pending ? t.common.loading : w.submit}
