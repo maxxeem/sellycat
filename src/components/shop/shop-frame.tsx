@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mail, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 import { shopImage } from "@/lib/shop/image";
+import { readableOn } from "@/lib/design/color";
 import { headerLook, type ShopTheme } from "@/lib/shop/theme";
 import type { ShopTexts } from "./shop-texts";
 import { CookieSettingsLink } from "./consent";
@@ -35,9 +36,13 @@ export function ShopFrame({
   const forLight = theme.logoLight || theme.logoDark;
   const forDark = theme.logoDark || theme.logoLight;
   const tone = headerLook(theme).tone;
+  // The footer sits on the surface colour: the logo variant made for that background.
+  const footerDark = readableOn(theme.colors.surface, "#111111", "#ffffff") === "#ffffff";
+  const footerLogo = footerDark ? forDark : forLight;
   const a = (href: string) => (inert ? { href: "#", onClick: undefined, tabIndex: -1 } : { href });
   return (
-    <div className="flex min-h-full flex-col">
+    // Pages shorter than the screen still end with the footer at the bottom (previews fill their box).
+    <div className={`flex flex-col ${inert ? "min-h-full" : "min-h-dvh"}`}>
       <header className="shop-header" data-tone={tone}>
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6">
           <Link {...a("/")} className="flex min-w-0 items-center" aria-label={name}>
@@ -58,7 +63,12 @@ export function ShopFrame({
       <footer className="mt-20 border-t border-[var(--shop-line)] bg-[var(--shop-surface)] text-sm text-[var(--shop-muted)]" data-testid="shop-footer">
         <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div className="flex flex-col gap-4">
-            <p className="shop-heading text-lg font-bold text-[var(--shop-text)]">{name}</p>
+            {footerLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img {...shopImage(footerLogo, "160px")} alt={name} className="h-9 w-auto max-w-[160px] self-start object-contain" data-testid="shop-footer-logo" />
+            ) : (
+              <p className="shop-heading text-lg font-bold text-[var(--shop-text)]">{name}</p>
+            )}
             {contact?.email || contact?.phone ? (
               <ul className="flex flex-col gap-2.5">
                 {contact?.email ? (
