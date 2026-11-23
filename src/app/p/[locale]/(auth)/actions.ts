@@ -1,6 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { TENANT_COOKIE } from "@/lib/auth/tenants";
 import { z } from "zod";
 import { apexUrl, siteHost, DEFAULT_ROOT, validateSlug } from "@/lib/site/hosts";
 import { safeNext } from "@/lib/site/routing";
@@ -155,8 +157,9 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
   const { data: auth } = await supabase.auth.getUser();
   const user = auth.user;
   if (!user?.email) return { error: "linkInvalid" };
+  // A first shop only, unless the form comes from /new-shop (an additional shop, same checks).
   const { data: mine } = await supabase.rpc("my_tenants");
-  if (mine && mine.length > 0) redirect("/dashboard");
+  if (mine && mine.length > 0 && form.get("additional") !== "1") redirect("/dashboard");
   const { shopName, slug, locale } = parsed.data;
   const code = normaliseCode(parsed.data.code);
   const mode = await getSignupMode();
@@ -194,6 +197,8 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
       await db.rpc("finish_invite_signup", { p_user: user.id, p_tenant: tenantId });
       await registerDomain(`${candidate}.${root}`);
       after(() => sendWelcomeMail(tenantId).catch((e) => console.error("[welcome mail]", e instanceof Error ? e.message : e)));
+      // Open the new shop (an account with shops already would otherwise land in the previous one).
+      (await cookies()).set(TENANT_COOKIE, tenantId, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production" });
       redirect("/dashboard");
     }
     if (!error.message.includes("duplicate")) return { error: error.message.includes("paused") ? "codeRequired" : "linkInvalid", field: error.message.includes("paused") ? "code" : undefined };

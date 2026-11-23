@@ -23,6 +23,8 @@ export async function registerDomain(host: string): Promise<{ ok: boolean; messa
   const project = process.env.VERCEL_PROJECT_ID;
   const team = process.env.VERCEL_TEAM_ID;
   if (!token || !project) return { ok: false, message: `${host}: no VERCEL_API_TOKEN, add the domain in Vercel by hand.` };
+  // Local development (`<slug>.localhost`) never belongs in the Vercel project.
+  if (host === "localhost" || host.endsWith(".localhost") || host.includes(".localhost:")) return { ok: true, message: `${host}: local, not registered.` };
   const query = team ? `?teamId=${encodeURIComponent(team)}` : "";
   const body: Record<string, string> = { name: host };
   if (process.env.VERCEL_ENV === "preview") body.gitBranch = process.env.VERCEL_GIT_COMMIT_REF || "main";

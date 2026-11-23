@@ -66,6 +66,9 @@ export const de: Dictionary = {
     or: "oder",
     welcomeTitle: "Willkommen bei Sellycat",
     welcomeIntro: "Du bist mit {email} angemeldet. Wie soll dein Shop heissen?",
+    newShopTitle: "Neuen Shop erstellen",
+    newShopIntro: "Der neue Shop gehört zu deinem Konto {email}. Wie soll er heissen?",
+    backToDashboard: "Zurück zum Dashboard",
     welcomeSubmit: "Shop erstellen",
     slugInvalid: "3–40 Zeichen: Kleinbuchstaben, Ziffern und Bindestriche.",
     slugReserved: "Diese Adresse ist reserviert.",
@@ -81,6 +84,7 @@ export const de: Dictionary = {
     welcome: "Willkommen, {name}",
     noTenant: "Dein Konto ist noch mit keinem Shop verbunden.",
     switchShop: "Shop wechseln",
+    newShop: "+ Neuen Shop erstellen",
     yourShop: "Dein Shop",
     openShop: "Shop öffnen",
     home: {

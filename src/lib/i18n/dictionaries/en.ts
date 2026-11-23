@@ -64,6 +64,9 @@ export const en = {
     or: "or",
     welcomeTitle: "Welcome to Sellycat",
     welcomeIntro: "You are signed in as {email}. What should your shop be called?",
+    newShopTitle: "Create a new shop",
+    newShopIntro: "The new shop belongs to your account {email}. What should it be called?",
+    backToDashboard: "Back to the dashboard",
     welcomeSubmit: "Create shop",
     slugInvalid: "3–40 characters: lowercase letters, digits and hyphens.",
     slugReserved: "This address is reserved.",
@@ -79,6 +82,7 @@ export const en = {
     welcome: "Welcome, {name}",
     noTenant: "Your account is not linked to a shop yet.",
     switchShop: "Switch shop",
+    newShop: "+ Create a new shop",
     yourShop: "Your shop",
     openShop: "Open shop",
     home: {

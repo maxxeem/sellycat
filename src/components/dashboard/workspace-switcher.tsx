@@ -6,9 +6,11 @@ import { Select } from "@/components/select";
 import { useI18n } from "@/lib/i18n/context";
 
 const ADMIN = "__admin";
+const NEW = "__new";
 
 /**
- * Top of the sidebar: which shop (or the Sellycat admin) is open, and a quick switch between them.
+ * Top of the sidebar: which shop (or the Sellycat admin) is open, a quick switch between them and
+ * «Create a new shop» (page /new-shop).
  * The admin is a separate area behind its own checks (staff, MFA), so going there and back is a full
  * page load rather than a client-side transition.
  */
@@ -26,12 +28,8 @@ export function WorkspaceSwitcher({
   const { t } = useI18n();
   const [pending, start] = useTransition();
   const value = inStaff ? ADMIN : (currentId ?? "");
-  const canSwitch = tenants.length > 1 || (isStaff && tenants.length > 0);
 
-  if (!canSwitch) {
-    const label = inStaff ? t.account.staff : tenants.find((x) => x.id === currentId)?.name;
-    return label ? <p className="mb-3 truncate px-3 text-xs font-bold uppercase tracking-wider text-muted">{label}</p> : null;
-  }
+  if (tenants.length === 0 && !isStaff) return null;
   return (
     <Select
       aria-label={t.dashboard.switchShop}
@@ -44,6 +42,8 @@ export function WorkspaceSwitcher({
         if (next === value) return;
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- deliberate full load into the admin area
         if (next === ADMIN) window.location.assign("/admin");
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the welcome form lives outside the dashboard layout
+        else if (next === NEW) window.location.assign("/new-shop");
         else start(() => switchTenant(next));
       }}
     >
@@ -53,6 +53,7 @@ export function WorkspaceSwitcher({
         </option>
       ))}
       {isStaff ? <option value={ADMIN}>{t.account.staff}</option> : null}
+      <option value={NEW}>{t.dashboard.newShop}</option>
     </Select>
   );
 }

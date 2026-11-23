@@ -9,7 +9,7 @@ import { slugify } from "@/lib/site/hosts";
 import { welcomeAction } from "../actions";
 
 /** Shop name, address, invite code (when signup is not open) and the terms, for a Google account. */
-export function WelcomeForm({ email, suggestedName, root, needsCode, initialCode }: { email: string; suggestedName: string; root: string; needsCode: boolean; initialCode: string }) {
+export function WelcomeForm({ email, suggestedName, root, needsCode, initialCode, additional = false }: { email: string; suggestedName: string; root: string; needsCode: boolean; initialCode: string; additional?: boolean }) {
   const { t, locale } = useI18n();
   const [state, action, pending] = useActionState(welcomeAction, null);
   const dict = t.auth as Record<string, string>;
@@ -20,8 +20,9 @@ export function WelcomeForm({ email, suggestedName, root, needsCode, initialCode
   const shownSlug = slugTouched ? slug : slugify(name);
   return (
     <form action={action} className="flex flex-col gap-4" data-testid="welcome-form">
-      <p className="text-sm text-muted">{fmt(t.auth.welcomeIntro, { email })}</p>
+      <p className="text-sm text-muted">{fmt(additional ? t.auth.newShopIntro : t.auth.welcomeIntro, { email })}</p>
       <input type="hidden" name="locale" value={locale} />
+      {additional ? <input type="hidden" name="additional" value="1" /> : null}
       <Field label={t.auth.shopName}>
         <Input name="shopName" value={name} onChange={(e) => setName(e.target.value)} placeholder={suggestedName} required maxLength={120} />
       </Field>
