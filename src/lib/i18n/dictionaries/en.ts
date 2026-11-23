@@ -238,6 +238,7 @@ export const en = {
       closed: { title: "We are closed right now", text: "Please check back later." },
     },
     noDeals: "No deals right now. Check back soon!",
+    noDealsYet: "There are no deals available right now.",
     valueVoucher: "Gift voucher",
     worth: "Worth {value}",
     days: "d",

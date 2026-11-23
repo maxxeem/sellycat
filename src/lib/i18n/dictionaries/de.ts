@@ -240,6 +240,7 @@ export const de: Dictionary = {
       closed: { title: "Wir haben gerade geschlossen", text: "Schau bitte später wieder vorbei." },
     },
     noDeals: "Zurzeit keine Deals. Schau bald wieder vorbei!",
+    noDealsYet: "Aktuell sind keine Deals verfügbar.",
     valueVoucher: "Wertgutschein",
     worth: "Wert {value}",
     days: "T",

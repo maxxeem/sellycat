@@ -19,8 +19,8 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
   if (!shop.legalComplete) return <ShopHome shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }} theme={shop.theme} t={t} deals={[]} categories={[]} notice={t.notReady} />;
   if (category && !categories.some((c) => c.slug === category)) notFound();
   const listed = listedDeals(deals);
-  // No deal to show yet on the start page: same «opens soon» note as before the legal texts.
-  if (!category && !listed.length) return <ShopHome shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }} theme={shop.theme} t={t} deals={[]} categories={[]} notice={t.notReady} />;
+  // No deal to show on the start page: header and hero with a plain note instead of the list.
+  if (!category && !listed.length) return <ShopHome shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }} theme={shop.theme} t={t} deals={[]} categories={[]} notice={t.noDealsYet} />;
   const base = shop.primaryHost ? `https://${shop.primaryHost}` : "";
   return (
     <>
