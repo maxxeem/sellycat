@@ -1,9 +1,10 @@
-import { DiscordLogo, FacebookLogo, InstagramLogo, LinkedinLogo, PinterestLogo, SnapchatLogo, SpotifyLogo, TelegramLogo, ThreadsLogo, TiktokLogo, TwitchLogo, WhatsappLogo, XLogo, YoutubeLogo } from "@phosphor-icons/react/dist/ssr";
+import { DiscordLogo, FacebookLogo, Globe, InstagramLogo, LinkedinLogo, PinterestLogo, SnapchatLogo, SpotifyLogo, TelegramLogo, ThreadsLogo, TiktokLogo, TwitchLogo, WhatsappLogo, XLogo, YoutubeLogo } from "@phosphor-icons/react/dist/ssr";
 import type { ComponentType } from "react";
 import { SOCIAL_LABEL, socialUrl, type SocialNetwork } from "@/lib/shop/social";
 
 type IconProps = { className?: string; weight?: "regular" | "fill" | "bold"; "aria-hidden"?: boolean };
 export const SOCIAL_ICON: Record<SocialNetwork, ComponentType<IconProps>> = {
+  website: Globe,
   instagram: InstagramLogo,
   facebook: FacebookLogo,
   tiktok: TiktokLogo,
@@ -20,7 +21,7 @@ export const SOCIAL_ICON: Record<SocialNetwork, ComponentType<IconProps>> = {
   twitch: TwitchLogo,
 };
 
-/** Round icon links of the shop's social media profiles (only entries that make a valid link). */
+/** Round icon links of the shop's website and social media profiles (only entries that make a valid link). */
 export function SocialIcons({ links, inert = false }: { links: Array<{ network: SocialNetwork; url: string }>; inert?: boolean }) {
   const items = links.map((l) => ({ ...l, href: socialUrl(l.network, l.url) })).filter((l) => l.href);
   if (!items.length) return null;

@@ -14,17 +14,16 @@ const html = (theme: ShopTheme, inert = false) =>
 const logos = { ...DEFAULT_THEME, logoLight: "https://example.supabase.co/storage/v1/object/public/a/light.png", logoDark: "https://example.supabase.co/storage/v1/object/public/a/dark.png" };
 
 describe("ShopFrame footer", () => {
-  it("shows the logo made for the footer background", () => {
-    const light = html({ ...logos, colors: { ...logos.colors, surface: "#f5f5f5" } });
-    const dark = html({ ...logos, colors: { ...logos.colors, surface: "#1c1c1c" } });
-    const footerImg = (h: string) => h.match(/<img[^>]*data-testid="shop-footer-logo"[^>]*>/)?.[0] ?? "";
-    expect(footerImg(light)).toContain("light.png");
-    expect(footerImg(dark)).toContain("dark.png");
+  it("shows the website and social media icons instead of a logo", () => {
+    const h = html({ ...logos, socialLinks: [{ network: "website", url: "www.my105.ch" }, { network: "instagram", url: "@my105radio" }, { network: "linkedin", url: "not a link" }] });
+    expect(h).not.toContain("shop-footer-logo");
+    expect(h).toContain('href="https://www.my105.ch/"');
+    expect(h).toContain('href="https://www.instagram.com/my105radio"');
+    expect(h).not.toContain('aria-label="LinkedIn"');
   });
 
-  it("falls back to the shop name without a logo", () => {
-    expect(html(DEFAULT_THEME)).not.toContain("shop-footer-logo");
-    expect(html(DEFAULT_THEME)).toContain(">my105</p>");
+  it("shows no icon row without links", () => {
+    expect(html(DEFAULT_THEME)).not.toContain("shop-social");
   });
 
   it("fills the screen so the footer sits at the bottom (previews fill their box)", () => {

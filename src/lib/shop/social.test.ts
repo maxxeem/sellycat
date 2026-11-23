@@ -12,6 +12,8 @@ describe("social links", () => {
     expect(socialUrl("facebook", "facebook.com/my105")).toBe("https://facebook.com/my105");
     expect(socialUrl("linkedin", "https://www.linkedin.com/company/my105/")).toBe("https://www.linkedin.com/company/my105/");
     expect(socialUrl("whatsapp", "http://wa.me/41790000000")).toBe("https://wa.me/41790000000");
+    expect(socialUrl("website", "www.my105.ch")).toBe("https://www.my105.ch/");
+    expect(socialUrl("website", "my105")).toBeNull();
   });
 
   it("rejects anything that is not a web link", () => {

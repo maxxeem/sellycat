@@ -3,11 +3,12 @@
  * networks exist and how an entry (a full link, a link without https://, or an @handle) becomes a
  * safe https URL.
  */
-export const SOCIAL_NETWORKS = ["instagram", "facebook", "tiktok", "youtube", "x", "linkedin", "threads", "pinterest", "whatsapp", "telegram", "snapchat", "spotify", "discord", "twitch"] as const;
+export const SOCIAL_NETWORKS = ["website", "instagram", "facebook", "tiktok", "youtube", "x", "linkedin", "threads", "pinterest", "whatsapp", "telegram", "snapchat", "spotify", "discord", "twitch"] as const;
 export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number];
 export const isSocialNetwork = (v: unknown): v is SocialNetwork => typeof v === "string" && (SOCIAL_NETWORKS as readonly string[]).includes(v);
 
 export const SOCIAL_LABEL: Record<SocialNetwork, string> = {
+  website: "Website",
   instagram: "Instagram",
   facebook: "Facebook",
   tiktok: "TikTok",
