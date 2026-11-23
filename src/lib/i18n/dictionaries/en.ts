@@ -1616,7 +1616,6 @@ export const en = {
   },
   account: {
     profile: "Profile & account",
-    switchTo: "Switch to",
     staff: "Sellycat admin",
     dark: "Dark mode",
     light: "Light mode",

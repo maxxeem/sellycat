@@ -61,7 +61,7 @@ export function ShellFrame({ user, tenants, current, children, nav, homeHref = "
         <DashboardMenu isActive={active} onNavigate={() => setOpen(false)} role={current?.role} />
       )}
       <div className="mt-auto border-t border-line pt-3">
-        <AccountMenu user={user} tenants={tenants} currentId={current?.id ?? null} isStaff={isStaff} inStaff={Boolean(nav)} onNavigate={() => setOpen(false)} />
+        <AccountMenu user={user} onNavigate={() => setOpen(false)} />
       </div>
     </nav>
   );

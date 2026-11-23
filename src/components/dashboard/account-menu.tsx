@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, ChevronsUpDown, LogOut, Moon, ShieldCheck, Store, Sun, UserRound } from "lucide-react";
+import { ChevronsUpDown, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { logout, switchTenant } from "@/app/p/[locale]/dashboard/actions";
+import { useEffect, useRef, useState } from "react";
+import { logout } from "@/app/p/[locale]/dashboard/actions";
 import { useI18n } from "@/lib/i18n/context";
 
 const initials = (name: string) =>
@@ -17,29 +17,20 @@ const initials = (name: string) =>
 
 /**
  * The person at the bottom of the sidebar: one compact row (avatar, name, e-mail). A click opens
- * the account menu: profile and account settings, switching between shops and to the Sellycat
- * admin (staff only), light/dark and sign-out.
+ * the account menu: profile and account settings, light/dark and sign-out. Switching between shops
+ * and the Sellycat admin lives in the workspace switcher at the top of the sidebar.
  */
 export function AccountMenu({
   user,
-  tenants,
-  currentId,
-  isStaff,
-  inStaff,
   onNavigate,
 }: {
   user: { name: string; email: string };
-  tenants: Array<{ id: string; name: string }>;
-  currentId: string | null;
-  isStaff: boolean;
-  inStaff: boolean;
   onNavigate?: () => void;
 }) {
   const { t } = useI18n();
   const a = t.account;
   const { resolvedTheme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const [pending, start] = useTransition();
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,7 +47,6 @@ export function AccountMenu({
   }, [open]);
 
   const item = "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-surface";
-  const canSwitch = tenants.length > 1 || (isStaff && tenants.length > 0) || (isStaff && !inStaff);
 
   return (
     <div ref={box} className="relative">
@@ -65,36 +55,6 @@ export function AccountMenu({
           <Link href="/dashboard/profile" role="menuitem" className={item} onClick={() => (setOpen(false), onNavigate?.())}>
             <UserRound className="h-4 w-4 text-muted" aria-hidden /> {a.profile}
           </Link>
-          {canSwitch ? (
-            <>
-              <p className="px-3 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wider text-muted">{a.switchTo}</p>
-              {tenants.map((tn) => {
-                const current = !inStaff && tn.id === currentId;
-                return (
-                  <button
-                    key={tn.id}
-                    type="button"
-                    role="menuitem"
-                    disabled={pending}
-                    className={item}
-                    onClick={() => (current ? setOpen(false) : start(() => switchTenant(tn.id)))}
-                  >
-                    <Store className="h-4 w-4 text-muted" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate">{tn.name}</span>
-                    {current ? <Check className="h-4 w-4 text-accent-text" aria-hidden /> : null}
-                  </button>
-                );
-              })}
-              {isStaff ? (
-                // A full page load: the admin is a separate area behind its own checks (staff, MFA).
-                <a href="/admin" role="menuitem" className={item} onClick={() => (setOpen(false), onNavigate?.())}>
-                  <ShieldCheck className="h-4 w-4 text-muted" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{a.staff}</span>
-                  {inStaff ? <Check className="h-4 w-4 text-accent-text" aria-hidden /> : null}
-                </a>
-              ) : null}
-            </>
-          ) : null}
           <div className="my-1.5 h-px bg-line" />
           <button type="button" role="menuitem" className={item} onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
             <Sun className="hidden h-4 w-4 text-muted dark:block" aria-hidden />

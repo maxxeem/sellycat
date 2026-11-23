@@ -1618,7 +1618,6 @@ export const de: Dictionary = {
   },
   account: {
     profile: "Profil & Konto",
-    switchTo: "Wechseln zu",
     staff: "Sellycat Admin",
     dark: "Dunkles Design",
     light: "Helles Design",
