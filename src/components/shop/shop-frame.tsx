@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SocialIcons } from "./social-icons";
 import { Mail, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 import { shopImage } from "@/lib/shop/image";
@@ -87,6 +88,7 @@ export function ShopFrame({
                 ) : null}
               </ul>
             ) : null}
+            <SocialIcons links={theme.socialLinks} inert={inert} />
           </div>
           <FooterColumn title={t.footerShop}>
             <li>

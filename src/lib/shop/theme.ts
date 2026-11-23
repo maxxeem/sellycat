@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { contrastRatio, mix, normaliseHex, readableOn } from "@/lib/design/color";
 import { fontCssFormat } from "@/lib/design/font-file";
+import { SOCIAL_NETWORKS } from "./social";
 import { fontCssUrl } from "@/lib/design/font-proxy";
 
 const hex = z.string().transform((v, ctx) => {
@@ -74,6 +75,8 @@ export const themeSchema = z.object({
   favicon: url,
   socialImage: url,
   footerLinks: z.array(z.object({ label: z.string().max(60), url: z.string().max(500) })).max(12).default([]),
+  /** Social media icons in the footer: the entry as typed (link or @handle), shown only via `socialUrl`. */
+  socialLinks: z.array(z.object({ network: z.enum(SOCIAL_NETWORKS), url: z.string().max(300) })).max(SOCIAL_NETWORKS.length).default([]),
 });
 export type ShopTheme = z.infer<typeof themeSchema>;
 

@@ -17,6 +17,8 @@ import { normaliseHex } from "@/lib/design/color";
 import type { BrandingSuggestion } from "@/lib/design/brand-parse";
 import { FONT_ACCEPT, checkFontFile, familyFromFile, fontCssFormat } from "@/lib/design/font-file";
 import { isGoogleFont } from "@/lib/design/google-fonts";
+import { SOCIAL_ICON } from "@/components/shop/social-icons";
+import { SOCIAL_LABEL, SOCIAL_NETWORKS, socialUrl, type SocialNetwork } from "@/lib/shop/social";
 import { contrastIssues, themeFontCss, type ShopTheme, type ThemeFont } from "@/lib/shop/theme";
 import { importFromWebsite, saveTheme } from "./actions";
 
@@ -250,6 +252,7 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
               <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => update((th) => ({ ...th, footerLinks: [...th.footerLinks, { label: "", url: "" }] }))}>
                 <Plus className="h-4 w-4" /> {g.addLink}
               </button>
+              <SocialLinksField value={theme.socialLinks} onChange={(socialLinks) => update((th) => ({ ...th, socialLinks }))} />
             </div>
           </Card>
         </div>
@@ -359,6 +362,52 @@ function FontField({ label, value, onChange, tenantId }: { label: string; value:
             </div>
           ) : null}
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Social media profiles for the footer: network + link or @handle, at most one per network. */
+function SocialLinksField({ value, onChange }: { value: ShopTheme["socialLinks"]; onChange: (v: ShopTheme["socialLinks"]) => void }) {
+  const { t } = useI18n();
+  const g = t.design;
+  const free = SOCIAL_NETWORKS.filter((n) => !value.some((v) => v.network === n));
+  const set = (i: number, patch: Partial<ShopTheme["socialLinks"][number]>) => onChange(value.map((v, j) => (j === i ? { ...v, ...patch } : v)));
+  return (
+    <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4 text-sm">
+      <div>
+        <p className="font-semibold">{g.socialTitle}</p>
+        <p className="text-xs text-muted">{g.socialHint}</p>
+      </div>
+      {value.map((l, i) => {
+        const Icon = SOCIAL_ICON[l.network];
+        const bad = l.url.trim() !== "" && !socialUrl(l.network, l.url);
+        return (
+          <div key={l.network} className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line" aria-hidden>
+                <Icon className="h-5 w-5" />
+              </span>
+              <div className="w-36 shrink-0">
+                <Select value={l.network} onChange={(e) => set(i, { network: e.target.value as SocialNetwork })} aria-label={g.socialNetwork}>
+                  {SOCIAL_NETWORKS.filter((n) => n === l.network || free.includes(n)).map((n) => (
+                    <option key={n} value={n}>{SOCIAL_LABEL[n]}</option>
+                  ))}
+                </Select>
+              </div>
+              <Input value={l.url} placeholder={g.socialPlaceholder} maxLength={300} onChange={(e) => set(i, { url: e.target.value })} aria-label={fmt(g.socialLink, { network: SOCIAL_LABEL[l.network] })} autoCapitalize="none" spellCheck={false} />
+              <button type="button" className="p-2 text-danger" aria-label={g.remove} onClick={() => onChange(value.filter((_, j) => j !== i))}>
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+            {bad ? <p className="pl-12 text-xs text-danger">{g.socialInvalid}</p> : null}
+          </div>
+        );
+      })}
+      {free.length ? (
+        <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => onChange([...value, { network: free[0]!, url: "" }])} data-testid="social-add">
+          <Plus className="h-4 w-4" /> {g.socialAdd}
+        </button>
       ) : null}
     </div>
   );
