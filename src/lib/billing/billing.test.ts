@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { currencyForCountry, currencyFromStripe } from "./currency";
 import { idsForMode, isDowngrade, planForPrice, stripeModeFor, tenantStateFromSubscription } from "./map";
-import { bookable, feePercent, formatPrice, withFeeMin, isFree, parseAmount, parsePercent, parsePlanPrices, toPlan, yearlyPerMonth } from "./plans";
+import { bookable, feeMinText, feePercent, formatPrice, withFeeMin, isFree, parseAmount, parsePercent, parsePlanPrices, toPlan, yearlyPerMonth } from "./plans";
 
 const plans = [
   { id: "starter", stripe: { price_month_id: "p_s_m", price_year_id: "p_s_y" } },
@@ -74,8 +74,11 @@ describe("billing", () => {
 
 describe("withFeeMin", () => {
   it("appends the minimum per sale in the chosen currency", () => {
-    expect(withFeeMin("19.5 % pro Verkauf", 100, "CHF", "mind. {amount}")).toBe("19.5 % pro Verkauf, mind. CHF 1");
-    expect(withFeeMin("3.5 % per sale", 150, "EUR", "min. {amount}")).toBe("3.5 % per sale, min. EUR 1.50");
+    expect(withFeeMin("19.5 % pro Verkauf", 100, "CHF", "mind. {amount}")).toBe("19.5 % pro Verkauf, mind.\u00a0CHF\u00a01");
+    expect(withFeeMin("3.5 % per sale", 150, "EUR", "min. {amount}")).toBe("3.5 % per sale, min.\u00a0EUR\u00a01.50");
     expect(withFeeMin("9.5 % per sale", 0, "USD", "min. {amount}")).toBe("9.5 % per sale");
+  });
+  it("never breaks inside the minimum (non-breaking spaces)", () => {
+    expect(feeMinText(100, "CHF", "mind. {amount}")).not.toMatch(/ /);
   });
 });

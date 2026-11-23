@@ -117,7 +117,8 @@ export function Pricing({ plans, labels, locale, currency, cta, ctaLabel }: { pl
               )}
               <p className="mt-5 self-start border-t border-fg/10 pt-5 text-sm text-fg/80">
                 <span className="font-semibold text-fg">{feePercent(plan.feeBps)}</span> {fmt(l.fee, { fee: "" }).trim()}
-                {plan.feeMin > 0 ? <span className="text-fg/55"> · {feeMinText(plan.feeMin, currency, l.feeMin)}</span> : null}
+                {/* The minimum on its own line, never broken inside ("mind. CHF" / "1"). */}
+                {plan.feeMin > 0 ? <span className="mt-0.5 block whitespace-nowrap text-xs text-fg/55">{feeMinText(plan.feeMin, currency, l.feeMin)}</span> : null}
               </p>
               <div className="mt-6 flex flex-col gap-2 self-start">
                 {plan.contactOnly ? (

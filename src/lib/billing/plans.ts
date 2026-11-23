@@ -107,7 +107,8 @@ export const feePercent = (bps: number) => `${Number.isInteger(bps / 100) ? bps 
 /** "mind. CHF 1" from the minimum in minor units; `minText` is the dictionary's «mind. {amount}». */
 export function feeMinText(minMinor: number, currency: Currency, minText: string): string {
   const v = minMinor / 100;
-  return minText.replace("{amount}", `${currency} ${Number.isInteger(v) ? v : v.toFixed(2)}`);
+  // Non-breaking spaces: "mind. CHF 1" never wraps in the middle.
+  return minText.replace(/ /g, "\u00a0").replace("{amount}", `${currency}\u00a0${Number.isInteger(v) ? v : v.toFixed(2)}`);
 }
 
 /** "19.5 % pro Verkauf, mind. CHF 1": a fee text with the minimum per sale appended (unchanged without one). */
