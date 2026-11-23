@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { contrastRatio, mix, normaliseHex, readableOn } from "@/lib/design/color";
+import { fontCssFormat } from "@/lib/design/font-file";
 import { fontCssUrl } from "@/lib/design/font-proxy";
 
 const hex = z.string().transform((v, ctx) => {
@@ -19,7 +20,7 @@ const url = z.string().max(1000).url().or(z.literal("")).default("");
 export const fontSchema = z.object({
   source: z.enum(["system", "google", "custom"]).default("system"),
   family: z.string().max(80).default(""),
-  /** Uploaded woff2 (source "custom"). */
+  /** Uploaded font file: woff2, woff, ttf or otf (source "custom"). */
   url: url,
 });
 export type ThemeFont = z.infer<typeof fontSchema>;
@@ -57,9 +58,17 @@ export const themeSchema = z.object({
       direction: z.enum(["down", "right", "diagonal"]).default("diagonal"),
     })
     .default({ style: "bar", fill: "none", from: "#ff4b23", to: "#7a1fa2", direction: "diagonal" }),
+  /** `focusX`/`focusY` (0–100 %): the point of the picture that stays visible when it is cropped. */
   hero: z
-    .object({ enabled: z.boolean().default(true), title: z.string().max(120).default(""), subtitle: z.string().max(240).default(""), image: url })
-    .default({ enabled: true, title: "", subtitle: "", image: "" }),
+    .object({
+      enabled: z.boolean().default(true),
+      title: z.string().max(120).default(""),
+      subtitle: z.string().max(240).default(""),
+      image: url,
+      focusX: z.number().min(0).max(100).default(50),
+      focusY: z.number().min(0).max(100).default(50),
+    })
+    .default({ enabled: true, title: "", subtitle: "", image: "", focusX: 50, focusY: 50 }),
   logoLight: url,
   logoDark: url,
   favicon: url,
@@ -144,7 +153,7 @@ export function themeFontCss(theme: ShopTheme): { links: string[]; faces: string
       if (!links.includes(href)) links.push(href);
     }
     if (font.source === "custom" && font.family && font.url) {
-      faces += `@font-face{font-family:"${font.family.replace(/"/g, "")}";src:url("${font.url.replace(/"/g, "")}") format("woff2");font-display:swap;}`;
+      faces += `@font-face{font-family:"${font.family.replace(/"/g, "")}";src:url("${font.url.replace(/"/g, "")}") format("${fontCssFormat(font.url)}");font-display:swap;}`;
     }
   }
   return { links, faces };

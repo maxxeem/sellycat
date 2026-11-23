@@ -3,9 +3,10 @@
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fontCssUrl } from "@/lib/design/font-proxy";
-import { GOOGLE_FONTS } from "@/lib/design/google-fonts";
+import { GOOGLE_FONT_LIST, type FontCategory } from "@/lib/design/google-fonts";
 import { useI18n } from "@/lib/i18n/context";
 
+const PAGE = 60;
 const family = (name: string) => `family=${name.trim().replace(/ /g, "+")}`;
 
 /** Adds a font's stylesheet once (through our proxy); the browser fetches only the subsets it needs. */
@@ -76,18 +77,28 @@ export function FontPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [category, setCategory] = useState<FontCategory | "all">("all");
+  const [limit, setLimit] = useState(PAGE);
+  const more = useRef<HTMLLIElement>(null);
   useEffect(() => {
     if (value.trim()) loadFont(value, ":wght@400;700");
   }, [value]);
 
-  const matches = useMemo(() => {
+  const all = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (
-      q
-        ? GOOGLE_FONTS.filter((f) => f.toLowerCase().includes(q))
-        : [...GOOGLE_FONTS]
-    ) as string[];
-  }, [query]);
+    return GOOGLE_FONT_LIST.filter((f) => (category === "all" || f.category === category) && (!q || f.family.toLowerCase().includes(q))).map((f) => f.family);
+  }, [query, category]);
+  // ~1800 families: render a page at a time, the next one when the end of the list scrolls into view.
+  const matches = all.slice(0, limit);
+  useEffect(() => {
+    const el = more.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) setLimit((l) => l + PAGE);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [open, all, limit]);
 
   useEffect(() => {
     if (!open) return;
@@ -114,9 +125,8 @@ export function FontPicker({
           type="button"
           onClick={() => {
             setOpen(!open);
-            setActive(
-              Math.max(0, (GOOGLE_FONTS as readonly string[]).indexOf(value)),
-            );
+            setActive(0);
+            setLimit(PAGE);
           }}
           aria-haspopup="listbox"
           aria-expanded={open}
@@ -146,6 +156,7 @@ export function FontPicker({
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setActive(0);
+                  setLimit(PAGE);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") {
@@ -171,6 +182,25 @@ export function FontPicker({
                 }
               />
             </div>
+            <div className="flex flex-wrap gap-1 border-b border-line px-2 py-2" role="radiogroup" aria-label={t.design.fontCategory}>
+              {(["all", "s", "r", "d", "h", "m"] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={category === c}
+                  onClick={() => {
+                    setCategory(c);
+                    setActive(0);
+                    setLimit(PAGE);
+                  }}
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${category === c ? "bg-ink text-surface-2" : "bg-surface text-muted hover:text-ink"}`}
+                >
+                  {t.design.fontCats[c]}
+                </button>
+              ))}
+              <span className="ml-auto self-center pr-1 text-xs text-muted">{all.length}</span>
+            </div>
             <ul
               id={id}
               role="listbox"
@@ -179,6 +209,7 @@ export function FontPicker({
               {matches.map((f, i) => (
               <FontOption key={f} name={f} id={`${id}-${i}`} selected={f === value} active={i === active} sample={sample} onPick={() => pick(f)} onHover={() => setActive(i)} />
             ))}
+            {matches.length < all.length ? <li ref={more} className="h-8" aria-hidden /> : null}
             {!matches.length ? (
                 <li className="px-3 py-4 text-sm text-muted">–</li>
               ) : null}

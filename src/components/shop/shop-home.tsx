@@ -36,13 +36,13 @@ export function ShopHome({
           {theme.hero.image ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img {...shopImage(theme.hero.image, "100vw")} alt="" className="absolute inset-0 h-full w-full object-cover" fetchPriority="high" />
+              <img {...shopImage(theme.hero.image, "100vw")} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: `${theme.hero.focusX}% ${theme.hero.focusY}%` }} fetchPriority="high" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/10" />
               {/* Keeps the logo readable when the header sits on the picture. */}
               <div className="shop-hero-top-shade absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/55 to-transparent" />
             </>
           ) : null}
-          <div className={`relative mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-20 ${theme.hero.image ? "text-white" : ""}`}>
+          <div className={`relative mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-20 ${theme.hero.image ? "flex min-h-[20rem] flex-col justify-end text-white sm:min-h-[26rem]" : ""}`}>
             <h1 className="shop-heading max-w-3xl text-4xl font-bold leading-tight tracking-tight sm:text-5xl">{heroTitle}</h1>
             {theme.hero.subtitle ? <p className={`mt-4 max-w-2xl text-lg ${theme.hero.image ? "text-white/90" : ""}`}>{theme.hero.subtitle}</p> : null}
           </div>

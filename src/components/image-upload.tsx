@@ -2,6 +2,7 @@
 
 import { ImagePlus, Loader2, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
+import { FONT_FORMATS, fontExt } from "@/lib/design/font-file";
 import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,7 +13,11 @@ export async function uploadMedia(tenantId: string, folder: string, file: File):
   const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${tenantId}/${folder}/${crypto.randomUUID()}.${ext}`;
   const supabase = createClient();
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { cacheControl: "31536000", upsert: false, contentType: ext === "woff2" ? "font/woff2" : file.type || undefined });
+  // For File bodies the storage client sends the file's own type (contentType is ignored), and
+  // browsers often report none for fonts: give the file the right type, or the bucket rejects it.
+  const type = (fontExt(file.name) ? FONT_FORMATS[fontExt(file.name)!].mime : "") || file.type;
+  const body = type && type !== file.type ? new File([file], file.name, { type }) : file;
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, body, { cacheControl: "31536000", upsert: false, contentType: type || undefined });
   if (error) throw error;
   return supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
 }

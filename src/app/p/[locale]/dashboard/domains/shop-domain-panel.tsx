@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, RefreshCw, Star, Trash2 } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, RefreshCw, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Badge, Notice, buttonClass, inputClass } from "@/components/ui";
@@ -56,10 +56,49 @@ function ProviderGuide({ provider }: { provider: DnsProvider | null }) {
   );
 }
 
+/** Where the connection stands: added → DNS found → certificate → live. */
+function Progress({ status }: { status: ShopDomainView["status"] }) {
+  const { t } = useI18n();
+  const g = t.shopDomain;
+  const reached = status === "active" ? 3 : status === "dns_ok" ? 1 : 0;
+  return (
+    <ol className="grid grid-cols-3 gap-2 text-xs" aria-label={g.progressLabel}>
+      {g.progress.map((label, i) => {
+        const done = i < reached;
+        const current = i === reached && status !== "active";
+        return (
+          <li key={label} className="flex flex-col gap-1.5">
+            <span className={`h-1.5 rounded-full ${done ? "bg-success" : current ? "animate-pulse bg-warn" : "bg-line"}`} />
+            <span className={`flex items-center gap-1 ${done ? "font-semibold text-ink" : current ? "font-semibold text-warn" : "text-muted"}`}>
+              {done ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden /> : current ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden /> : null}
+              {label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function DomainCard({ d, run, pending }: { d: ShopDomainView; run: (fn: () => Promise<ShopDomainResult>) => void; pending: boolean }) {
   const { t, locale } = useI18n();
   const g = t.shopDomain;
+  const router = useRouter();
   const tone = d.status === "active" ? "green" : d.status === "error" ? "red" : "amber";
+  const [checking, startCheck] = useTransition();
+  const [checked, setResult] = useState<{ tone: "success" | "info" | "warning" | "error"; text: string; status: ShopDomainView["status"] | null } | null>(null);
+  // A later automatic check moved the domain on: the old answer no longer applies.
+  const result = checked && (checked.status === null || checked.status === d.status) ? checked : null;
+  const check = () =>
+    startCheck(async () => {
+      setResult(null);
+      const r = await checkDomain(d.hostname);
+      if (!r.ok) setResult({ tone: "error", text: r.detail ? fmt(g.errors[r.error], { detail: r.detail }) : g.errors[r.error], status: null });
+      else if (r.status === "active") setResult({ tone: "success", text: g.result.active, status: "active" });
+      else if (r.status === "dns_ok") setResult({ tone: "info", text: g.result.dns_ok, status: "dns_ok" });
+      else setResult({ tone: "warning", text: g.result.pending, status: "pending" });
+      router.refresh();
+    });
   return (
     <div className="flex flex-col gap-4 rounded-input border border-line p-4" data-testid="shop-domain">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -72,7 +111,14 @@ function DomainCard({ d, run, pending }: { d: ShopDomainView; run: (fn: () => Pr
         </span>
       </div>
 
-      {d.status !== "active" ? (
+      <Progress status={d.status} />
+      {result ? (
+        <Notice tone={result.tone}>{result.text}</Notice>
+      ) : d.status === "dns_ok" ? (
+        <Notice tone="info">{g.result.dns_ok}</Notice>
+      ) : null}
+
+      {d.status === "pending" || d.status === "error" ? (
         <>
           <div className="rounded-input bg-surface p-4 text-sm">
             <p className="mb-2 font-semibold">{g.stepsTitle}</p>
@@ -117,9 +163,11 @@ function DomainCard({ d, run, pending }: { d: ShopDomainView; run: (fn: () => Pr
             <Star className="h-4 w-4" aria-hidden /> {g.makePrimary}
           </button>
         ) : null}
-        <button type="button" disabled={pending} onClick={() => run(() => checkDomain(d.hostname))} className={buttonClass.secondary}>
-          <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} aria-hidden /> {g.check}
-        </button>
+        {d.status !== "active" ? (
+          <button type="button" disabled={pending || checking} onClick={check} className={buttonClass.secondary} data-testid="domain-check">
+            <RefreshCw className={`h-4 w-4 ${checking ? "animate-spin" : ""}`} aria-hidden /> {checking ? g.checkingNow : g.check}
+          </button>
+        ) : null}
         <button
           type="button"
           disabled={pending}

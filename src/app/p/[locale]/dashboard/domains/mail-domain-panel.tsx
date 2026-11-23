@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, Copy, RefreshCw, Trash2, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, Notice, buttonClass, inputClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n";
@@ -76,11 +77,14 @@ export function MailDomainPanel({ sender, planAllows, domain }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [local, setLocal] = useState(domain?.localPart ?? "gutscheine");
+  const router = useRouter();
   const run = (fn: () => Promise<MailDomainResult>) =>
     start(async () => {
       setError(null);
       const r = await fn();
       if (!r.ok) setError(m.errors[r.error]);
+      // Show the new state at once (DNS records after adding, the result of a check).
+      router.refresh();
     });
   const preview = draft.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
   const bare = preview && preview.split(".").length === 2;
@@ -112,9 +116,12 @@ export function MailDomainPanel({ sender, planAllows, domain }: Props) {
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold">{m.localPart}</span>
-            <span className="flex items-center gap-2">
-              <input value={local} onChange={(e) => setLocal(e.target.value)} className={`${inputClass} w-44 font-mono`} autoCapitalize="none" spellCheck={false} />
-              <span className="truncate font-mono text-sm text-muted">@{preview || m.placeholder}</span>
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {/* Short field: the address part is short, the domain beside it should be readable in full. */}
+              <span className="w-40 shrink-0">
+                <input value={local} onChange={(e) => setLocal(e.target.value)} className={`${inputClass} font-mono`} autoCapitalize="none" spellCheck={false} data-testid="mail-local" />
+              </span>
+              <span className="min-w-0 break-all font-mono text-sm text-muted">@{preview || m.placeholder}</span>
             </span>
           </label>
           <div>

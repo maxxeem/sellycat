@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Monitor, Plus, Smartphone, Trash2, Wand2 } from "lucide-react";
-import { useMemo, useState, useTransition, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, Loader2, Monitor, Plus, Smartphone, Trash2, Upload, Wand2 } from "lucide-react";
+import { useMemo, useState, useTransition, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { ColorField, ColorFieldGroup } from "@/components/color-field";
 import { FontPicker } from "@/components/font-picker";
 import { ImageUpload, uploadMedia } from "@/components/image-upload";
@@ -15,7 +15,8 @@ import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { normaliseHex } from "@/lib/design/color";
 import type { BrandingSuggestion } from "@/lib/design/brand-parse";
-import { GOOGLE_FONTS } from "@/lib/design/google-fonts";
+import { FONT_ACCEPT, checkFontFile, familyFromFile, fontCssFormat } from "@/lib/design/font-file";
+import { isGoogleFont } from "@/lib/design/google-fonts";
 import { contrastIssues, themeFontCss, type ShopTheme, type ThemeFont } from "@/lib/shop/theme";
 import { importFromWebsite, saveTheme } from "./actions";
 
@@ -70,8 +71,8 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
       },
       mode: s.mode ?? th.mode,
       fonts: {
-        heading: s.fonts.heading && (GOOGLE_FONTS as readonly string[]).includes(s.fonts.heading) ? { source: "google", family: s.fonts.heading, url: "" } : th.fonts.heading,
-        body: s.fonts.body && (GOOGLE_FONTS as readonly string[]).includes(s.fonts.body) ? { source: "google", family: s.fonts.body, url: "" } : th.fonts.body,
+        heading: s.fonts.heading && isGoogleFont(s.fonts.heading) ? { source: "google", family: s.fonts.heading, url: "" } : th.fonts.heading,
+        body: s.fonts.body && isGoogleFont(s.fonts.body) ? { source: "google", family: s.fonts.body, url: "" } : th.fonts.body,
       },
     }));
     setSuggestion(undefined);
@@ -220,7 +221,9 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
               <Field label={g.heroSubtitle}>
                 <Input value={theme.hero.subtitle} maxLength={240} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, subtitle: e.target.value } }))} />
               </Field>
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url } }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
+              <HeroGuide />
+              {theme.hero.image ? <HeroFocus image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} /> : null}
             </div>
           </Card>
 
@@ -281,6 +284,28 @@ function FontField({ label, value, onChange, tenantId }: { label: string; value:
   const { t } = useI18n();
   const g = t.design;
   const [uploading, setUploading] = useState(false);
+  const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const fileName = value.url ? decodeURIComponent(value.url.split("/").pop() ?? "") : "";
+  const upload = async (file: File) => {
+    setStatus(null);
+    const check = checkFontFile(file.name, file.size, new Uint8Array(await file.slice(0, 4).arrayBuffer()));
+    if (!check.ok) {
+      setStatus({ tone: "error", text: check.error === "size" ? g.fontTooBig : g.fontWrongType });
+      return;
+    }
+    setUploading(true);
+    try {
+      // Stored under its real format, whatever the file name says.
+      const typed = new File([file], `${file.name.replace(/\.[a-z0-9]+$/i, "")}.${check.ext}`, { type: check.mime });
+      const url = await uploadMedia(tenantId, "fonts", typed);
+      onChange({ ...value, family: value.family.trim() || familyFromFile(file.name), url });
+      setStatus({ tone: "success", text: fmt(g.fontUploaded, { file: file.name }) });
+    } catch {
+      setStatus({ tone: "error", text: g.fontUploadFailed });
+    } finally {
+      setUploading(false);
+    }
+  };
   return (
     <div className="flex flex-col gap-2 text-sm">
       <span className="font-semibold">{label}</span>
@@ -294,28 +319,129 @@ function FontField({ label, value, onChange, tenantId }: { label: string; value:
       ) : null}
       {value.source === "custom" ? (
         <div className="flex flex-col gap-2">
-          <Input value={value.family} placeholder="Font name" onChange={(e) => onChange({ ...value, family: e.target.value })} />
-          <label className={`${buttonClass.secondary} cursor-pointer self-start`}>
-            {uploading ? t.common.loading : value.url ? "✓ woff2" : g.uploadFont}
-            <input
-              type="file"
-              accept=".woff2,font/woff2"
-              className="sr-only"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setUploading(true);
-                try {
-                  const url = await uploadMedia(tenantId, "fonts", file);
-                  onChange({ ...value, family: value.family || file.name.replace(/\.woff2$/i, ""), url });
-                } finally {
-                  setUploading(false);
-                }
-              }}
-            />
-          </label>
+          <Field label={g.fontName} hint={g.fontNameHint}>
+            <Input value={value.family} placeholder="Brand Sans" maxLength={80} onChange={(e) => onChange({ ...value, family: e.target.value })} />
+          </Field>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className={`${buttonClass.secondary} cursor-pointer ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
+              {uploading ? g.uploading : value.url ? g.replaceFont : g.uploadFont}
+              <input
+                type="file"
+                accept={FONT_ACCEPT}
+                className="sr-only"
+                data-testid="font-upload"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void upload(file);
+                }}
+              />
+            </label>
+            {value.url && !status ? (
+              <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-success">
+                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> <span className="truncate">{fmt(g.fontActive, { file: fileName })}</span>
+              </span>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted">{g.fontFormats}</p>
+          {status ? (
+            <p role="status" className={`flex items-start gap-1.5 text-xs font-semibold ${status.tone === "success" ? "text-success" : "text-danger"}`}>
+              {status.tone === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> : <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
+              {status.text}
+            </p>
+          ) : null}
+          {value.url && value.family ? (
+            <div className="rounded-input border border-line bg-surface p-3" style={{ fontFamily: `"${value.family.replace(/"/g, "")}", system-ui` }} data-testid="custom-font-sample">
+              <style>{`@font-face{font-family:"${value.family.replace(/"/g, "")}";src:url("${value.url.replace(/"/g, "")}") format("${fontCssFormat(value.url)}");font-display:swap;}`}</style>
+              <p className="text-xl font-bold leading-tight">{g.fontSampleTitle}</p>
+              <p className="mt-1 text-sm">{g.fontSampleText}</p>
+            </div>
+          ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** What the header picture should look like (size, format, what gets cropped). */
+function HeroGuide() {
+  const { t } = useI18n();
+  const g = t.design;
+  return (
+    <div className="rounded-input bg-surface p-3 text-xs">
+      <p className="mb-1.5 font-semibold text-ink">{g.heroGuideTitle}</p>
+      <ul className="flex list-disc flex-col gap-1 pl-4 text-muted">
+        {g.heroGuide.map((line, i) => (
+          <li key={i}>{line}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Focus point of the header picture: a click on the whole picture sets the point that stays
+ * visible; next to it the crops the shop shows on a wide screen and on a phone.
+ */
+function HeroFocus({ image, x, y, onChange }: { image: string; x: number; y: number; onChange: (x: number, y: number) => void }) {
+  const { t } = useI18n();
+  const g = t.design;
+  const position = `${x}% ${y}%`;
+  const set = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const clamp = (v: number) => Math.round(Math.min(100, Math.max(0, v)));
+    onChange(clamp(((e.clientX - box.left) / box.width) * 100), clamp(((e.clientY - box.top) / box.height) * 100));
+  };
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <div>
+        <p className="font-semibold">{g.heroFocus}</p>
+        <p className="text-xs text-muted">{g.heroFocusHint}</p>
+      </div>
+      {/* The whole picture (at most 18rem high); the dot marks the focus point. */}
+      <div className="flex justify-center rounded-input border border-line bg-surface">
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label={g.heroFocus}
+        aria-valuetext={`${x} % / ${y} %`}
+        aria-valuenow={x}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          set(e);
+        }}
+        onPointerMove={(e) => {
+          if (e.buttons) set(e);
+        }}
+        onKeyDown={(e) => {
+          const step = e.shiftKey ? 10 : 2;
+          const keys: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+          const d = keys[e.key];
+          if (!d) return;
+          e.preventDefault();
+          onChange(Math.min(100, Math.max(0, x + d[0])), Math.min(100, Math.max(0, y + d[1])));
+        }}
+        className="relative cursor-crosshair touch-none select-none overflow-hidden"
+        data-testid="hero-focus"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={image} alt="" draggable={false} className="block max-h-72 w-auto max-w-full" />
+        <span className="pointer-events-none absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-coral/70 shadow-[0_0_0_2px_rgba(0,0,0,0.45)]" style={{ left: `${x}%`, top: `${y}%` }} aria-hidden />
+      </div>
+      </div>
+      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] items-end gap-3">
+        <figure className="flex flex-col gap-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" className="aspect-[18/5] w-full rounded-input border border-line object-cover" style={{ objectPosition: position }} />
+          <figcaption className="flex items-center gap-1 text-xs text-muted"><Monitor className="h-3.5 w-3.5" aria-hidden /> {g.previewDesktop}</figcaption>
+        </figure>
+        <figure className="flex flex-col gap-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" className="aspect-[6/5] w-full rounded-input border border-line object-cover" style={{ objectPosition: position }} />
+          <figcaption className="flex items-center gap-1 text-xs text-muted"><Smartphone className="h-3.5 w-3.5" aria-hidden /> {g.previewMobile}</figcaption>
+        </figure>
+      </div>
     </div>
   );
 }
