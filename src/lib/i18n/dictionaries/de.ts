@@ -1973,6 +1973,7 @@ export const de: Dictionary = {
     intro: "Fragen zu Sellycat, eine Demo oder zu deinem Plan? Schreib uns, wir melden uns bei dir.",
     name: "Name",
     email: "E-Mail",
+    fullName: "Vollständig: {name}",
     company: "Firma oder Organisation",
     optional: "freiwillig",
     message: "Nachricht",

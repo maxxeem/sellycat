@@ -1971,6 +1971,7 @@ export const en = {
     intro: "Questions about Sellycat, a demo or your plan? Write to us, we will get back to you.",
     name: "Name",
     email: "Email",
+    fullName: "In full: {name}",
     company: "Company or organisation",
     optional: "optional",
     message: "Message",

@@ -7,6 +7,7 @@ import { Badge, Notice, buttonClass, inputClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import type { DnsRecord } from "@/lib/mail/mailgun";
+import { recordName } from "@/lib/mail/record-name";
 import { addMailDomain, checkMailDomain, removeMailDomain, saveLocalPart, type MailDomainResult } from "./actions";
 
 type Props = {
@@ -34,9 +35,10 @@ export function CopyButton({ value }: { value: string }) {
   );
 }
 
-function RecordRow({ r }: { r: DnsRecord }) {
+function RecordRow({ r, domain }: { r: DnsRecord; domain: string }) {
   const { t } = useI18n();
   const m = t.mailDomain;
+  const n = recordName(r.name, domain);
   return (
     <li className="flex flex-col gap-2 rounded-input border border-line p-3" data-testid="dns-record">
       <div className="flex items-center justify-between gap-2">
@@ -57,8 +59,11 @@ function RecordRow({ r }: { r: DnsRecord }) {
       <div className="grid gap-1 text-sm sm:grid-cols-[5rem_1fr]">
         <span className="text-muted">{m.name}</span>
         <span className="flex min-w-0 items-start justify-between gap-2">
-          <code className="break-all font-mono">{r.name}</code>
-          <CopyButton value={r.name} />
+          <span className="flex min-w-0 flex-col">
+            <code className="break-all font-mono">{n.host}</code>
+            {n.host !== n.full ? <span className="break-all text-xs text-muted">{fmt(m.fullName, { name: n.full })}</span> : null}
+          </span>
+          <CopyButton value={n.host} />
         </span>
         <span className="text-muted">{m.value}</span>
         <span className="flex min-w-0 items-start justify-between gap-2">
@@ -152,7 +157,7 @@ export function MailDomainPanel({ sender, planAllows, domain }: Props) {
 
           <ul className="flex flex-col gap-2">
             {domain.records.filter((r) => r.purpose === "sending").map((r, i) => (
-              <RecordRow key={`s${i}`} r={r} />
+              <RecordRow key={`s${i}`} r={r} domain={domain.domain} />
             ))}
           </ul>
           {domain.records.some((r) => r.purpose === "receiving") ? (
@@ -160,7 +165,7 @@ export function MailDomainPanel({ sender, planAllows, domain }: Props) {
               <summary className="cursor-pointer text-muted">{m.optional}</summary>
               <ul className="mt-2 flex flex-col gap-2">
                 {domain.records.filter((r) => r.purpose === "receiving").map((r, i) => (
-                  <RecordRow key={`r${i}`} r={r} />
+                  <RecordRow key={`r${i}`} r={r} domain={domain.domain} />
                 ))}
               </ul>
             </details>
