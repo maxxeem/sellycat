@@ -43,6 +43,7 @@ describe("normaliseMailDomain", () => {
   it("rejects invalid and Sellycat domains", () => {
     expect(normaliseMailDomain("velo")).toBeNull();
     expect(normaliseMailDomain("a b.ch")).toBeNull();
+    expect(normaliseMailDomain("\u00a0deals.my105.ch\u200b ")).toBe("deals.my105.ch");
     expect(normaliseMailDomain("mail.sellycat.com")).toBeNull();
     expect(normaliseMailDomain("sellycat.com")).toBeNull();
   });

@@ -1927,6 +1927,8 @@ export const de: Dictionary = {
     subdomainTip: "Tipp: Nimm eine Subdomain (z.B. mail.{domain}), damit dein bestehendes E-Mail-Postfach nicht gestört wird.",
     errors: {
       invalid: "Bitte gib eine gültige Domain ein, z.B. mail.deinefirma.ch.",
+      platform: "Das ist die Absender-Domain von Sellycat. Bitte gib eine Domain von dir ein, z.B. mail.deinefirma.ch.",
+      exists: "Dein Shop hat schon eine Absender-Domain. Entferne sie zuerst, um eine andere einzurichten.",
       taken: "Diese Domain wird schon von einem anderen Shop verwendet.",
       plan: "Dein Abo enthält keine eigene Absender-Domain.",
       not_configured: "Der Mailversand ist noch nicht eingerichtet.",

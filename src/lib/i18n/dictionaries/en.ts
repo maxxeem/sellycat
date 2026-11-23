@@ -1925,6 +1925,8 @@ export const en = {
     subdomainTip: "Tip: use a subdomain (e.g. mail.{domain}) so your existing mailbox is not disturbed.",
     errors: {
       invalid: "Please enter a valid domain, e.g. mail.yourcompany.com.",
+      platform: "That is Sellycat's sender domain. Please enter a domain of your own, e.g. mail.yourcompany.com.",
+      exists: "Your shop already has a sender domain. Remove it first to set up another one.",
       taken: "This domain is already used by another shop.",
       plan: "Your plan does not include your own sender domain.",
       not_configured: "Email sending is not set up yet.",

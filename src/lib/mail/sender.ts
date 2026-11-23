@@ -33,7 +33,11 @@ export function buildSender(i: SenderInput): Sender {
 
 /** A sender domain the shop may enter: a subdomain like mail.example.ch, not Sellycat's own. */
 export function normaliseMailDomain(raw: string): string | null {
-  const d = raw.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\.$/, "");
+  // Pasted text can carry invisible characters (zero-width, BOM) and no-break spaces at the ends.
+  const d = raw
+    .replace(/[\u200b-\u200d\u2060\ufeff]/g, "")
+    .trim()
+    .toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/\.$/, "");
   if (!/^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(d) || d.length > 200) return null;
   if (d === "sellycat.com" || d.endsWith(".sellycat.com")) return null;
   return d;

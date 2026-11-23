@@ -9,6 +9,10 @@ describe("parseCustomDomain", () => {
     expect(p("shop.firma.co.uk")).toEqual({ ok: true, domain: { host: "shop.firma.co.uk", apex: "firma.co.uk", sub: "shop" } });
     expect(p("a.b.firma.ch")).toMatchObject({ ok: true, domain: { apex: "firma.ch", sub: "a.b" } });
   });
+  it("ignores invisible characters from pasting", () => {
+    expect(p("\ufeffshop.my105.ch\u00a0")).toEqual({ ok: true, domain: { host: "shop.my105.ch", apex: "my105.ch", sub: "shop" } });
+  });
+
   it("rejects invalid input and the platform's own hosts", () => {
     for (const bad of ["firma", "-x.ch", "fi rma.ch", "co.uk", "x.123", ""]) expect(p(bad)).toEqual({ ok: false, error: "invalid" });
     for (const own of ["sellycat.com", "shop.sellycat.com", "x.staging.sellycat.com", "x.vercel.app"]) expect(p(own)).toEqual({ ok: false, error: "platform" });

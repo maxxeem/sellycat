@@ -6,7 +6,7 @@ import { createSenderDomain, deleteSenderDomain, mailConfigured, platformMailDom
 import { normaliseMailDomain } from "@/lib/mail/sender";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type MailDomainError = "invalid" | "taken" | "plan" | "not_configured" | "mailgun" | "local" | "forbidden";
+export type MailDomainError = "invalid" | "platform" | "exists" | "taken" | "plan" | "not_configured" | "mailgun" | "local" | "forbidden";
 export type MailDomainResult = { ok: true } | { ok: false; error: MailDomainError };
 
 const refresh = () => revalidatePath("/p/[locale]/dashboard/domains", "page");
@@ -28,13 +28,20 @@ export async function addMailDomain(rawDomain: string, rawLocal: string): Promis
   if (allowed !== true) return { ok: false, error: "plan" };
   if (!mailConfigured()) return { ok: false, error: "not_configured" };
   const domain = normaliseMailDomain(rawDomain);
-  if (!domain || domain === platformMailDomain()) return { ok: false, error: "invalid" };
+  if (!domain) {
+    console.warn(`[mail-domain] invalid input ${JSON.stringify(rawDomain)}`);
+    return { ok: false, error: "invalid" };
+  }
+  if (domain === platformMailDomain()) return { ok: false, error: "platform" };
   const local = rawLocal.trim().toLowerCase() || "gutscheine";
   if (!LOCAL.test(local)) return { ok: false, error: "local" };
   const { data: existing } = await admin.from("mail_domains").select("tenant_id").eq("domain", domain).maybeSingle();
-  if (existing) return { ok: false, error: existing.tenant_id === tenant.id ? "invalid" : "taken" };
+  if (existing) return { ok: false, error: existing.tenant_id === tenant.id ? "exists" : "taken" };
   const { data: mine } = await admin.from("mail_domains").select("domain").eq("tenant_id", tenant.id).maybeSingle();
-  if (mine) return { ok: false, error: "invalid" };
+  if (mine) {
+    console.warn(`[mail-domain] ${tenant.id} already has ${mine.domain}`);
+    return { ok: false, error: "exists" };
+  }
 
   const state = await createSenderDomain(domain);
   if (!state.ok) {

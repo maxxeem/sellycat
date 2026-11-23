@@ -10,6 +10,7 @@ const MULTI_SUFFIX = new Set(["co.uk", "org.uk", "ac.uk", "com.au", "net.au", "c
 
 export function parseCustomDomain(input: string, platformRoot: string): { ok: true; domain: ParsedDomain } | { ok: false; error: DomainError } {
   const host = input
+    .replace(/[\u200b-\u200d\u2060\ufeff]/g, "")
     .trim()
     .toLowerCase()
     .replace(/^[a-z]+:\/\//, "")
