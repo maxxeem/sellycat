@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SocialIcons } from "./social-icons";
+import { socialUrl } from "@/lib/shop/social";
 import { Mail, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 import { shopImage } from "@/lib/shop/image";
@@ -36,6 +37,7 @@ export function ShopFrame({
   const forLight = theme.logoLight || theme.logoDark;
   const forDark = theme.logoDark || theme.logoLight;
   const tone = headerLook(theme).tone;
+  const firstColumn = Boolean(contact?.email || contact?.phone || theme.socialLinks.some((l) => socialUrl(l.network, l.url)));
   const a = (href: string) => (inert ? { href: "#", onClick: undefined, tabIndex: -1 } : { href });
   return (
     // Pages shorter than the screen still end with the footer at the bottom (previews fill their box).
@@ -58,7 +60,9 @@ export function ShopFrame({
       </header>
       <main className="flex-1">{children}</main>
       <footer className="mt-20 border-t border-[var(--shop-line)] bg-[var(--shop-surface)] text-sm text-[var(--shop-muted)]" data-testid="shop-footer">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr]">
+        <div className={`mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 ${firstColumn ? "lg:grid-cols-[1.4fr_1fr_1fr]" : "lg:grid-cols-[1fr_1fr_1.4fr]"}`}>
+          {/* Icons and contact; without either, the menus start on the left. */}
+          {firstColumn ? (
           <div className="flex flex-col gap-4">
             <SocialIcons links={theme.socialLinks} inert={inert} />
             {contact?.email || contact?.phone ? (
@@ -80,6 +84,7 @@ export function ShopFrame({
               </ul>
             ) : null}
           </div>
+          ) : null}
           <FooterColumn title={t.footerShop}>
             <li>
               <Link {...a("/")} className="hover:text-[var(--shop-text)]">{t.footerAllDeals}</Link>

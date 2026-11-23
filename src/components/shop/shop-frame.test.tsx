@@ -22,8 +22,10 @@ describe("ShopFrame footer", () => {
     expect(h).not.toContain('aria-label="LinkedIn"');
   });
 
-  it("shows no icon row without links", () => {
+  it("shows no icon row without links, and the menus start on the left", () => {
     expect(html(DEFAULT_THEME)).not.toContain("shop-social");
+    expect(html(DEFAULT_THEME)).toContain("lg:grid-cols-[1fr_1fr_1.4fr]");
+    expect(html({ ...DEFAULT_THEME, socialLinks: [{ network: "website", url: "my105.ch" }] })).toContain("lg:grid-cols-[1.4fr_1fr_1fr]");
   });
 
   it("fills the screen so the footer sits at the bottom (previews fill their box)", () => {
