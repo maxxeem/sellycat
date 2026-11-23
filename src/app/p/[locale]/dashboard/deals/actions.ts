@@ -159,7 +159,7 @@ export type ImportResult =
  * "Mit KI aus Link übernehmen": a draft from a product page; the chosen images are stored in the
  * shop's own storage. Nothing is saved to the deal: the editor shows the draft for review.
  */
-export async function importDealFromUrl(url: string): Promise<ImportResult> {
+export async function importDealFromUrl(url: string, pastedText?: string): Promise<ImportResult> {
   const { tenant, supabase } = await requireTenant("editor");
   let target: URL;
   try {
@@ -170,7 +170,7 @@ export async function importDealFromUrl(url: string): Promise<ImportResult> {
   if (!aiImportConfigured()) return { ok: false, error: "not_configured" };
   if (!importLimit.check(tenant.id).ok) return { ok: false, error: "limit" };
   const { data: info } = await supabase.from("tenants").select("locale").eq("id", tenant.id).single();
-  const r = await importFromPage(target.toString(), info?.locale === "en" ? "en" : "de");
+  const r = await importFromPage(target.toString(), info?.locale === "en" ? "en" : "de", typeof pastedText === "string" ? pastedText.slice(0, 60_000) : undefined);
   if (!r.ok) return r;
   const images: Array<{ url: string; alt: string }> = [];
   for (const img of r.draft.images) {

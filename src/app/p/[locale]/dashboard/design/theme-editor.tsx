@@ -20,7 +20,7 @@ import { isGoogleFont } from "@/lib/design/google-fonts";
 import { SOCIAL_ICON } from "@/components/shop/social-icons";
 import { SOCIAL_LABEL, SOCIAL_NETWORKS, socialUrl, type SocialNetwork } from "@/lib/shop/social";
 import { contrastIssues, themeFontCss, type ShopTheme, type ThemeFont } from "@/lib/shop/theme";
-import { importFromWebsite, saveTheme } from "./actions";
+import { colorsFromLogo, importFromWebsite, saveTheme } from "./actions";
 
 type ColorKey = keyof ShopTheme["colors"];
 
@@ -35,6 +35,7 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
   const [importUrl, setImportUrl] = useState("");
   const [suggestion, setSuggestion] = useState<BrandingSuggestion | undefined>(undefined);
   const [importError, setImportError] = useState<"blocked" | "unreachable" | "nothing" | null>(null);
+  const [importPartial, setImportPartial] = useState(false);
   const [importing, startImport] = useTransition();
 
   const update = (fn: (t: ShopTheme) => ShopTheme) => {
@@ -105,42 +106,46 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
 
       <div className="grid gap-6 2xl:grid-cols-[440px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-6">
-          <Card title={g.importTitle} description={g.importHint}>
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                startImport(async () => {
-                  const r = await importFromWebsite(importUrl);
-                  setSuggestion(r.ok ? r.suggestion : undefined);
-                  setImportError(r.ok ? null : r.reason);
-                });
-              }}
-            >
-              <Input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="www.kundenfirma.ch" inputMode="url" required />
-              <button type="submit" className={buttonClass.secondary} disabled={importing}>
-                <Wand2 className="h-4 w-4" aria-hidden /> {importing ? t.common.loading : g.importRun}
-              </button>
-            </form>
-            {importError ? <p className="mt-3 text-sm text-muted">{importError === "blocked" ? g.importBlocked : importError === "unreachable" ? g.importUnreachable : g.importNothing}</p> : null}
-            {suggestion ? (
-              <div className="mt-4 flex flex-col gap-3 rounded-input border border-line p-3 text-sm">
-                {suggestion.logo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={suggestion.logo} alt="Logo" className="h-10 w-auto max-w-[200px] object-contain" />
-                ) : null}
-                <div className="flex flex-wrap gap-2">
-                  {[suggestion.colors.primary, suggestion.colors.accent, suggestion.colors.background, suggestion.colors.text].filter(Boolean).map((c) => (
-                    <span key={c} className="flex items-center gap-1.5 rounded-full border border-line px-2 py-1 font-mono text-xs">
-                      <span className="h-4 w-4 rounded-full border border-line" style={{ background: c }} /> {c}
-                    </span>
-                  ))}
+          <div id="branding-import" className="scroll-mt-24">
+            <Card title={g.importTitle} description={g.importHint}>
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  startImport(async () => {
+                    const r = await importFromWebsite(importUrl);
+                    setSuggestion(r.ok ? r.suggestion : undefined);
+                    setImportError(r.ok ? null : r.reason);
+                    setImportPartial(r.ok && r.partial);
+                  });
+                }}
+              >
+                <Input value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="www.kundenfirma.ch" inputMode="url" required />
+                <button type="submit" className={buttonClass.secondary} disabled={importing}>
+                  <Wand2 className="h-4 w-4" aria-hidden /> {importing ? t.common.loading : g.importRun}
+                </button>
+              </form>
+              {importError ? <p className="mt-3 text-sm text-muted">{importError === "blocked" ? g.importBlocked : importError === "unreachable" ? g.importUnreachable : g.importNothing}</p> : null}
+              {suggestion ? (
+                <div className="mt-4 flex flex-col gap-3 rounded-input border border-line p-3 text-sm">
+                  {importPartial ? <p className="text-muted">{g.importPartial}</p> : null}
+                  {suggestion.logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={suggestion.logo} alt="Logo" className="h-10 w-auto max-w-[200px] object-contain" />
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    {[suggestion.colors.primary, suggestion.colors.accent, suggestion.colors.background, suggestion.colors.text].filter(Boolean).map((c) => (
+                      <span key={c} className="flex items-center gap-1.5 rounded-full border border-line px-2 py-1 font-mono text-xs">
+                        <span className="h-4 w-4 rounded-full border border-line" style={{ background: c }} /> {c}
+                      </span>
+                    ))}
+                  </div>
+                  {suggestion.fonts.heading || suggestion.fonts.body ? <p className="text-muted">{[suggestion.fonts.heading, suggestion.fonts.body].filter(Boolean).join(" / ")}</p> : null}
+                  <button type="button" className={`${buttonClass.primary} self-start`} onClick={() => applySuggestion(suggestion)}>{g.importApply}</button>
                 </div>
-                {suggestion.fonts.heading || suggestion.fonts.body ? <p className="text-muted">{[suggestion.fonts.heading, suggestion.fonts.body].filter(Boolean).join(" / ")}</p> : null}
-                <button type="button" className={`${buttonClass.primary} self-start`} onClick={() => applySuggestion(suggestion)}>{g.importApply}</button>
-              </div>
-            ) : null}
-          </Card>
+              ) : null}
+            </Card>
+          </div>
 
           <Card title={g.colors}>
             <div className="flex flex-col gap-4">
@@ -233,6 +238,24 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
             <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoLight} label={g.logoLight} hint={g.hintLogo} height="h-32" tone="light" onChange={(url) => update((th) => ({ ...th, logoLight: url }))} />
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoDark} label={g.logoDark} hint={g.hintLogo} height="h-32" tone="dark" onChange={(url) => update((th) => ({ ...th, logoDark: url }))} />
+              {theme.logoLight || theme.logoDark ? (
+                <button
+                  type="button"
+                  className={`${buttonClass.secondary} self-start`}
+                  disabled={importing}
+                  onClick={() =>
+                    startImport(async () => {
+                      const r = await colorsFromLogo(theme.logoLight || theme.logoDark);
+                      setSuggestion(r.ok ? r.suggestion : undefined);
+                      setImportError(r.ok ? null : "nothing");
+                      setImportPartial(false);
+                      if (r.ok) document.getElementById("branding-import")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    })
+                  }
+                >
+                  <Wand2 className="h-4 w-4" aria-hidden /> {importing ? t.common.loading : g.logoColors}
+                </button>
+              ) : null}
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.favicon} label={g.favicon} hint={g.hintFavicon} height="h-32" accept="image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" onChange={(url) => update((th) => ({ ...th, favicon: url }))} />
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.socialImage} label={g.socialImage} hint={g.hintSocial} height="h-32" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, socialImage: url }))} />
             </div>

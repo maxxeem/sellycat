@@ -15,13 +15,16 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [seconds, setSeconds] = useState(0);
+  // Sites that let no robot in: the customer copies the page text from the browser instead.
+  const [pasteOffer, setPasteOffer] = useState(false);
+  const [pasted, setPasted] = useState("");
   useEffect(() => {
     if (!pending) return;
     const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, [pending]);
 
-  const run = () => {
+  const run = (text?: string) => {
     setSeconds(0);
     start(async () => {
       setMessage(null);
@@ -29,7 +32,7 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
       // A dropped connection is retried once; a new Sellycat version needs a reload.
       for (let attempt = 0; attempt < 2 && !r; attempt++) {
         try {
-          r = await importDealFromUrl(url);
+          r = await importDealFromUrl(url, text);
         } catch (e) {
           const text = e instanceof Error ? e.message : "";
           if (/Server Action|was not found|older or newer deployment/i.test(text)) return setMessage({ tone: "error", text: a.errors.outdated });
@@ -37,7 +40,12 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
         }
       }
       if (!r) return setMessage({ tone: "error", text: a.errors.connection });
-      if (!r.ok) return setMessage({ tone: "error", text: a.errors[r.error] });
+      if (!r.ok) {
+        if (["blocked", "unreachable", "nothing"].includes(r.error)) setPasteOffer(true);
+        return setMessage({ tone: "error", text: a.errors[r.error] });
+      }
+      setPasteOffer(false);
+      setPasted("");
       onDraft(r);
       setMessage(r.basic ? { tone: "info", text: fmt(a.basic, { images: String(r.images.length) }) } : { tone: "success", text: fmt(a.done, { images: String(r.images.length) }) });
     });
@@ -62,6 +70,15 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
       </form>
       {pending ? <p className="text-xs text-muted" aria-live="polite">{fmt(a.working, { seconds: String(seconds) })}</p> : <p className="text-xs text-muted">{a.replaceHint}</p>}
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
+      {pasteOffer && !pending ? (
+        <div className="flex flex-col gap-2" data-testid="ai-import-paste">
+          <p className="text-xs text-muted">{a.pasteHint}</p>
+          <textarea value={pasted} onChange={(e) => setPasted(e.target.value)} rows={6} maxLength={60_000} placeholder={a.pastePlaceholder} className={inputClass} />
+          <button type="button" disabled={pasted.trim().length < 40} className={`${buttonClass.secondary} self-start`} onClick={() => run(pasted)}>
+            <Sparkles className="h-4 w-4" aria-hidden /> {a.pasteStart}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

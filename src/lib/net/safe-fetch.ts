@@ -88,12 +88,12 @@ const guardedLookup: LookupFunction = (hostname, options, callback) => {
  * deflate/brotli decoded, aborted after `timeoutMs`. IP literals need no lookup; `assertPublic`
  * covers them.
  */
-export async function pinnedFetch(url: URL, init: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs: number }): Promise<Response> {
+export async function pinnedFetch(url: URL, init: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs: number; signal?: AbortSignal }): Promise<Response> {
   const mod = url.protocol === "https:" ? https : http;
   return new Promise((resolve, reject) => {
     const req = mod.request(
       url,
-      { method: init.method ?? "GET", headers: { "accept-encoding": "gzip, deflate, br", ...init.headers }, lookup: guardedLookup, signal: AbortSignal.timeout(init.timeoutMs) },
+      { method: init.method ?? "GET", headers: { "accept-encoding": "gzip, deflate, br", ...init.headers }, lookup: guardedLookup, signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(init.timeoutMs)]) : AbortSignal.timeout(init.timeoutMs) },
       (res) => {
         const headers = new Headers();
         for (const [k, v] of Object.entries(res.headers)) if (v !== undefined) headers.set(k, Array.isArray(v) ? v.join(", ") : v);
@@ -126,37 +126,148 @@ export async function assertPublic(url: URL) {
 export class BlockedError extends Error {}
 const BLOCK_PAGE = /Attention Required! \| Cloudflare|cf-chl-|challenge-platform|Just a moment\.\.\.|captcha-delivery|px-captcha/i;
 
-export async function fetchText(start: string, accept: string, maxBytes = MAX_BYTES, timeoutMs = TIMEOUT_MS): Promise<{ url: URL; text: string } | null> {
-  let url = new URL(start);
+/**
+ * Sites disagree about who may read them: some stall or reset requests that name a bot (shops
+ * behind Akamai and similar), others block a browser name whose connection does not look like a
+ * browser (Cloudflare). Pages are therefore requested as both at once and the first good answer
+ * wins; the other request is cancelled. The host's winner is remembered for its images.
+ */
+const IDENTITIES = {
+  bot: { "user-agent": USER_AGENT },
+  browser: {
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+    "accept-language": "de-CH,de;q=0.9,en;q=0.8",
+  },
+} as const;
+type Identity = keyof typeof IDENTITIES;
+const preferred = new Map<string, { id: Identity; at: number }>();
+const remember = (host: string, id: Identity) => {
+  if (preferred.size > 500) preferred.clear();
+  preferred.set(host, { id, at: Date.now() });
+};
+const preferredFor = (host: string): Identity | undefined => {
+  const p = preferred.get(host);
+  return p && Date.now() - p.at < 10 * 60_000 ? p.id : undefined;
+};
+
+type Hop = { url: URL; res: Response };
+
+/** Follows redirects (each hop checked) as one identity; null for an unusable address. */
+async function follow(start: URL, accept: string, id: Identity, timeoutMs: number, signal?: AbortSignal): Promise<Hop | null> {
+  let url = start;
   for (let hop = 0; hop < MAX_HOPS; hop++) {
     await assertPublic(url);
-    const res = await pinnedFetch(url, { timeoutMs, headers: { accept, "user-agent": USER_AGENT } });
-    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
-      url = new URL(res.headers.get("location")!, url);
+    const res = await pinnedFetch(url, { timeoutMs, signal, headers: { accept, ...IDENTITIES[id] } });
+    const location = res.headers.get("location");
+    if (res.status >= 300 && res.status < 400 && location) {
+      await res.body?.cancel().catch(() => {});
+      url = new URL(location, url);
       continue;
     }
-    if ([401, 403, 429, 503].includes(res.status) && (res.headers.get("server")?.toLowerCase().includes("cloudflare") || res.headers.has("cf-mitigated") || res.status === 403)) throw new BlockedError(String(res.status));
-    if (!res.ok || !res.body) return null;
-    const reader = res.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.length;
-      if (size > maxBytes) {
-        await reader.cancel();
-        break;
-      }
-      chunks.push(value);
-    }
-    const text = new TextDecoder().decode(Buffer.concat(chunks));
-    if (accept.includes("html") && BLOCK_PAGE.test(text.slice(0, 20_000))) throw new BlockedError("challenge page");
-    return { url, text };
+    return { url, res };
   }
   return null;
 }
 
+async function readCapped(res: Response, maxBytes: number, overflow: "truncate" | "fail"): Promise<Buffer | null> {
+  if (!res.body) return null;
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > maxBytes) {
+      await reader.cancel().catch(() => {});
+      if (overflow === "fail") return null;
+      break;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+
+/** Charset from the header or the page's own meta tag (UTF-8 if unknown or unsupported). */
+function decodeText(data: Buffer, contentType: string | null): string {
+  const declared = contentType?.match(/charset=["']?([\w-]+)/i)?.[1] ?? data.subarray(0, 2048).toString("latin1").match(/<meta[^>]+charset=["']?([\w-]+)/i)?.[1];
+  try {
+    return new TextDecoder(declared && !/^utf-?8$/i.test(declared) ? declared : "utf-8").decode(data);
+  } catch {
+    return new TextDecoder().decode(data);
+  }
+}
+
+type TextResult = { url: URL; text: string };
+
+/** One identity's attempt: the text, or why there is none ("blocked" or "failed"). */
+async function textAs(start: URL, accept: string, id: Identity, maxBytes: number, timeoutMs: number, signal: AbortSignal): Promise<TextResult | "blocked" | "failed"> {
+  try {
+    const hop = await follow(start, accept, id, timeoutMs, signal);
+    if (!hop) return "failed";
+    const { res, url } = hop;
+    if ([401, 403, 429, 503].includes(res.status) && (res.headers.get("server")?.toLowerCase().includes("cloudflare") || res.headers.has("cf-mitigated") || res.status === 403)) {
+      await res.body?.cancel().catch(() => {});
+      return "blocked";
+    }
+    if (!res.ok) {
+      await res.body?.cancel().catch(() => {});
+      return "failed";
+    }
+    const data = await readCapped(res, maxBytes, "truncate");
+    if (!data) return "failed";
+    const text = decodeText(data, res.headers.get("content-type"));
+    if (accept.includes("html") && BLOCK_PAGE.test(text.slice(0, 20_000))) return "blocked";
+    return { url, text };
+  } catch (e) {
+    if (e instanceof Error && /protocol|port|credentials|private address/.test(e.message)) throw e;
+    return "failed";
+  }
+}
+
+/**
+ * A page or text file. Throws `BlockedError` when every identity was turned away by bot
+ * protection, returns null when the site could not be read, throws on addresses we never fetch.
+ */
+export async function fetchText(start: string, accept: string, maxBytes = MAX_BYTES, timeoutMs = TIMEOUT_MS): Promise<TextResult | null> {
+  const url = new URL(start);
+  await assertPublic(url);
+  const known = preferredFor(url.hostname);
+  const ids: Identity[] = known ? [known] : ["bot", "browser"];
+  const controllers = ids.map(() => new AbortController());
+  const outcomes: Array<"blocked" | "failed"> = [];
+  const result = await new Promise<TextResult | null>((resolve, reject) => {
+    let open = ids.length;
+    ids.forEach((id, i) => {
+      textAs(url, accept, id, maxBytes, timeoutMs, controllers[i].signal).then(
+        (r) => {
+          open--;
+          if (typeof r === "object") {
+            remember(url.hostname, id);
+            remember(r.url.hostname, id);
+            controllers.forEach((c, j) => j !== i && c.abort());
+            resolve(r);
+          } else {
+            outcomes.push(r);
+            if (!open) resolve(null);
+          }
+        },
+        (e) => {
+          controllers.forEach((c) => c.abort());
+          reject(e);
+        },
+      );
+    });
+  });
+  if (result) return result;
+  // The remembered identity stopped working: forget it and try both once more.
+  if (known) {
+    preferred.delete(url.hostname);
+    return fetchText(start, accept, maxBytes, timeoutMs);
+  }
+  if (outcomes.includes("blocked")) throw new BlockedError("blocked");
+  return null;
+}
 
 /** An image (only image/* responses, at most `maxBytes`), with the same guards. */
 export async function fetchImage(start: string, maxBytes = 10_000_000, timeoutMs = TIMEOUT_MS): Promise<{ data: Buffer; type: string } | null> {
@@ -166,34 +277,27 @@ export async function fetchImage(start: string, maxBytes = 10_000_000, timeoutMs
   } catch {
     return null;
   }
-  for (let hop = 0; hop < MAX_HOPS; hop++) {
+  // Images go out as the identity that worked for their host, else as a browser (image CDNs
+  // rarely block browsers), then once more as the bot.
+  const known = preferredFor(url.hostname);
+  const ids: Identity[] = known ? [known, known === "bot" ? "browser" : "bot"] : ["browser", "bot"];
+  for (const id of ids) {
     try {
-      await assertPublic(url);
-    } catch {
-      return null;
-    }
-    const res = await pinnedFetch(url, { timeoutMs, headers: { accept: "image/*", "user-agent": USER_AGENT } }).catch(() => null);
-    if (!res) return null;
-    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
-      url = new URL(res.headers.get("location")!, url);
-      continue;
-    }
-    const type = res.headers.get("content-type")?.split(";")[0].trim() ?? "";
-    if (!res.ok || !res.body || !type.startsWith("image/")) return null;
-    const reader = res.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.length;
-      if (size > maxBytes) {
-        await reader.cancel();
-        return null;
+      const hop = await follow(url, "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8", id, timeoutMs);
+      if (!hop) return null;
+      const type = hop.res.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
+      if (!hop.res.ok || !type.startsWith("image/")) {
+        await hop.res.body?.cancel().catch(() => {});
+        if (hop.res.status === 404 || hop.res.status === 410 || (hop.res.ok && !type.startsWith("image/"))) return null;
+        continue;
       }
-      chunks.push(value);
+      const data = await readCapped(hop.res, maxBytes, "fail");
+      if (!data) return null;
+      remember(url.hostname, id);
+      return { data, type };
+    } catch (e) {
+      if (e instanceof Error && /protocol|port|credentials|private address/.test(e.message)) return null;
     }
-    return { data: Buffer.concat(chunks), type };
   }
   return null;
 }

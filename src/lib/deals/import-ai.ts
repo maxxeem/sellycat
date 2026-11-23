@@ -4,11 +4,13 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import sharp from "sharp";
 import { z } from "zod";
 import { fetchImage, fetchText, BlockedError } from "@/lib/net/safe-fetch";
-import { parseProductPage, type DraftBlock, type PageFacts } from "./import-parse";
+import { hasContent, parseFetchedText, parseProductPage, type DraftBlock, type PageFacts } from "./import-parse";
 
 /**
  * AI deal import: reads a product page (through the SSRF-safe fetch), shows Claude the text and
  * the candidate images, and gets back a deal draft in the shop's language. Needs ANTHROPIC_API_KEY.
+ * When we cannot read the page ourselves (bot protection, timeouts, pages built only by
+ * JavaScript), Claude's web fetch reads it from Anthropic's side as a second way in.
  */
 export const aiImportConfigured = () => Boolean(process.env.ANTHROPIC_API_KEY);
 
@@ -20,6 +22,7 @@ const PAGE_TIMEOUT_MS = 20_000;
 const IMAGE_TIMEOUT_MS = 15_000;
 const AI_TIMEOUT_MS = 110_000;
 const AI_SECOND_TRY_UNTIL_MS = 150_000;
+const WEB_FETCH_TIMEOUT_MS = 60_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const Draft = z.object({
@@ -83,16 +86,46 @@ async function thumbnails(urls: string[]): Promise<Array<{ full: Buffer; thumb: 
   return out;
 }
 
-/** The page, with up to three tries (timeouts and network errors); blocked pages are not retried. */
+/** The page, with up to two tries (timeouts and network errors); blocked pages are not retried. */
 async function loadPage(url: string): Promise<{ url: URL; text: string } | null> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const page = await fetchText(url, "text/html,application/xhtml+xml", 2_500_000, PAGE_TIMEOUT_MS);
+      const page = await fetchText(url, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", 3_000_000, PAGE_TIMEOUT_MS);
       if (page) return page;
     } catch (e) {
       if (e instanceof BlockedError) throw e;
+      if (e instanceof Error && /protocol|port|credentials|private address/.test(e.message)) return null;
     }
-    if (attempt < 2) await sleep(1000 * (attempt + 1));
+    if (attempt < 1) await sleep(1500);
+  }
+  return null;
+}
+
+/**
+ * The page as Claude's web fetch sees it (front matter + Markdown), or null when Anthropic cannot
+ * read it either. Only the one URL the customer entered is fetched (allowed domain = its host).
+ */
+async function fetchViaClaude(client: Anthropic, url: string): Promise<PageFacts | null> {
+  try {
+    const host = new URL(url).hostname;
+    const response = await client.messages.create(
+      {
+        model: MODEL,
+        max_tokens: 2000,
+        output_config: { effort: "low" },
+        tools: [{ type: "web_fetch_20260209", name: "web_fetch", max_uses: 1, allowed_domains: [host], max_content_tokens: 40_000 }],
+        messages: [{ role: "user", content: `Fetch this page with web_fetch, then answer only "done". Do not fetch anything else.\n${url}` }],
+      },
+      { timeout: WEB_FETCH_TIMEOUT_MS, maxRetries: 1 },
+    );
+    for (const block of response.content) {
+      if (block.type !== "web_fetch_tool_result" || block.content.type !== "web_fetch_result") continue;
+      const source = block.content.content.source;
+      if (source.type !== "text" || !source.data.trim()) continue;
+      return parseFetchedText(source.data, block.content.url || url);
+    }
+  } catch (e) {
+    console.error("[deal import] web fetch", e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : e instanceof Error ? e.message : e);
   }
   return null;
 }
@@ -137,18 +170,35 @@ async function ask(client: Anthropic, locale: "de" | "en", content: Anthropic.Be
   }
 }
 
-export async function importFromPage(url: string, locale: "de" | "en"): Promise<{ ok: true; draft: Imported } | { ok: false; error: ImportError }> {
+/**
+ * `pasted`: the page text the customer copied from their browser, for sites that let no robot
+ * in (then nothing is fetched and the draft has no images).
+ */
+export async function importFromPage(url: string, locale: "de" | "en", pasted?: string): Promise<{ ok: true; draft: Imported } | { ok: false; error: ImportError }> {
   if (!aiImportConfigured()) return { ok: false, error: "not_configured" };
   const started = Date.now();
-  let page;
-  try {
-    page = await loadPage(url);
-  } catch (e) {
-    return { ok: false, error: e instanceof BlockedError ? "blocked" : "unreachable" };
+  const client = new Anthropic({ maxRetries: 2, timeout: AI_TIMEOUT_MS });
+  let facts: PageFacts | null = pasted?.trim() ? { url, title: null, description: null, product: null, text: pasted.trim().slice(0, 24_000), images: [] } : null;
+  let failure: "blocked" | "unreachable" = "unreachable";
+  if (!facts) {
+    try {
+      const page = await loadPage(url);
+      if (page) facts = parseProductPage(page.text, page.url.toString());
+    } catch (e) {
+      if (e instanceof BlockedError) failure = "blocked";
+    }
   }
-  if (!page) return { ok: false, error: "unreachable" };
-  const facts = parseProductPage(page.text, page.url.toString());
-  if (facts.text.length < 80 && !facts.product) return { ok: false, error: "nothing" };
+  // Our own request was refused, timed out or found only an empty JavaScript shell: let
+  // Anthropic's web fetch try. What we did get (e.g. images, price) is kept.
+  if (!pasted?.trim() && (!facts || !hasContent(facts))) {
+    const fetched = await fetchViaClaude(client, url);
+    if (fetched && hasContent(fetched)) {
+      facts = facts
+        ? { ...fetched, title: fetched.title ?? facts.title, description: fetched.description ?? facts.description, product: facts.product ?? fetched.product, images: [...new Set([...facts.images, ...fetched.images])] }
+        : fetched;
+    }
+  }
+  if (!facts || (pasted?.trim() ? facts.text.length < 40 : !hasContent(facts))) return { ok: false, error: facts ? "nothing" : failure };
   const images = await thumbnails(facts.images);
 
   const summary = [
@@ -168,7 +218,6 @@ export async function importFromPage(url: string, locale: "de" | "en"): Promise<
   });
   withImages.push({ type: "text", text: images.length ? `Write the deal draft. Choose images by their number (0 to ${images.length - 1}).` : "Write the deal draft. There are no usable images: return an empty image list." });
 
-  const client = new Anthropic({ maxRetries: 2, timeout: AI_TIMEOUT_MS });
   let answer = await ask(client, locale, withImages);
   // Second try without the photos (an unusual image can make the request fail); the photos are
   // then taken in page order.
