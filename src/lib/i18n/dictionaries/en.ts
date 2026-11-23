@@ -102,7 +102,7 @@ export const en = {
       publishAskAdmin: "Owners or admins can publish the shop.",
       needsLegal: "Your shop is online but shows “This shop opens soon” until imprint, terms and privacy are in place.",
       cardTitle: "Online status",
-      cardIntro: "Take your shop offline for a while or put it back online. You can edit the note visitors see meanwhile here.",
+      cardIntro: "Take your shop offline for a while or put it back online. While it is offline, you can edit the note visitors see here.",
       statusOnline: "Your shop is online",
       statusBuilding: "Your shop is not online yet",
       statusClosed: "Your shop is offline",

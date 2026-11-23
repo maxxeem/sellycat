@@ -104,7 +104,7 @@ export const de: Dictionary = {
       publishAskAdmin: "Inhaber oder Admins können den Shop publizieren.",
       needsLegal: "Dein Shop ist online, zeigt aber erst «Dieser Shop öffnet bald», bis Impressum, AGB und Datenschutz hinterlegt sind.",
       cardTitle: "Online-Status",
-      cardIntro: "Nimm deinen Shop vorübergehend offline oder stelle ihn wieder online. Den Hinweis, den Besucher dann sehen, kannst du hier anpassen.",
+      cardIntro: "Nimm deinen Shop vorübergehend offline oder stelle ihn wieder online. Ist er offline, kannst du hier den Hinweis anpassen, den Besucher sehen.",
       statusOnline: "Dein Shop ist online",
       statusBuilding: "Dein Shop ist noch nicht online",
       statusClosed: "Dein Shop ist offline",

@@ -42,6 +42,8 @@ export function ShopStatus({ state, notice, defaults, name, theme }: { state: Sh
         )}
       </div>
 
+      {/* The «closed» note and its preview only while the shop is offline (they take a lot of room). */}
+      {state === "closed" ? (
       <form action={action} className="grid gap-6 xl:grid-cols-2">
         <section className="flex min-w-0 flex-col gap-3">
           <div>
@@ -67,6 +69,7 @@ export function ShopStatus({ state, notice, defaults, name, theme }: { state: Sh
           </div>
         </div>
       </form>
+      ) : null}
     </div>
   );
 }
