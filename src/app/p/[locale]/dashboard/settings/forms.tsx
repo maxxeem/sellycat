@@ -1,7 +1,9 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { useActionState, useTransition } from "react";
+import type { JSONContent } from "@tiptap/react";
+import { useActionState, useState, useTransition } from "react";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { Field, Input, Notice, Select, buttonClass, inputClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { LOCALE_LABEL, LOCALES } from "@/lib/i18n/locales";
@@ -105,16 +107,20 @@ export function BillingForm({ values }: { values: Record<string, string | null> 
   );
 }
 
-export function LegalForm({ values }: { values: { imprint: string; terms: string; privacy: string } }) {
+/** Imprint, terms and privacy with simple formatting; each document goes to the action as JSON. */
+export function LegalForm({ values }: { values: Record<"imprint" | "terms" | "privacy", JSONContent> }) {
   const { t } = useI18n();
   const s = t.settings;
   const [state, action, pending] = useActionState(saveLegal, null);
+  const [docs, setDocs] = useState(values);
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-5">
       {(["imprint", "terms", "privacy"] as const).map((k) => (
-        <Field key={k} label={s[k]}>
-          <textarea name={k} defaultValue={values[k]} rows={k === "imprint" ? 6 : 10} className={inputClass} data-testid={`legal-${k}`} />
-        </Field>
+        <div key={k} className="flex flex-col gap-1.5 text-sm" data-testid={`legal-${k}`}>
+          <span className="font-semibold">{s[k]}</span>
+          <input type="hidden" name={k} value={JSON.stringify(docs[k])} />
+          <RichTextEditor value={values[k]} onChange={(doc) => setDocs((d) => ({ ...d, [k]: doc }))} label={s[k]} tools="simple" minHeight={k === "imprint" ? "min-h-32" : "min-h-56"} />
+        </div>
       ))}
       <Status state={state} />
       <Submit pending={pending} />

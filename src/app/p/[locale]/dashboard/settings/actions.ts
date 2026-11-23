@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { refreshShop, requireTenant, str } from "@/lib/dashboard/context";
+import type { JSONContent } from "@tiptap/core";
 import { slugifyTitle } from "@/lib/shop/deal-input";
+import { docToPlain, isDoc } from "@/lib/shop/rich-text";
 
 export type FormState = { error?: string; ok?: boolean } | null;
 const done = (tenantId: string): FormState => {
@@ -49,9 +51,25 @@ export async function saveBilling(_: FormState, form: FormData): Promise<FormSta
   return error ? { error: error.message } : done(tenant.id);
 }
 
+/** A posted legal document (Tiptap JSON, at most 200 kB), or null. */
+function legalDoc(raw: FormDataEntryValue | null): JSONContent | null {
+  if (typeof raw !== "string" || raw.length > 200_000) return null;
+  try {
+    const doc = JSON.parse(raw) as unknown;
+    return isDoc(doc) ? doc : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveLegal(_: FormState, form: FormData): Promise<FormState> {
   const { tenant, supabase } = await requireTenant("admin");
-  const rows = (["imprint", "terms", "privacy"] as const).map((kind) => ({ tenant_id: tenant.id, kind, content: (form.get(kind) as string | null)?.slice(0, 100_000) ?? "" }));
+  const rows = (["imprint", "terms", "privacy"] as const).map((kind) => {
+    const doc = legalDoc(form.get(kind));
+    // The document for the shop, its plain text for the completeness check.
+    return { tenant_id: tenant.id, kind, content_doc: doc, content: docToPlain(doc).slice(0, 100_000) };
+  });
+  if (rows.some((r) => !r.content_doc)) return { error: "invalid" };
   const { error } = await supabase.from("legal_pages").upsert(rows, { onConflict: "tenant_id,kind" });
   return error ? { error: error.message } : done(tenant.id);
 }

@@ -143,13 +143,15 @@ export async function getShopCategories(tenantId: string): Promise<Array<{ name:
   return data ?? [];
 }
 
-export async function getLegalPage(tenantId: string, kind: "imprint" | "terms" | "privacy"): Promise<string | null> {
+/** A legal page: formatted HTML (from the document, known nodes only) or, for older pages, plain text. */
+export async function getLegalPage(tenantId: string, kind: "imprint" | "terms" | "privacy"): Promise<{ text: string; html: string } | null> {
   "use cache";
   cacheTag(`shop:${tenantId}`);
   cacheLife("hours");
   if (!UUID.test(tenantId) || !configured()) return null;
-  const { data } = await createPublicClient().from("legal_pages").select("content").eq("tenant_id", tenantId).eq("kind", kind).maybeSingle();
-  return data?.content ?? null;
+  const { data } = await createPublicClient().from("legal_pages").select("content, content_doc").eq("tenant_id", tenantId).eq("kind", kind).maybeSingle();
+  if (!data) return null;
+  return { text: data.content ?? "", html: data.content_doc ? docToHtml(data.content_doc) : "" };
 }
 
 /** Deals the listing shows right now. */

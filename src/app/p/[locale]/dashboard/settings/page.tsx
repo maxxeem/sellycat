@@ -8,6 +8,7 @@ import { ShopStatus } from "./shop-status";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { isShopState, type ShopNotice } from "@/lib/shop/shop-state";
 import { parseTheme } from "@/lib/shop/theme";
+import { isDoc, plainToDoc } from "@/lib/shop/rich-text";
 
 export const metadata = { title: "Settings" };
 
@@ -27,12 +28,16 @@ async function Settings({ t }: { t: Dictionary }) {
   const { tenant, supabase } = await requireTenant("admin");
   const [{ data: info }, { data: legal }, { data: categories }, { data: themeRow }] = await Promise.all([
     supabase.from("tenants").select("name, locale, mail_from_name, reply_to, shop_settings, billing, shop_state, shop_notice").eq("id", tenant.id).single(),
-    supabase.from("legal_pages").select("kind, content").eq("tenant_id", tenant.id),
+    supabase.from("legal_pages").select("kind, content, content_doc").eq("tenant_id", tenant.id),
     supabase.from("categories").select("id, name, slug").eq("tenant_id", tenant.id).order("sort_order").order("name"),
     supabase.from("shop_themes").select("published, draft, published_at").eq("tenant_id", tenant.id).maybeSingle(),
   ]);
   const shopLocale = info?.locale === "en" ? "en" : "de";
-  const legalMap = Object.fromEntries((legal ?? []).map((l) => [l.kind, l.content]));
+  // Older pages have plain text only: open them as a document with the same paragraphs and lines.
+  const legalDocFor = (kind: "imprint" | "terms" | "privacy") => {
+    const row = (legal ?? []).find((l) => l.kind === kind);
+    return isDoc(row?.content_doc) ? row.content_doc : plainToDoc(row?.content ?? "");
+  };
   const s = (info?.shop_settings ?? {}) as Record<string, string | null>;
   const b = (info?.billing ?? {}) as Record<string, string | null>;
   return (
@@ -72,7 +77,7 @@ async function Settings({ t }: { t: Dictionary }) {
         </Card>
       </div>
       <Card title={t.settings.legal} description={t.settings.legalHint} className="lg:col-span-2">
-        <LegalForm values={{ imprint: legalMap.imprint ?? "", terms: legalMap.terms ?? "", privacy: legalMap.privacy ?? "" }} />
+        <LegalForm values={{ imprint: legalDocFor("imprint"), terms: legalDocFor("terms"), privacy: legalDocFor("privacy") }} />
       </Card>
     </div>
   );

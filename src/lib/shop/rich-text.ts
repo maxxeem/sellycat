@@ -39,3 +39,30 @@ export function textToDoc(text: string): JSONContent {
   const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   return { type: "doc", content: paragraphs.map((p) => ({ type: "paragraph", content: [{ type: "text", text: p }] })) };
 }
+
+/** Plain text with line breaks → document: blank line = new paragraph, single line break kept. */
+export function plainToDoc(text: string): JSONContent {
+  const paragraphs = text.replace(/\r\n?/g, "\n").split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  return {
+    type: "doc",
+    content: paragraphs.length
+      ? paragraphs.map((p) => ({ type: "paragraph", content: p.split("\n").flatMap((line, i) => [...(i ? [{ type: "hardBreak" }] : []), ...(line ? [{ type: "text", text: line }] : [])]) }))
+      : [{ type: "paragraph" }],
+  };
+}
+
+/** Document → plain text with its structure (paragraphs, line breaks, list items). */
+export function docToPlain(doc: unknown): string {
+  if (!isDoc(doc)) return "";
+  const inline = (n: JSONContent): string => (n.type === "text" ? (n.text ?? "") : n.type === "hardBreak" ? "\n" : (n.content ?? []).map(inline).join(""));
+  const block = (n: JSONContent, prefix = ""): string[] => {
+    if (n.type === "bulletList" || n.type === "orderedList") {
+      const start = typeof n.attrs?.start === "number" ? n.attrs.start : 1;
+      return [(n.content ?? []).map((li, i) => block(li, n.type === "orderedList" ? `${start + i}. ` : "- ").join("\n")).join("\n")];
+    }
+    if (n.type === "listItem") return [(n.content ?? []).flatMap((c) => block(c)).map((t, i) => (i ? `  ${t}` : `${prefix}${t}`)).join("\n")];
+    if (n.type === "blockquote") return (n.content ?? []).flatMap((c) => block(c));
+    return [inline(n)];
+  };
+  return (doc.content ?? []).flatMap((n) => block(n)).map((t) => t.trim()).filter(Boolean).join("\n\n");
+}

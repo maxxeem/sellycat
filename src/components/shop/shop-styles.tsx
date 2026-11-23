@@ -49,9 +49,13 @@ export const SHOP_CSS = `
 .shop-prose p{margin:.75rem 0;}
 .shop-prose h2{font-family:var(--shop-font-heading);font-size:1.35rem;font-weight:700;margin:1.5rem 0 .5rem;}
 .shop-prose h3{font-family:var(--shop-font-heading);font-size:1.1rem;font-weight:700;margin:1.25rem 0 .5rem;}
-.shop-prose ul{list-style:disc;padding-left:1.25rem;}
-.shop-prose ol{list-style:decimal;padding-left:1.25rem;}
-.shop-prose li>p{margin:.25rem 0;}
+.shop-prose ul{list-style:disc outside;padding-left:1.5rem;margin:.75rem 0;}
+.shop-prose ol{list-style:decimal outside;padding-left:1.75rem;margin:.75rem 0;}
+.shop-prose ul ul{list-style-type:circle;margin:.25rem 0;}
+.shop-prose ol ol{margin:.25rem 0;}
+.shop-prose li{padding-left:.25rem;margin:.3rem 0;}
+.shop-prose li>p{margin:0;}
+.shop-prose li::marker{color:var(--shop-muted);}
 .shop-prose a{color:var(--shop-primary);text-decoration:underline;}
 .shop-prose blockquote{border-left:3px solid var(--shop-line);padding-left:1rem;color:var(--shop-muted);}
 .shop-root :focus-visible{outline:2px solid var(--shop-primary);outline-offset:2px;}

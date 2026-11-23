@@ -875,18 +875,21 @@ export type Database = {
       legal_pages: {
         Row: {
           content: string
+          content_doc: Json | null
           kind: Database["public"]["Enums"]["legal_kind"]
           tenant_id: string
           updated_at: string
         }
         Insert: {
           content?: string
+          content_doc?: Json | null
           kind: Database["public"]["Enums"]["legal_kind"]
           tenant_id: string
           updated_at?: string
         }
         Update: {
           content?: string
+          content_doc?: Json | null
           kind?: Database["public"]["Enums"]["legal_kind"]
           tenant_id?: string
           updated_at?: string
