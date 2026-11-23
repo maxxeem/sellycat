@@ -10,7 +10,22 @@ import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
  * Small rich text editor (Tiptap) with only the formatting the shop can render. `tools`: the full
  * set for deal descriptions, or the simple one for legal texts (bold, italic, underline, lists, links).
  */
-export function RichTextEditor({ value, onChange, label, tools = "full", minHeight = "min-h-40" }: { value: JSONContent | null; onChange: (doc: JSONContent) => void; label: string; tools?: "full" | "simple"; minHeight?: string }) {
+export function RichTextEditor({
+  value,
+  onChange,
+  label,
+  tools = "full",
+  minHeight = "min-h-40",
+  stickyToolbar,
+}: {
+  value: JSONContent | null;
+  onChange: (doc: JSONContent) => void;
+  label: string;
+  tools?: "full" | "simple";
+  minHeight?: string;
+  /** Keep the toolbar in view while scrolling through a long text: the `top-*` classes (below any sticky page bar). */
+  stickyToolbar?: string;
+}) {
   const { t } = useI18n();
   const r = t.richText;
   const editor = useEditor({
@@ -45,7 +60,7 @@ export function RichTextEditor({ value, onChange, label, tools = "full", minHeig
   const c = () => editor?.chain().focus();
   return (
     <div className="rounded-input border border-line bg-surface-2 focus-within:border-ink">
-      <div className="flex flex-wrap gap-0.5 border-b border-line p-1" role="toolbar" aria-label={label}>
+      <div className={`flex flex-wrap gap-0.5 rounded-t-input border-b border-line bg-surface-2 p-1 ${stickyToolbar ? `sticky z-20 ${stickyToolbar}` : ""}`} role="toolbar" aria-label={label}>
         {btn(state?.bold, () => c()?.toggleBold().run(), <Bold className="h-4 w-4" />, r.bold)}
         {btn(state?.italic, () => c()?.toggleItalic().run(), <Italic className="h-4 w-4" />, r.italic)}
         {tools === "simple" ? btn(state?.underline, () => c()?.toggleUnderline().run(), <Underline className="h-4 w-4" />, r.underline) : null}

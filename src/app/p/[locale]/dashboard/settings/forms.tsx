@@ -119,7 +119,7 @@ export function LegalForm({ values }: { values: Record<"imprint" | "terms" | "pr
         <div key={k} className="flex flex-col gap-1.5 text-sm" data-testid={`legal-${k}`}>
           <span className="font-semibold">{s[k]}</span>
           <input type="hidden" name={k} value={JSON.stringify(docs[k])} />
-          <RichTextEditor value={values[k]} onChange={(doc) => setDocs((d) => ({ ...d, [k]: doc }))} label={s[k]} tools="simple" minHeight={k === "imprint" ? "min-h-32" : "min-h-56"} />
+          <RichTextEditor value={values[k]} onChange={(doc) => setDocs((d) => ({ ...d, [k]: doc }))} label={s[k]} tools="simple" minHeight={k === "imprint" ? "min-h-32" : "min-h-56"} stickyToolbar="top-[66px] lg:top-0" />
         </div>
       ))}
       <Status state={state} />
