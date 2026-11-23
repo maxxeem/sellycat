@@ -10,18 +10,16 @@ describe("shop state", () => {
   });
 
   it("uses the shop's own texts, else the defaults", () => {
-    const t = noticeTexts({ closed_title: "Betriebsferien", closed_text: "  " }, defaults);
+    const t = noticeTexts({ closed_title: "Betriebsferien", closed_text: "  ", building_title: "ignored" } as never, defaults);
     expect(t.closed).toEqual({ title: "Betriebsferien", text: "Schau bitte später wieder vorbei." });
     expect(t.building).toEqual(defaults.building);
     expect(noticeTexts(null, defaults)).toEqual(defaults);
   });
 
-  it("stores trimmed texts, cut to length, empty as null", () => {
-    const form: Record<string, string> = { building_title: "  Neu  hier ", building_text: "", closed_title: "x".repeat(200) };
+  it("stores only the closed texts, trimmed and cut to length, empty as null", () => {
+    const form: Record<string, string> = { building_title: "Neu", closed_title: "x".repeat(200), closed_text: "  Bis  bald " };
     const n = parseNotice((k) => form[k]);
-    expect(n.building_title).toBe("Neu hier");
-    expect(n.building_text).toBeNull();
-    expect(n.closed_title).toHaveLength(80);
-    expect(n.closed_text).toBeNull();
+    expect(n).toEqual({ closed_title: "x".repeat(80), closed_text: "Bis bald" });
+    expect(parseNotice(() => "").closed_title).toBeNull();
   });
 });

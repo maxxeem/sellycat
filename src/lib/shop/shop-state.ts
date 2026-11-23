@@ -6,21 +6,22 @@ export const SHOP_STATES = ["building", "online", "closed"] as const;
 export type ShopState = (typeof SHOP_STATES)[number];
 export const isShopState = (v: unknown): v is ShopState => typeof v === "string" && (SHOP_STATES as readonly string[]).includes(v);
 
-export const NOTICE_KEYS = ["building_title", "building_text", "closed_title", "closed_text"] as const;
+/** Only the «closed» note is the shop's own; «a new shop is coming» is always Sellycat's text. */
+export const NOTICE_KEYS = ["closed_title", "closed_text"] as const;
 export type NoticeKey = (typeof NOTICE_KEYS)[number];
 export type ShopNotice = Partial<Record<NoticeKey, string | null>>;
-export const NOTICE_MAX = { building_title: 80, building_text: 300, closed_title: 80, closed_text: 300 } as const;
+export const NOTICE_MAX = { closed_title: 80, closed_text: 300 } as const;
 
 type Defaults = { building: { title: string; text: string }; closed: { title: string; text: string } };
 
-/** The texts a note shows: the shop's own, else the default of the shop's language. */
+/** The texts a note shows: the shop's own «closed» texts, else the defaults of the shop's language. */
 export function noticeTexts(notice: ShopNotice | null | undefined, defaults: Defaults) {
   const pick = (key: NoticeKey, fallback: string) => {
     const v = notice?.[key]?.trim();
     return v ? v : fallback;
   };
   return {
-    building: { title: pick("building_title", defaults.building.title), text: pick("building_text", defaults.building.text) },
+    building: defaults.building,
     closed: { title: pick("closed_title", defaults.closed.title), text: pick("closed_text", defaults.closed.text) },
   };
 }

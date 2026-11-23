@@ -45,3 +45,32 @@ export function ShopStateSwitch({ state, className = "" }: { state: ShopState; c
     </span>
   );
 }
+
+/** «Publish shop» in the getting-started steps: the first time the shop goes online. */
+export function PublishShopButton() {
+  const { t } = useI18n();
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="inline-flex flex-col items-end gap-1">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            setFailed(false);
+            const r = await setShopState("online");
+            if (!r.ok) setFailed(true);
+            router.refresh();
+          })
+        }
+        className={buttonClass.primary}
+        data-testid="shop-publish"
+      >
+        <Rocket className="h-4 w-4" aria-hidden /> {pending ? "…" : t.dashboard.shopState.publish}
+      </button>
+      {failed ? <span className="text-xs text-danger">{t.common.error}</span> : null}
+    </span>
+  );
+}

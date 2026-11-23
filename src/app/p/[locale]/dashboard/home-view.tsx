@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, Check, CreditCard, Handshake, Palette, Receipt, Scale, Tag, Ticket, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, CreditCard, Handshake, Palette, Receipt, Rocket, Scale, Tag, Ticket, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Storefront } from "@phosphor-icons/react/dist/ssr";
 import { Badge, buttonClass } from "@/components/ui";
 import { fmt, type Dictionary } from "@/lib/i18n";
@@ -9,7 +9,7 @@ import { trend, type Figure, type Overview } from "@/lib/dashboard/overview";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { NewDealButton } from "./deals/new-deal-button";
 import { CopyLink } from "./copy-link";
-import { ShopStateSwitch } from "./shop-state-switch";
+import { PublishShopButton } from "./shop-state-switch";
 import type { ShopState } from "@/lib/shop/shop-state";
 
 type Icon = ComponentType<{ className?: string; strokeWidth?: number }>;
@@ -45,7 +45,10 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, shopState, 
     { label: t.dashboard.setup.deal, done: setup.deal, href: "/dashboard/deals", icon: Tag },
     { label: t.dashboard.setup.payments, done: setup.payments, href: "/dashboard/payments", icon: CreditCard },
   ];
-  const done = steps.filter((s) => s.done).length;
+  // The last step: publishing the shop (until then visitors see «a new shop is coming»).
+  const published = shopState !== "building";
+  const total = steps.length + 1;
+  const done = steps.filter((s) => s.done).length + (published ? 1 : 0);
   const online = shopState === "online";
   const st = t.dashboard.shopState;
 
@@ -74,7 +77,6 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, shopState, 
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 *:w-full *:px-2 sm:flex sm:flex-wrap sm:*:w-auto sm:*:px-4 [&>*:last-child]:col-span-2">
-            {canManage ? <ShopStateSwitch state={shopState} className="col-span-2 *:w-full sm:*:w-auto" /> : null}
             <a href={shopUrl} target="_blank" rel="noreferrer" className={buttonClass.secondary}>
               <Storefront className="h-4 w-4" aria-hidden /> {t.dashboard.openShop}
             </a>
@@ -84,10 +86,16 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, shopState, 
         </div>
         {!online ? (
           <p className="border-t border-line px-5 py-3 text-sm text-muted sm:px-7" data-testid="shop-state-hint">
-            {shopState === "closed" ? st.closedHint : st.buildingHint}{" "}
-            <Link href="/dashboard/settings#shop-status" className="font-semibold text-accent-text hover:underline">
-              {st.editTexts}
-            </Link>
+            {shopState === "closed" ? (
+              <>
+                {st.closedHint}{" "}
+                <Link href="/dashboard/settings#shop-status" className="font-semibold text-accent-text hover:underline">
+                  {st.toSettings}
+                </Link>
+              </>
+            ) : (
+              st.buildingHint
+            )}
           </p>
         ) : !setup.legal ? (
           // Online, but the shop lists no deals before imprint, terms and privacy are in place.
@@ -100,17 +108,17 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, shopState, 
         ) : null}
       </section>
 
-      {done < steps.length ? (
-        <section className="rounded-card border border-line bg-surface-2 p-5 shadow-card sm:p-6" data-testid="setup">
+      {done < total ? (
+        <section id="setup" className="scroll-mt-24 rounded-card border border-line bg-surface-2 p-5 shadow-card sm:p-6" data-testid="setup">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-base font-semibold">{t.dashboard.setup.title}</h2>
               <p className="text-sm text-muted">{h.setupHint}</p>
             </div>
-            <p className="text-sm font-semibold">{fmt(h.progress, { done, total: steps.length })}</p>
+            <p className="text-sm font-semibold">{fmt(h.progress, { done, total })}</p>
           </div>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden>
-            <div className="h-full rounded-full bg-accent" style={{ width: `${(done / steps.length) * 100}%` }} />
+            <div className="h-full rounded-full bg-accent" style={{ width: `${(done / total) * 100}%` }} />
           </div>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {steps.map((s) => (
@@ -128,6 +136,19 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, shopState, 
               </li>
             ))}
           </ul>
+          <div
+            className={`mt-2 flex flex-wrap items-center gap-3 rounded-input border p-3 text-sm ${published ? "border-transparent text-muted" : "border-accent/40 bg-accent/5"}`}
+            data-testid="setup-publish"
+          >
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${published ? "bg-success/15 text-success" : "bg-accent text-ink"}`}>
+              {published ? <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Rocket className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className={`block ${published ? "line-through" : "font-semibold"}`}>{st.publishStep}</span>
+              {published ? null : <span className="block text-xs text-muted">{canManage ? st.publishHint : st.publishAskAdmin}</span>}
+            </span>
+            {!published && canManage ? <PublishShopButton /> : null}
+          </div>
         </section>
       ) : null}
 

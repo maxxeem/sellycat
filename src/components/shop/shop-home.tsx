@@ -17,6 +17,7 @@ export function ShopHome({
   activeCategory,
   inert = false,
   now,
+  notice,
 }: {
   shop: ShopInfo;
   theme: ShopTheme;
@@ -26,6 +27,8 @@ export function ShopHome({
   activeCategory?: string | null;
   inert?: boolean;
   now?: Date;
+  /** Instead of the deals (e.g. «This shop opens soon» while legal texts are missing); the hero stays. */
+  notice?: string;
 }) {
   const heroTitle = theme.hero.title || shop.name;
 
@@ -49,7 +52,11 @@ export function ShopHome({
         </section>
       ) : null}
 
+      {notice ? (
+        <p className="mx-auto max-w-xl px-4 py-24 text-center text-[var(--shop-muted)]" data-testid="shop-not-ready">{notice}</p>
+      ) : (
       <ShopDealList shop={shop} layout={theme.listLayout} t={t} deals={deals} categories={categories} activeCategory={activeCategory ?? null} inert={inert} now={now} />
+      )}
     </>
   );
 }

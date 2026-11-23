@@ -15,7 +15,8 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
   if (!shop) notFound();
   const t = shopTexts(shop.locale);
   if (shop.state !== "online") return <Gate shop={shop} />;
-  if (!shop.legalComplete) return <p className="mx-auto max-w-xl px-4 py-24 text-center text-[var(--shop-muted)]">{t.notReady}</p>;
+  // Online but imprint, terms or privacy missing: header and hero, no deals.
+  if (!shop.legalComplete) return <ShopHome shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }} theme={shop.theme} t={t} deals={[]} categories={[]} notice={t.notReady} />;
   if (category && !categories.some((c) => c.slug === category)) notFound();
   const base = shop.primaryHost ? `https://${shop.primaryHost}` : "";
   return (
