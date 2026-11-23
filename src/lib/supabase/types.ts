@@ -1463,6 +1463,7 @@ export type Database = {
         Row: {
           application_fee_bps: number
           application_fee_fixed: number
+          application_fee_min: number
           contact_only: boolean
           created_at: string
           id: string
@@ -1479,6 +1480,7 @@ export type Database = {
         Insert: {
           application_fee_bps?: number
           application_fee_fixed?: number
+          application_fee_min?: number
           contact_only?: boolean
           created_at?: string
           id: string
@@ -1495,6 +1497,7 @@ export type Database = {
         Update: {
           application_fee_bps?: number
           application_fee_fixed?: number
+          application_fee_min?: number
           contact_only?: boolean
           created_at?: string
           id?: string

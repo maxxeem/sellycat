@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Card, Notice, buttonClass } from "@/components/ui";
 import type { Currency } from "@/lib/billing/currency";
-import { feePercent, formatPrice, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
+import { feePercent, formatPrice, withFeeMin, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
 import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { choosePlan, keepPlan, openPortal, type BillingResult } from "./actions";
@@ -79,7 +79,7 @@ export function BillingPanel(props: { plans: PanelPlan[]; currentPlanId: string;
                   {p.contactOnly ? s.onRequest : free ? formatPrice(0, props.currency) : price !== null ? formatPrice(price, props.currency) : "–"}
                   {!p.contactOnly && !free && price !== null ? <span className="text-sm font-medium text-muted"> {s.perMonth}</span> : null}
                 </p>
-                <p className="text-sm font-semibold">{fmt(s.feeShort, { fee: feePercent(p.feeBps) })}</p>
+                <p className="text-sm font-semibold">{withFeeMin(fmt(s.feeShort, { fee: feePercent(p.feeBps) }), p.feeMin, props.currency, t.common.feeMin)}</p>
               </div>
               <ul className="flex flex-1 flex-col gap-1.5 text-sm">
                 <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />{p.limits.deals_live === null ? s.features.dealsUnlimited : fmt(s.features.deals, { count: p.limits.deals_live })}</li>

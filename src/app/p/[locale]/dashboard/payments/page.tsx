@@ -35,9 +35,9 @@ async function Payments({ t, locale, searchParams }: { t: Dictionary; locale: st
   const error = ERRORS.find((e) => e === sp.error);
   const [{ data: account }, { data: fee }] = await Promise.all([
     supabase.from("stripe_accounts").select("*").eq("tenant_id", tenant.id).maybeSingle(),
-    createAdminClient().from("tenants").select("currency, fee_override_bps, fee_override_fixed, plans(application_fee_bps, application_fee_fixed)").eq("id", tenant.id).single(),
+    createAdminClient().from("tenants").select("currency, fee_override_bps, fee_override_fixed, plans(application_fee_bps, application_fee_fixed, application_fee_min)").eq("id", tenant.id).single(),
   ]);
-  const plan = fee?.plans as unknown as { application_fee_bps: number; application_fee_fixed: number } | null;
+  const plan = fee?.plans as unknown as { application_fee_bps: number; application_fee_fixed: number; application_fee_min: number } | null;
   const bps = fee?.fee_override_bps ?? plan?.application_fee_bps ?? 0;
   const fixed = fee?.fee_override_fixed ?? plan?.application_fee_fixed ?? 0;
   const status = connectStatus(account);
@@ -99,7 +99,8 @@ async function Payments({ t, locale, searchParams }: { t: Dictionary; locale: st
       <Card title={t.payments.fee}>
         <p className="text-sm">
           {bps || fixed
-            ? fmt(t.payments.feeValue, { percent: (bps / 100).toLocaleString(locale === "de" ? "de-CH" : "en-CH"), fixed: formatMoney(fixed, fee?.currency ?? "CHF", locale) })
+            ? fmt(fixed ? t.payments.feeValue : t.payments.feeValueRate, { percent: (bps / 100).toLocaleString(locale === "de" ? "de-CH" : "en-CH"), fixed: formatMoney(fixed, fee?.currency ?? "CHF", locale) }) +
+              (plan?.application_fee_min ? `, ${fmt(t.common.feeMin, { amount: formatMoney(plan.application_fee_min, fee?.currency ?? "CHF", locale) })}` : "")
             : t.payments.feeNone}
         </p>
       </Card>

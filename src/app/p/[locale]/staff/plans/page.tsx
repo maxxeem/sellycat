@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Card, PageHeader, Skeleton } from "@/components/ui";
-import { feePercent, formatPrice } from "@/lib/billing/plans";
+import { feePercent, formatPrice, withFeeMin } from "@/lib/billing/plans";
 import { loadPlans } from "@/lib/billing/stripe";
 import { fmt, type Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
@@ -35,7 +35,7 @@ async function Plans({ t }: { t: Dictionary }) {
             `ID ${plan.id}`,
             fmt(p.shops, { count: count(plan.id) }),
             plan.contactOnly ? p.contactOnly : plan.prices.monthly.CHF !== undefined ? `${formatPrice(plan.prices.monthly.CHF, "CHF")} ${p.perMonth}` : null,
-            `${p.fee} ${feePercent(plan.feeBps)}`,
+            withFeeMin(`${p.fee} ${feePercent(plan.feeBps)}`, plan.feeMin, "CHF", t.common.feeMin),
             plan.stripe.price_month_id || plan.stripe.price_year_id ? p.inStripe : null,
           ]
             .filter(Boolean)

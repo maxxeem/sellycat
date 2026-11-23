@@ -72,7 +72,7 @@ function structuredData(locale: Locale, description: string, offers: { name: str
 async function loadPlans() {
   const { data } = await createPublicClient()
     .from("plans")
-    .select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, trial_days")
+    .select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, application_fee_min, trial_days")
     .eq("is_public", true)
     .order("sort_order");
   return (data ?? []).map(toPlan);

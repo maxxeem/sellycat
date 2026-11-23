@@ -2,6 +2,7 @@ import { siteEn } from "./site";
 /** English dictionary (fallback). Keys are grouped by area; de.ts must have the same shape. */
 export const en = {
   common: {
+    feeMin: "min. {amount}",
     brand: "Sellycat",
     login: "Log in",
     logout: "Log out",
@@ -717,6 +718,7 @@ export const en = {
     openItems: "Open items at Stripe: {count}",
     fee: "Sellycat fee",
     feeValue: "{percent}% + {fixed} per order",
+    feeValueRate: "{percent}% per order",
     feeNone: "No fee in your plan",
     testMode: "Test mode: no real money moves.",
     connected: "Stripe is connected.",

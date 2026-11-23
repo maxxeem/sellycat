@@ -24,6 +24,7 @@ export type PlanRow = {
   marketing: unknown;
   application_fee_bps: number;
   application_fee_fixed: number;
+  application_fee_min: number;
   trial_days: number;
 };
 export type Plan = {
@@ -37,6 +38,8 @@ export type Plan = {
   copy: Record<"de" | "en", PlanCopy>;
   feeBps: number;
   feeFixed: number;
+  /** Minimum fee per order in minor units (100 = 1 CHF/EUR/USD). */
+  feeMin: number;
   trialDays: number;
 };
 
@@ -84,6 +87,7 @@ export function toPlan(row: PlanRow): Plan {
     copy: parseCopy(row.marketing),
     feeBps: row.application_fee_bps,
     feeFixed: row.application_fee_fixed,
+    feeMin: row.application_fee_min ?? 0,
     trialDays: row.trial_days,
   };
 }
@@ -98,6 +102,17 @@ export function parseAmount(raw: string): number | null {
 
 /** "10 %" / "2.5 %" from basis points. */
 export const feePercent = (bps: number) => `${Number.isInteger(bps / 100) ? bps / 100 : (bps / 100).toFixed(2).replace(/0$/, "")} %`;
+
+/** "mind. CHF 1" from the minimum in minor units; `minText` is the dictionary's «mind. {amount}». */
+export function feeMinText(minMinor: number, currency: Currency, minText: string): string {
+  const v = minMinor / 100;
+  return minText.replace("{amount}", `${currency} ${Number.isInteger(v) ? v : v.toFixed(2)}`);
+}
+
+/** "19.5 % pro Verkauf, mind. CHF 1": a fee text with the minimum per sale appended (unchanged without one). */
+export function withFeeMin(text: string, minMinor: number, currency: Currency, minText: string): string {
+  return minMinor > 0 ? `${text}, ${feeMinText(minMinor, currency, minText)}` : text;
+}
 
 /** Percent as typed ("10", "2,5", "2.5 %") → basis points; NaN = invalid. */
 export function parsePercent(raw: string): number {

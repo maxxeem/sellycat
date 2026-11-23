@@ -24,7 +24,7 @@ export type PlanWithStripe = Plan & { stripe: PlanStripeIds; stripeRaw: unknown 
 export async function loadPlans(): Promise<PlanWithStripe[]> {
   const { data } = await createAdminClient()
     .from("plans")
-    .select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, trial_days, stripe")
+    .select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, application_fee_min, trial_days, stripe")
     .order("sort_order");
   const mode = billingMode();
   return (data ?? []).map((row) => ({ ...toPlan(row), stripe: idsForMode<PlanStripeIds>(row.stripe, mode), stripeRaw: row.stripe }));

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { currencyForCountry, currencyFromStripe } from "./currency";
 import { idsForMode, isDowngrade, planForPrice, stripeModeFor, tenantStateFromSubscription } from "./map";
-import { bookable, feePercent, formatPrice, isFree, parseAmount, parsePercent, parsePlanPrices, toPlan, yearlyPerMonth } from "./plans";
+import { bookable, feePercent, formatPrice, withFeeMin, isFree, parseAmount, parsePercent, parsePlanPrices, toPlan, yearlyPerMonth } from "./plans";
 
 const plans = [
   { id: "starter", stripe: { price_month_id: "p_s_m", price_year_id: "p_s_y" } },
   { id: "pro", stripe: { price_month_id: "p_p_m", price_year_id: "p_p_y" } },
 ];
 const row = (o: Partial<Parameters<typeof toPlan>[0]> = {}) =>
-  toPlan({ id: "starter", name: "Starter", sort_order: 1, is_public: true, contact_only: false, limits: { deals_live: 15, branding: false }, prices: { monthly: { CHF: 49, EUR: 49, USD: 49 }, yearly: { CHF: 468 } }, marketing: {}, application_fee_bps: 1000, application_fee_fixed: 0, trial_days: 7, ...o });
+  toPlan({ id: "starter", name: "Starter", sort_order: 1, is_public: true, contact_only: false, limits: { deals_live: 15, branding: false }, prices: { monthly: { CHF: 49, EUR: 49, USD: 49 }, yearly: { CHF: 468 } }, marketing: {}, application_fee_bps: 1000, application_fee_fixed: 0, application_fee_min: 0, trial_days: 7, ...o });
 
 describe("billing", () => {
   it("picks the currency by country: CHF in CH/LI, EUR in Europe, USD elsewhere", () => {
@@ -69,5 +69,13 @@ describe("billing", () => {
     expect(stripeModeFor("sk_test_x")).toBe("test");
     expect(idsForMode({ test: { product_id: "a" }, live: { product_id: "b" } }, "live")).toEqual({ product_id: "b" });
     expect(idsForMode(null, "test")).toEqual({});
+  });
+});
+
+describe("withFeeMin", () => {
+  it("appends the minimum per sale in the chosen currency", () => {
+    expect(withFeeMin("19.5 % pro Verkauf", 100, "CHF", "mind. {amount}")).toBe("19.5 % pro Verkauf, mind. CHF 1");
+    expect(withFeeMin("3.5 % per sale", 150, "EUR", "min. {amount}")).toBe("3.5 % per sale, min. EUR 1.50");
+    expect(withFeeMin("9.5 % per sale", 0, "USD", "min. {amount}")).toBe("9.5 % per sale");
   });
 });

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Field, Input, Notice, buttonClass, inputClass } from "@/components/ui";
 import { CURRENCIES, type Currency } from "@/lib/billing/currency";
-import { feePercent, formatPrice, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
+import { feePercent, formatPrice, withFeeMin, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { sendContact, type ContactState } from "./actions";
 import { Select } from "@/components/select";
@@ -84,7 +84,7 @@ export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]
                 ) : (
                   <p className="text-2xl font-bold">–</p>
                 )}
-                <p className="mt-1 text-sm font-semibold">{fmt(t.fee, { fee: feePercent(p.feeBps) })}</p>
+                <p className="mt-1 text-sm font-semibold">{withFeeMin(fmt(t.fee, { fee: feePercent(p.feeBps) }), p.feeMin, currency, getDictionary(locale).common.feeMin)}</p>
               </div>
               <ul className="flex flex-1 flex-col gap-2 text-sm">
                 {features(p).map((f) => (

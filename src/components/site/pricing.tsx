@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { SignupCta } from "@/lib/access/rules";
 import type { Currency } from "@/lib/billing/currency";
-import { feePercent, type Interval, type Plan } from "@/lib/billing/plans";
+import { feeMinText, feePercent, withFeeMin, type Interval, type Plan } from "@/lib/billing/plans";
 import type { Dictionary } from "@/lib/i18n";
 import { fmt } from "@/lib/i18n/fmt";
 import type { Locale } from "@/lib/i18n/locales";
@@ -17,11 +17,11 @@ const group = (n: number, locale: Locale) => String(Math.round(n)).replace(/\B(?
 const money = (v: number, locale: Locale) => (Number.isInteger(v) ? group(v, locale) : v.toFixed(2));
 
 /** Feature lines per card: the numbers always, switches only where they first appear ("Everything in X, plus"). */
-function cardLines(plan: Plan, previous: Plan | null, l: Labels): string[] {
+function cardLines(plan: Plan, previous: Plan | null, l: Labels, currency: Currency): string[] {
   const p = previous?.limits;
   const x = plan.limits;
   const out = [
-    fmt(l.fee, { fee: feePercent(plan.feeBps) }),
+    withFeeMin(fmt(l.fee, { fee: feePercent(plan.feeBps) }), plan.feeMin, currency, l.feeMin),
     x.deals_live === null ? l.dealsUnlimited : fmt(l.deals, { n: x.deals_live }),
     x.seats === 1 ? l.seatsOne : fmt(l.seats, { n: x.seats ?? "∞" }),
   ];
@@ -116,6 +116,7 @@ export function Pricing({ plans, labels, locale, currency, cta, ctaLabel }: { pl
               )}
               <p className="mt-5 self-start border-t border-fg/10 pt-5 text-sm text-fg/80">
                 <span className="font-semibold text-fg">{feePercent(plan.feeBps)}</span> {fmt(l.fee, { fee: "" }).trim()}
+                {plan.feeMin > 0 ? <span className="text-fg/55"> · {feeMinText(plan.feeMin, currency, l.feeMin)}</span> : null}
               </p>
               <div className="mt-6 flex flex-col gap-2 self-start">
                 {plan.contactOnly ? (
@@ -134,7 +135,7 @@ export function Pricing({ plans, labels, locale, currency, cta, ctaLabel }: { pl
               </div>
               <ul className="mt-7 flex flex-col gap-2.5 text-sm">
                 {i > 0 ? <li className="text-xs font-semibold uppercase tracking-wide text-fg/45">{fmt(l.plus, { plan: plans[i - 1].name })}</li> : null}
-                {cardLines(plan, plans[i - 1] ?? null, l).map((line) => (
+                {cardLines(plan, plans[i - 1] ?? null, l, currency).map((line) => (
                   <li key={line} className="flex items-start gap-2.5 text-fg/85">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-coral-text" aria-hidden />
                     <span>{line}</span>

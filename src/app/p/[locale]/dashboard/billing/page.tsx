@@ -3,7 +3,7 @@ import { Badge, Card, Notice, PageHeader, Skeleton, Table, tdClass, thClass } fr
 import { roleAtLeast } from "@/lib/auth/tenants";
 import { currencyForCountry, type Currency } from "@/lib/billing/currency";
 import { currencyFromRequest } from "@/lib/billing/currency-server";
-import { feePercent } from "@/lib/billing/plans";
+import { feePercent, withFeeMin } from "@/lib/billing/plans";
 import { customerCurrency, loadPlans, stripeConfigured } from "@/lib/billing/stripe";
 import { requireTenant } from "@/lib/dashboard/context";
 import { fmt, type Dictionary } from "@/lib/i18n";
@@ -63,7 +63,7 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
             {row.billing_interval ? <Badge>{s.intervals[row.billing_interval as "monthly" | "yearly"]}</Badge> : null}
           </div>
           <ul className="grid gap-1 text-sm text-muted sm:grid-cols-2">
-            <li>{fmt(s.feeLine, { fee: feePercent(fee) })}</li>
+            <li>{withFeeMin(fmt(s.feeLine, { fee: feePercent(fee) }), current.feeMin, currency, t.common.feeMin)}</li>
             <li>{current.limits.deals_live === null ? fmt(s.dealsUnlimited, { live: live ?? 0 }) : fmt(s.dealsUsage, { live: live ?? 0, limit: current.limits.deals_live })}</li>
             {status === "trialing" && row.current_period_end ? <li>{fmt(s.trialUntil, { date: date(row.current_period_end) })}</li> : null}
             {status === "active" && row.current_period_end && !row.cancel_at_period_end ? <li>{fmt(s.renews, { date: date(row.current_period_end) })}</li> : null}
@@ -75,7 +75,7 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
       </Card>
 
       <BillingPanel
-        plans={plans.filter((p) => p.isPublic || p.id === current.id).map((p) => ({ id: p.id, name: p.name, sortOrder: p.sortOrder, isPublic: p.isPublic, contactOnly: p.contactOnly, limits: p.limits, prices: p.prices, copy: p.copy, feeBps: p.feeBps, feeFixed: p.feeFixed, trialDays: p.trialDays, bookable: { monthly: Boolean(p.stripe.price_month_id), yearly: Boolean(p.stripe.price_year_id) } }))}
+        plans={plans.filter((p) => p.isPublic || p.id === current.id).map((p) => ({ id: p.id, name: p.name, sortOrder: p.sortOrder, isPublic: p.isPublic, contactOnly: p.contactOnly, limits: p.limits, prices: p.prices, copy: p.copy, feeBps: p.feeBps, feeFixed: p.feeFixed, feeMin: p.feeMin, trialDays: p.trialDays, bookable: { monthly: Boolean(p.stripe.price_month_id), yearly: Boolean(p.stripe.price_year_id) } }))}
         currentPlanId={current.id}
         currentInterval={(row.billing_interval as "monthly" | "yearly" | null) ?? null}
         hasSubscription={status !== "none" && status !== "canceled"}

@@ -4,6 +4,7 @@ import { siteDe } from "./site";
 /** Deutsch (Schweizer Schreibweise: ss statt ß). */
 export const de: Dictionary = {
   common: {
+    feeMin: "mind. {amount}",
     brand: "Sellycat",
     login: "Anmelden",
     logout: "Abmelden",
@@ -719,6 +720,7 @@ export const de: Dictionary = {
     openItems: "Offene Punkte bei Stripe: {count}",
     fee: "Sellycat-Gebühr",
     feeValue: "{percent}% + {fixed} pro Bestellung",
+    feeValueRate: "{percent}% pro Bestellung",
     feeNone: "Keine Gebühr in deinem Abo",
     testMode: "Testmodus: Es fliesst kein echtes Geld.",
     connected: "Stripe ist verbunden.",

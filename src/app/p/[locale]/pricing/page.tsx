@@ -46,7 +46,7 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
 
 async function Plans({ locale, searchParams }: { locale: "de" | "en"; searchParams: PageProps<"/p/[locale]/pricing">["searchParams"] }) {
   const [{ data }, located, sp] = await Promise.all([
-    createPublicClient().from("plans").select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, trial_days").eq("is_public", true).order("sort_order"),
+    createPublicClient().from("plans").select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, application_fee_min, trial_days").eq("is_public", true).order("sort_order"),
     currencyFromRequest(),
     searchParams,
   ]);
