@@ -1256,7 +1256,6 @@ export const en = {
     billingLabel: "Billing",
     intervals: { monthly: "Monthly", yearly: "Yearly" },
     yearlySave: "−{percent} %",
-    currencyLabel: "Currency",
     perMonth: "/ month",
     billedYearly: "{amount} billed yearly",
     billedMonthly: "billed monthly",

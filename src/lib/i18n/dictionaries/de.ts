@@ -1258,7 +1258,6 @@ export const de: Dictionary = {
     billingLabel: "Abrechnung",
     intervals: { monthly: "Monatlich", yearly: "Jährlich" },
     yearlySave: "−{percent} %",
-    currencyLabel: "Währung",
     perMonth: "/ Monat",
     billedYearly: "{amount} jährlich abgerechnet",
     billedMonthly: "monatlich abgerechnet",

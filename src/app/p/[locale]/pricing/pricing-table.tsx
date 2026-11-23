@@ -4,17 +4,15 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Field, Input, Notice, buttonClass, inputClass } from "@/components/ui";
-import { CURRENCIES, type Currency } from "@/lib/billing/currency";
+import type { Currency } from "@/lib/billing/currency";
 import { feePercent, formatPrice, withFeeMin, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { sendContact, type ContactState } from "./actions";
-import { Select } from "@/components/select";
 
 /** Plan cards with the monthly/yearly switch; Business opens the contact form. */
-export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]; locale: "de" | "en"; initialCurrency: Currency }) {
+export function PricingTable({ plans, locale, currency }: { plans: Plan[]; locale: "de" | "en"; currency: Currency }) {
   const t = getDictionary(locale).pricing;
   const [interval, setInterval] = useState<Interval>("yearly");
-  const [currency, setCurrency] = useState<Currency>(initialCurrency);
   const [contactPlan, setContactPlan] = useState<string | null>(null);
   const [state, action, pending] = useActionState<ContactState, FormData>(sendContact, null);
   // Largest yearly saving among the bookable plans (follows the prices staff sets).
@@ -48,13 +46,6 @@ export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]
             </button>
           ))}
         </div>
-        <Select size="sm" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} aria-label={t.currencyLabel}>
-          {CURRENCIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </Select>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-testid="pricing-plans">

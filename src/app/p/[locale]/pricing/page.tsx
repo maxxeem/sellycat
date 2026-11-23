@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Logo } from "@/components/brand";
 import { Skeleton, buttonClass } from "@/components/ui";
-import { isCurrency } from "@/lib/billing/currency";
 import { currencyFromRequest } from "@/lib/billing/currency-server";
 import { toPlan } from "@/lib/billing/plans";
 import { getDictionary } from "@/lib/i18n";
@@ -15,7 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 export const metadata: Metadata = { title: "Sellycat – Preise / Pricing" };
 
 /** Public pricing page: plans from the database (staff edits them), currency by location. */
-export default async function PricingPage({ params, searchParams }: PageProps<"/p/[locale]/pricing">) {
+export default async function PricingPage({ params }: PageProps<"/p/[locale]/pricing">) {
   const { locale: raw } = await params;
   const locale = isLocale(raw) ? raw : "en";
   const t = getDictionary(locale);
@@ -35,7 +34,7 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
         <h1 className="text-h2 text-balance text-center">{t.pricing.title}</h1>
         <p className="mx-auto mt-3 max-w-2xl text-center text-muted">{t.pricing.intro}</p>
         <Suspense fallback={<Skeleton className="mt-10 h-[32rem]" />}>
-          <Plans locale={locale} searchParams={searchParams} />
+          <Plans locale={locale} />
         </Suspense>
       </section>
       <SiteFooter />
@@ -44,13 +43,12 @@ export default async function PricingPage({ params, searchParams }: PageProps<"/
   );
 }
 
-async function Plans({ locale, searchParams }: { locale: "de" | "en"; searchParams: PageProps<"/p/[locale]/pricing">["searchParams"] }) {
-  const [{ data }, located, sp] = await Promise.all([
+async function Plans({ locale }: { locale: "de" | "en" }) {
+  // Currency only by location (CH/LI → CHF, Europe → EUR, elsewhere USD), no switcher.
+  const [{ data }, currency] = await Promise.all([
     createPublicClient().from("plans").select("id, name, sort_order, is_public, contact_only, limits, prices, marketing, application_fee_bps, application_fee_fixed, application_fee_min, trial_days").eq("is_public", true).order("sort_order"),
     currencyFromRequest(),
-    searchParams,
   ]);
-  const chosen = typeof sp.currency === "string" ? sp.currency.toUpperCase() : null;
   const plans = (data ?? []).map(toPlan);
-  return <PricingTable plans={plans} locale={locale} initialCurrency={isCurrency(chosen) ? chosen : located} />;
+  return <PricingTable plans={plans} locale={locale} currency={currency} />;
 }
