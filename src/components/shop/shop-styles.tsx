@@ -12,6 +12,17 @@ export function themeAttrs(theme: ShopTheme) {
 }
 
 /**
+ * Page chrome of a shop (not the editor preview): native scrollbar, form controls and the
+ * overscroll area follow the theme instead of the browser's default light grey. Colours are
+ * validated hex values from the theme.
+ */
+export function pageChromeCss(theme: ShopTheme): string {
+  const bg = theme.colors.background;
+  const thumb = `color-mix(in srgb, ${theme.colors.text} 32%, ${bg})`;
+  return `html{color-scheme:${theme.mode === "dark" ? "dark" : "light"};background:${bg};scrollbar-color:${thumb} ${bg};}body{background:${bg};}`;
+}
+
+/**
  * Component classes of the shop, written once against the --shop-* variables. Kept as a plain
  * stylesheet so the editor preview and the shop render identically.
  * Next 16 keeps the previous page mounted but hidden (inline `display: none`), so the header

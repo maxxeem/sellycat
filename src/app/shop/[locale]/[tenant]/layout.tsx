@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { ConsentBanner } from "@/components/shop/consent";
 import { ShopFrame } from "@/components/shop/shop-frame";
-import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles";
+import { SHOP_CSS, pageChromeCss, themeAttrs, themeStyle } from "@/components/shop/shop-styles";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { getShopProfile } from "@/lib/shop/queries";
 import { themeFontCss } from "@/lib/shop/theme";
@@ -48,7 +48,7 @@ async function Shell({ tenant, children }: { tenant: Promise<string>; children: 
       {links.map((href) => (
         <link key={href} rel="stylesheet" href={href} precedence="default" />
       ))}
-      <style>{SHOP_CSS + inlined.join("") + fonts.faces}</style>
+      <style>{SHOP_CSS + pageChromeCss(shop.theme) + inlined.join("") + fonts.faces}</style>
       <ShopFrame name={shop.name} theme={shop.theme} t={t} contact={{ email: shop.settings.contact_email, phone: shop.settings.contact_phone }} branding={shop.settings.branding === true} cookieSettings={Boolean(shop.settings.ga4_id || shop.settings.meta_pixel_id)}>
         {children}
       </ShopFrame>
