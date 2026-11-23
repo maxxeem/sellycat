@@ -77,7 +77,7 @@ export function Bands({ labels, locale }: { labels: Labels; locale: Locale }) {
         })}
       </div>
       {/* The still element in the middle: a large phone with the purchase case, on a soft veil; the bands run
-          behind it on every screen size, as on desktop. */}
+          behind it from 600 px up; classic phone widths show the phone alone (site.css). */}
       <div className="band-centre pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden>
         <span className="band-veil absolute left-1/2 top-1/2 h-[190%] w-[400%] -translate-x-1/2 -translate-y-1/2 rounded-full" />
         <div ref={phone} className="band-phone relative rounded-[3rem] bg-site-ground/40 p-3 backdrop-blur-sm">

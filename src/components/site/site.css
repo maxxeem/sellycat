@@ -104,6 +104,8 @@
 /* Light page: a narrower, softer veil, so the photos beside the phone keep their colour. */
 .site:not(.site-dark) .band-veil { background: radial-gradient(closest-side, rgb(var(--ground-rgb) / 0.95), rgb(var(--ground-rgb) / 0.7) 30%, rgb(var(--ground-rgb) / 0.2) 50%, transparent 62%); }
 .band-grid { display: none; }
+/* Classic phone width: only the phone, no deal bands behind it (too busy); from 600 px (foldables, tablets) the bands run. */
+@media (max-width: 599px) { .band-rows, .band-veil { display: none; } .band-centre { position: relative; left: auto; top: auto; translate: none; display: flex; justify-content: center; } }
 @media (prefers-reduced-motion: reduce) { .band-kenburns { animation: none; } .band-rows, .band-centre { display: none; } .band-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding-inline: var(--fs-inset, 2rem); max-width: 72rem; margin-inline: auto; } .band-grid .band-card { width: auto; } }
 
 /* Numbers (stat boxes): quiet glass with a faint coral glow at the top edge, lifted slightly on hover. */
