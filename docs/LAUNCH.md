@@ -1,6 +1,6 @@
-# Launch-Check (Stand 20.11.2026)
+# Launch-Check (Stand 23.11.2026)
 
-Ergebnis: **Die Software ist bereit, die Production-Umgebung gibt es noch nicht.** Staging läuft vollständig. Für Production fehlen Datenbank, Variablen, Domain und die Live-Konten. Die Schritte unten der Reihe nach; ✅ = erledigt, ⬜ = offen, 👤 = nur Jan (Konten, Zahlungen, Verträge).
+Ergebnis: **Production läuft seit 23.11.2026 unter https://sellycat.com** (Landing, Preise, Hilfe, Login; Registrierung pausiert, nur Warteliste). Es fehlen noch Stripe Live, eigenes SMTP für Auth-Mails, Google-Anmeldung, der erste Staff-Admin und das GitHub-Secret für die Migrationen. Die Schritte unten der Reihe nach; ✅ = erledigt, ⬜ = offen, 👤 = nur Jan (Konten, Zahlungen, Verträge).
 
 ## 1. Qualität (erledigt)
 
@@ -11,17 +11,18 @@ Ergebnis: **Die Software ist bereit, die Production-Umgebung gibt es noch nicht.
 
 ## 2. Datenbank Production
 
-- ⬜👤 Supabase-Projekt `sellycat-production` anlegen (Region eu-central-1 Frankfurt, Pro-Plan für tägliche Backups/PITR).
-- ⬜ GitHub: Variable `SUPABASE_REF_PRODUCTION`, Secret `SUPABASE_DB_PASSWORD_PRODUCTION` (der Workflow `migrations.yml` spielt bei Push auf `release` alle Migrationen ein).
-- ⬜ Auth-Einstellungen wie Staging: Site URL `https://sellycat.com`, Redirect-URLs nur `https://sellycat.com/**` und `https://*.sellycat.com/**` (keine fremden Wildcards), SMTP über Mailgun, Mail-Vorlagen, Rate-Limits, «Confirm email» an.
-- ⬜ Supabase Auth → Sign In / Providers: «Allow manual linking» einschalten (für Google verbinden/trennen im Profil; Staging erledigt 21.11.2026).
+- ✅ Supabase-Projekt `sellycat-production` (Ref `amwifeqdcqkmjofxhsyz`, eu-central-1, Organisation «105» Pro), alle Migrationen eingespielt (23.11.2026). Zugang lokal in `.env.local` (`SUPABASE_PRODUCTION_*`, Pooler `aws-0-eu-central-1`).
+- ✅ GitHub-Variable `SUPABASE_REF_PRODUCTION`.
+- ⬜👤 GitHub-Secret `SUPABASE_DB_PASSWORD_PRODUCTION` (Wert = `SUPABASE_PRODUCTION_DB_PASSWORD` aus `.env.local`), sonst schlägt `migrations.yml` bei Push auf `release` fehl.
+- ✅ Auth: Site URL `https://sellycat.com`, Redirect-URLs `https://sellycat.com/**` und `https://*.sellycat.com/**`, «Confirm email» an, «Allow manual linking» an.
+- ⬜👤 Eigenes SMTP (Mailgun, `mail.sellycat.com`) unter Authentication → Emails → SMTP Settings. Ohne eigenes SMTP verschickt Supabase Auth-Mails nur an Mitglieder der Organisation (auch Staging hat noch keins). Mail-Vorlagen sind Supabase-Standard (wie Staging).
 - ⬜ Google-Anmeldung: in Google Cloud einen OAuth-Client (Web) mit Redirect-URI `https://<projekt>.supabase.co/auth/v1/callback` anlegen, Client-ID und -Secret in Supabase → Authentication → Providers → Google eintragen (je für Staging und Production).
 - ⬜ Storage-Buckets kommen aus den Migrationen; prüfen, dass `shop-media` öffentlich und `support` privat ist.
-- ⬜ Erster Staff-Admin (`npm run seed:staging` nur für Staging; Production: Admin von Hand anlegen und in `platform_staff` eintragen, TOTP einrichten).
+- ⬜ Erster Staff-Admin: Konto per Einladung anlegen, in `platform_staff` eintragen, TOTP einrichten (Registrierung ist in Production pausiert, `signup_mode = paused`).
 
 ## 3. Vercel Production (Branch `release`)
 
-Auf Vercel sind heute **nur Preview-Variablen** gesetzt. Für Production (Ziel «Production») neu setzen, mit Live-Werten:
+✅ Gesetzt am 23.11.2026: `NEXT_PUBLIC_SITE_URL`, Supabase (Production-Projekt), neues `CRON_SECRET`; Wallet, Mailgun, Places, Anthropic und Vercel-IDs teilen sich die Werte mit Preview. **Offen sind nur die Stripe-Variablen** (Zahlungen und Abos sind bis dahin aus).
 
 | Variable | Hinweis |
 | --- | --- |
@@ -52,7 +53,7 @@ Auf Vercel sind heute **nur Preview-Variablen** gesetzt. Für Production (Ziel �
 
 ## 5. Domain und Mail
 
-- ⬜👤 DNS bei GoDaddy: `sellycat.com` und `www` auf Vercel; für Shops entweder Nameserver zu Vercel (dann Wildcard `*.sellycat.com` mit Zertifikat) oder wie bei Staging jede Shop-Subdomain einzeln (geschieht automatisch über die Vercel-API).
+- ✅ DNS bei Cloudflare (23.11.2026, alles «DNS only»): `sellycat.com` A 216.150.1.1 / 216.150.16.1, `www` CNAME auf Vercel (308 auf `sellycat.com`), `*.sellycat.com` CNAME auf Vercel; Shop-Subdomains meldet die App einzeln bei Vercel an (Zertifikat pro Shop). MX (Cloudflare Email Routing) und Mailgun-Einträge unverändert.
 - ⬜ Mailgun: `mail.sellycat.com` verifiziert (SPF, DKIM, MX, Tracking aus), DMARC-Eintrag für `sellycat.com`.
 - ⬜ Apple Wallet Web-Service-URL zeigt auf `https://sellycat.com/api/passkit` (aus `NEXT_PUBLIC_SITE_URL`).
 
