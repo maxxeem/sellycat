@@ -2232,7 +2232,9 @@ export type Database = {
           plan_id: string
           plan_parent_id: string | null
           reply_to: string | null
+          shop_notice: Json
           shop_settings: Json
+          shop_state: string
           slug: string
           status: Database["public"]["Enums"]["tenant_status"]
           stripe_customer_id: string | null
@@ -2263,7 +2265,9 @@ export type Database = {
           plan_id?: string
           plan_parent_id?: string | null
           reply_to?: string | null
+          shop_notice?: Json
           shop_settings?: Json
+          shop_state?: string
           slug: string
           status?: Database["public"]["Enums"]["tenant_status"]
           stripe_customer_id?: string | null
@@ -2294,7 +2298,9 @@ export type Database = {
           plan_id?: string
           plan_parent_id?: string | null
           reply_to?: string | null
+          shop_notice?: Json
           shop_settings?: Json
+          shop_state?: string
           slug?: string
           status?: Database["public"]["Enums"]["tenant_status"]
           stripe_customer_id?: string | null
@@ -3196,6 +3202,8 @@ export type Database = {
           payments_ready: boolean
           primary_host: string
           settings: Json
+          shop_notice: Json
+          shop_state: string
           slug: string
           tenant_id: string
           theme: Json

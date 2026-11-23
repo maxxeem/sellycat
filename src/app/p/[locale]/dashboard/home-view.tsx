@@ -9,6 +9,8 @@ import { trend, type Figure, type Overview } from "@/lib/dashboard/overview";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { NewDealButton } from "./deals/new-deal-button";
 import { CopyLink } from "./copy-link";
+import { ShopStateSwitch } from "./shop-state-switch";
+import type { ShopState } from "@/lib/shop/shop-state";
 
 type Icon = ComponentType<{ className?: string; strokeWidth?: number }>;
 
@@ -18,6 +20,10 @@ export type HomeData = {
   userName: string;
   tenantName: string;
   shopUrl: string;
+  /** building (not opened yet) | online | closed (taken offline). */
+  shopState: ShopState;
+  /** Owner/admin: may switch the shop online/offline. */
+  canManage: boolean;
   /** The shop's primary colour and logo (tint of the shop card). */
   brand: string;
   /** Logo variants for light and dark backgrounds (either may be missing). */
@@ -30,7 +36,7 @@ export type HomeData = {
 };
 
 /** Dashboard start page: shop card, getting started (until done), key figures, recent orders, shortcuts. */
-export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logos, currency, setup, liveDeals, stats, recent }: HomeData) {
+export function HomeView({ t, locale, userName, tenantName, shopUrl, shopState, canManage, brand, logos, currency, setup, liveDeals, stats, recent }: HomeData) {
   const h = t.dashboard.home;
   const money = (cents: number) => formatMoney(cents, currency, locale);
   const steps: Array<{ label: string; done: boolean; href: string; icon: Icon }> = [
@@ -40,7 +46,8 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
     { label: t.dashboard.setup.payments, done: setup.payments, href: "/dashboard/payments", icon: CreditCard },
   ];
   const done = steps.filter((s) => s.done).length;
-  const online = setup.legal && setup.deal;
+  const online = shopState === "online";
+  const st = t.dashboard.shopState;
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,9 +63,9 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
               <p className="text-sm text-muted">{fmt(t.dashboard.welcome, { name: userName })}</p>
               <h1 className="truncate text-2xl font-bold tracking-tight">{tenantName}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                <span className={`inline-flex items-center gap-1.5 font-semibold ${online ? "text-success" : "text-warn"}`}>
-                  <span className={`h-2 w-2 rounded-full ${online ? "bg-success" : "bg-warn"}`} />
-                  {online ? h.online : h.offline}
+                <span className={`inline-flex items-center gap-1.5 font-semibold ${online ? "text-success" : shopState === "closed" ? "text-danger" : "text-warn"}`} data-testid="shop-state">
+                  <span className={`h-2 w-2 rounded-full ${online ? "bg-success" : shopState === "closed" ? "bg-danger" : "bg-warn"}`} />
+                  {online ? h.online : shopState === "closed" ? st.closed : h.offline}
                 </span>
                 <a href={shopUrl} target="_blank" rel="noreferrer" className="truncate text-muted hover:text-ink hover:underline">
                   {shopUrl.replace(/^https?:\/\//, "")}
@@ -67,6 +74,7 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 *:w-full *:px-2 sm:flex sm:flex-wrap sm:*:w-auto sm:*:px-4 [&>*:last-child]:col-span-2">
+            {canManage ? <ShopStateSwitch state={shopState} className="col-span-2 *:w-full sm:*:w-auto" /> : null}
             <a href={shopUrl} target="_blank" rel="noreferrer" className={buttonClass.secondary}>
               <Storefront className="h-4 w-4" aria-hidden /> {t.dashboard.openShop}
             </a>
@@ -74,6 +82,22 @@ export function HomeView({ t, locale, userName, tenantName, shopUrl, brand, logo
             <NewDealButton />
           </div>
         </div>
+        {!online ? (
+          <p className="border-t border-line px-5 py-3 text-sm text-muted sm:px-7" data-testid="shop-state-hint">
+            {shopState === "closed" ? st.closedHint : st.buildingHint}{" "}
+            <Link href="/dashboard/settings#shop-status" className="font-semibold text-accent-text hover:underline">
+              {st.editTexts}
+            </Link>
+          </p>
+        ) : !setup.legal ? (
+          // Online, but the shop lists no deals before imprint, terms and privacy are in place.
+          <p className="border-t border-line px-5 py-3 text-sm text-warn sm:px-7" data-testid="shop-state-hint">
+            {st.needsLegal}{" "}
+            <Link href="/dashboard/settings" className="font-semibold text-accent-text hover:underline">
+              {t.dashboard.setup.legal}
+            </Link>
+          </p>
+        ) : null}
       </section>
 
       {done < steps.length ? (

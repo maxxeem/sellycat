@@ -8,6 +8,7 @@ import { shopTexts } from "@/components/shop/shop-texts";
 import { routeUrl, staticMapUrl } from "@/lib/geo/geocode";
 import { dealStatus, isTeaser, remaining } from "@/lib/shop/deal-status";
 import { TrackView } from "./track-view";
+import { ShopGateFor } from "@/components/shop/shop-gate-for";
 import { getShopDeal, getShopProfile } from "@/lib/shop/queries";
 
 export function generateStaticParams() {
@@ -32,6 +33,7 @@ async function CachedDeal({ tenantId, slug }: { tenantId: string; slug: string }
   cacheTag(`shop:${tenantId}`);
   cacheLife("minutes");
   const [shop, deal] = await Promise.all([getShopProfile(tenantId), getShopDeal(tenantId, slug)]);
+  if (shop && shop.state !== "online") return <ShopGateFor shop={shop} />;
   if (!shop || !deal || !shop.legalComplete) notFound();
   const t = shopTexts(shop.locale);
   const now = new Date();

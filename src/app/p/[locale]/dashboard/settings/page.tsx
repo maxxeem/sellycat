@@ -4,6 +4,10 @@ import type { Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { requireTenant } from "@/lib/dashboard/context";
 import { BillingForm, CategoryManager, LegalForm, ShopSettingsForm } from "./forms";
+import { ShopStatus } from "./shop-status";
+import { shopTexts } from "@/components/shop/shop-texts";
+import { isShopState, type ShopNotice } from "@/lib/shop/shop-state";
+import { parseTheme } from "@/lib/shop/theme";
 
 export const metadata = { title: "Settings" };
 
@@ -21,16 +25,29 @@ export default async function SettingsPage({ params }: PageProps<"/p/[locale]/da
 
 async function Settings({ t }: { t: Dictionary }) {
   const { tenant, supabase } = await requireTenant("admin");
-  const [{ data: info }, { data: legal }, { data: categories }] = await Promise.all([
-    supabase.from("tenants").select("name, locale, mail_from_name, reply_to, shop_settings, billing").eq("id", tenant.id).single(),
+  const [{ data: info }, { data: legal }, { data: categories }, { data: themeRow }] = await Promise.all([
+    supabase.from("tenants").select("name, locale, mail_from_name, reply_to, shop_settings, billing, shop_state, shop_notice").eq("id", tenant.id).single(),
     supabase.from("legal_pages").select("kind, content").eq("tenant_id", tenant.id),
     supabase.from("categories").select("id, name, slug").eq("tenant_id", tenant.id).order("sort_order").order("name"),
+    supabase.from("shop_themes").select("published, draft, published_at").eq("tenant_id", tenant.id).maybeSingle(),
   ]);
+  const shopLocale = info?.locale === "en" ? "en" : "de";
   const legalMap = Object.fromEntries((legal ?? []).map((l) => [l.kind, l.content]));
   const s = (info?.shop_settings ?? {}) as Record<string, string | null>;
   const b = (info?.billing ?? {}) as Record<string, string | null>;
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      <div id="shop-status" className="scroll-mt-24 lg:col-span-2">
+        <Card title={t.dashboard.shopState.cardTitle} description={t.dashboard.shopState.cardIntro}>
+          <ShopStatus
+            state={isShopState(info?.shop_state) ? info.shop_state : "online"}
+            notice={(info?.shop_notice ?? {}) as ShopNotice}
+            defaults={shopTexts(shopLocale).gate}
+            name={info?.name ?? tenant.name}
+            theme={parseTheme(themeRow?.published_at ? themeRow.published : themeRow?.draft)}
+          />
+        </Card>
+      </div>
       <Card title={t.settings.shop}>
         <ShopSettingsForm
           values={{

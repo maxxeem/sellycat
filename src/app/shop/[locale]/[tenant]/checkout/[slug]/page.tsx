@@ -6,6 +6,7 @@ import { PageFallback } from "@/components/shop/page-fallback";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { maxQuantity } from "@/lib/payments/map";
 import { dealStatus, formatMoney } from "@/lib/shop/deal-status";
+import { ShopGateFor } from "@/components/shop/shop-gate-for";
 import { getShopDeal, getShopProfile } from "@/lib/shop/queries";
 import { CheckoutForm } from "./checkout-form";
 
@@ -32,6 +33,7 @@ async function CachedCheckout({ tenantId, slug }: { tenantId: string; slug: stri
   cacheTag(`shop:${tenantId}`);
   cacheLife("minutes");
   const [shop, deal] = await Promise.all([getShopProfile(tenantId), getShopDeal(tenantId, slug)]);
+  if (shop && shop.state !== "online") return <ShopGateFor shop={shop} />;
   if (!shop || !deal || !shop.legalComplete) notFound();
   const t = shopTexts(shop.locale);
   const status = dealStatus(deal, new Date());

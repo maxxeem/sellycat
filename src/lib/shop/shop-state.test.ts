@@ -1,0 +1,27 @@
+import { describe, expect, it } from "vitest";
+import { isShopState, noticeTexts, parseNotice } from "./shop-state";
+
+const defaults = { building: { title: "Hier entsteht ein neuer Shop", text: "Bald gibt es hier Deals." }, closed: { title: "Wir haben gerade geschlossen", text: "Schau bitte später wieder vorbei." } };
+
+describe("shop state", () => {
+  it("knows the three states", () => {
+    expect(["building", "online", "closed"].every(isShopState)).toBe(true);
+    expect(isShopState("open")).toBe(false);
+  });
+
+  it("uses the shop's own texts, else the defaults", () => {
+    const t = noticeTexts({ closed_title: "Betriebsferien", closed_text: "  " }, defaults);
+    expect(t.closed).toEqual({ title: "Betriebsferien", text: "Schau bitte später wieder vorbei." });
+    expect(t.building).toEqual(defaults.building);
+    expect(noticeTexts(null, defaults)).toEqual(defaults);
+  });
+
+  it("stores trimmed texts, cut to length, empty as null", () => {
+    const form: Record<string, string> = { building_title: "  Neu  hier ", building_text: "", closed_title: "x".repeat(200) };
+    const n = parseNotice((k) => form[k]);
+    expect(n.building_title).toBe("Neu hier");
+    expect(n.building_text).toBeNull();
+    expect(n.closed_title).toHaveLength(80);
+    expect(n.closed_text).toBeNull();
+  });
+});

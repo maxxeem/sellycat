@@ -47,6 +47,9 @@ export const SHOP_CSS = `
 .shop-root{--shop-header-h:4rem;}
 @media (min-width:640px){.shop-root{--shop-header-h:5rem;}}
 .shop-header{background:var(--shop-header-bg);color:var(--shop-on-header);position:relative;z-index:2;}
+.shop-root:has(.shop-gate) .shop-header{display:none;}
+.shop-root:has(.shop-gate-building) footer[data-testid="shop-footer"]{display:none;}
+.shop-root:has(.shop-gate-closed) footer[data-testid="shop-footer"]{margin-top:0;}
 .shop-root[data-header-fill="none"][data-header="bar"] .shop-header{border-bottom:1px solid var(--shop-line);}
 .shop-logo-for-dark{display:none;}
 .shop-header[data-tone="dark"] .shop-logo-for-light{display:none;}

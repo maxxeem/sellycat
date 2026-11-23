@@ -20,6 +20,8 @@ export async function saveShopSettings(_: FormState, form: FormData): Promise<Fo
   const pixel = str(form, "metaPixel");
   if (ga4 && !/^G-[A-Z0-9]{4,20}$/.test(ga4)) return { error: "ga4" };
   if (pixel && !/^\d{6,20}$/.test(pixel)) return { error: "metaPixel" };
+  // Keep the other settings (deal order …) that this form does not show.
+  const { data: current } = await supabase.from("tenants").select("shop_settings").eq("id", tenant.id).single();
   const { error } = await supabase
     .from("tenants")
     .update({
@@ -28,6 +30,7 @@ export async function saveShopSettings(_: FormState, form: FormData): Promise<Fo
       mail_from_name: str(form, "mailFromName"),
       reply_to: str(form, "replyTo"),
       shop_settings: {
+        ...((current?.shop_settings as Record<string, unknown> | null) ?? {}),
         contact_email: str(form, "contactEmail"),
         contact_phone: str(form, "contactPhone"),
         seo_description: str(form, "seoDescription"),

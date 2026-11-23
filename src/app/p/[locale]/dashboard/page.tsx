@@ -6,13 +6,22 @@ import { getSessionUser } from "@/lib/auth/session";
 import { getCurrentTenant } from "@/lib/auth/tenants";
 import { summarise } from "@/lib/dashboard/overview";
 import { dealStatus } from "@/lib/shop/deal-status";
-import { shopUrlForSlug } from "@/lib/site/hosts";
+import { DEFAULT_ROOT, shopUrlForSlug, siteHost } from "@/lib/site/hosts";
 import { createClient } from "@/lib/supabase/server";
 import { HomeView } from "./home-view";
+import { roleAtLeast } from "@/lib/auth/tenants";
+import { isShopState } from "@/lib/shop/shop-state";
 import { getStaffUser } from "@/lib/platform/staff";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Dashboard" };
+
+/** The shop's own domain once it is connected and set as main address (else the Sellycat address). */
+function customPrimary(host: string | null | undefined): string | null {
+  if (!host) return null;
+  const root = (siteHost() || DEFAULT_ROOT).split(":")[0];
+  return host === root || host.endsWith(`.${root}`) || host.endsWith(".localhost") ? null : `https://${host}`;
+}
 
 const DAY = 86_400_000;
 
@@ -67,7 +76,9 @@ async function Home({ t, locale }: { t: Dictionary; locale: string }) {
       locale={locale}
       userName={user?.name ?? ""}
       tenantName={tenant.name}
-      shopUrl={shopUrlForSlug(tenant.slug)}
+      shopUrl={customPrimary(shop?.primary_host) ?? shopUrlForSlug(tenant.slug)}
+      shopState={isShopState(shop?.shop_state) ? shop.shop_state : "online"}
+      canManage={roleAtLeast(tenant.role, "admin")}
       brand={look.colors?.primary ?? "#ff4b23"}
       logos={{ light: look.logoLight || null, dark: look.logoDark || null }}
       currency={shop?.currency ?? "CHF"}

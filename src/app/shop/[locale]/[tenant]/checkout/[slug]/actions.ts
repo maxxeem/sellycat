@@ -44,7 +44,8 @@ export async function startCheckout(tenantId: string, slug: string, raw: unknown
     getShopProfile(tenantId),
   ]);
   if (!account?.charges_enabled) return { ok: false, error: "payments" };
-  if (!deal) return { ok: false, error: "unavailable" };
+  // Not opened yet or taken offline: nothing can be bought.
+  if (!deal || profile?.state !== "online") return { ok: false, error: "unavailable" };
 
   const { data: rows, error } = await admin.rpc("start_checkout", {
     p_deal: deal.id,

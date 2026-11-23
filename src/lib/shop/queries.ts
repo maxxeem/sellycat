@@ -4,6 +4,7 @@ import type { DealView } from "@/components/shop/types";
 import { createPublicClient } from "@/lib/supabase/admin";
 import { isListed, type RedeemWindow } from "./deal-status";
 import { docToHtml } from "./rich-text-server";
+import { isShopState, type ShopNotice, type ShopState } from "./shop-state";
 import { parseTheme, type ShopTheme } from "./theme";
 
 /**
@@ -25,6 +26,9 @@ export type ShopProfile = {
   primaryHost: string | null;
   /** The shop's Stripe account can take payments (else the buy button stays disabled). */
   paymentsReady: boolean;
+  /** building (not opened yet) | online | closed (taken offline): only online shops list and sell deals. */
+  state: ShopState;
+  notice: ShopNotice;
 };
 
 export async function getShopProfile(tenantId: string): Promise<ShopProfile | null> {
@@ -46,6 +50,8 @@ export async function getShopProfile(tenantId: string): Promise<ShopProfile | nu
     legalComplete: row.legal_complete,
     primaryHost: row.primary_host,
     paymentsReady: row.payments_ready,
+    state: isShopState(row.shop_state) ? row.shop_state : "online",
+    notice: (row.shop_notice ?? {}) as ShopNotice,
   };
 }
 
