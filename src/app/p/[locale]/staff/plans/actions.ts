@@ -46,6 +46,9 @@ export async function savePlan(planId: string, _prev: PlanFormState, form: FormD
     else if (Number.isInteger(Number(raw)) && Number(raw) >= 0) limits[k] = Number(raw);
     else return { error: "limit" };
   }
+  const shops = Number(text(form, "limit_shops", 3) || "1");
+  if (!Number.isInteger(shops) || shops < 1 || shops > 50) return { error: "limit" };
+  limits.shops = shops;
   for (const k of LIMIT_FLAGS) limits[k] = form.get(`flag_${k}`) === "on";
 
   const marketing = {

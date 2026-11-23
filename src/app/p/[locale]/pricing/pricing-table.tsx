@@ -28,6 +28,7 @@ export function PricingTable({ plans, locale, initialCurrency }: { plans: Plan[]
     [
       p.limits.deals_live === null ? t.features.dealsUnlimited : fmt(t.features.deals, { count: p.limits.deals_live }),
       p.limits.seats === null ? t.features.seatsUnlimited : p.limits.seats === 1 ? t.features.seatsOne : fmt(t.features.seats, { count: p.limits.seats }),
+      p.limits.shops > 1 ? fmt(t.features.shops, { count: p.limits.shops }) : null,
       t.features.vouchers,
       t.features.wallet,
       p.limits.custom_domain ? t.features.domain : t.features.subdomain,

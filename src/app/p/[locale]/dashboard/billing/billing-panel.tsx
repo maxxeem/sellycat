@@ -83,6 +83,7 @@ export function BillingPanel(props: { plans: PanelPlan[]; currentPlanId: string;
               </div>
               <ul className="flex flex-1 flex-col gap-1.5 text-sm">
                 <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />{p.limits.deals_live === null ? s.features.dealsUnlimited : fmt(s.features.deals, { count: p.limits.deals_live })}</li>
+                {p.limits.shops > 1 ? <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />{fmt(s.features.shops, { count: p.limits.shops })}</li> : null}
                 <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />{p.limits.custom_domain ? s.features.domain : s.features.subdomain}</li>
                 <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />{p.limits.branding ? s.features.branding : s.features.noBranding}</li>
               </ul>

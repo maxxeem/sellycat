@@ -83,7 +83,10 @@ export function PlanEditor({ plan, canEdit }: { plan: Plan; canEdit: boolean }) 
             <Input name={`limit_${k}`} type="number" min={0} defaultValue={plan.limits[k] === null ? "" : String(plan.limits[k])} placeholder="∞" disabled={off} />
           </Field>
         ))}
-        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-3 lg:pt-6">
+        <Field label={p.shopsIncluded} hint={p.shopsHint}>
+          <Input name="limit_shops" type="number" min={1} max={50} defaultValue={String(plan.limits.shops)} disabled={off} />
+        </Field>
+        <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-2 lg:pt-6">
           {LIMIT_FLAGS.map((k) => (
             <Check key={k} name={`flag_${k}`} label={p.flags[k]} defaultChecked={plan.limits[k]} disabled={off} />
           ))}

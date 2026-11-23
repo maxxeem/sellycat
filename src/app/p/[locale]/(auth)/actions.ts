@@ -159,7 +159,10 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
   if (!user?.email) return { error: "linkInvalid" };
   // A first shop only, unless the form comes from /new-shop (an additional shop, same checks).
   const { data: mine } = await supabase.rpc("my_tenants");
-  if (mine && mine.length > 0 && form.get("additional") !== "1") redirect("/dashboard");
+  const additional = Boolean(mine && mine.length > 0);
+  if (additional && form.get("additional") !== "1") redirect("/dashboard");
+  // Room in a plan that includes several shops (Business): no code needed, create_tenant attaches it.
+  const included = additional && ((await supabase.rpc("included_shop_room")).data ?? 0) > 0;
   const { shopName, slug, locale } = parsed.data;
   const code = normaliseCode(parsed.data.code);
   const mode = await getSignupMode();
@@ -172,7 +175,7 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
   if (!free) return { error: "slugTaken", field: "slug" };
 
   // A code counts in every mode (plan, trial, coupon); without one only open signup (or staff) passes.
-  if (code || (codeRequired(mode) && !staff)) {
+  if (!included && (code || (codeRequired(mode) && !staff))) {
     if (!code) return { error: "codeRequired", field: "code" };
     // A use confirmed on an earlier try that found no shop yet (slug taken meanwhile) is reused,
     // so a retry never spends a second slot (a one-time code would otherwise lock the person out).

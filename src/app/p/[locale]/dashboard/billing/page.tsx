@@ -35,7 +35,7 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
   const notice = NOTICES.find((n) => n === sp.checkout);
   const admin = createAdminClient();
   const [{ data: row }, plans, { count: live }] = await Promise.all([
-    admin.from("tenants").select("plan_id, billing, billing_status, billing_interval, current_period_end, cancel_at_period_end, pending_plan_id, pending_interval, pending_at, stripe_customer_id, fee_override_bps").eq("id", tenant.id).single(),
+    admin.from("tenants").select("plan_id, plan_parent_id, billing, billing_status, billing_interval, current_period_end, cancel_at_period_end, pending_plan_id, pending_interval, pending_at, stripe_customer_id, fee_override_bps").eq("id", tenant.id).single(),
     loadPlans(),
     admin.from("deals").select("id", { count: "exact", head: true }).eq("tenant_id", tenant.id).eq("state", "published").is("archived_at", null),
   ]);
@@ -48,12 +48,15 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
   const canManage = roleAtLeast(tenant.role, "admin");
   const status = row.billing_status as "none" | "trialing" | "active" | "past_due" | "canceled" | "unpaid";
   const fee = row.fee_override_bps ?? current.feeBps;
+  // Included in the subscription of a main shop (Business): plan and billing are managed there.
+  const parent = row.plan_parent_id ? (await admin.from("tenants").select("name").eq("id", row.plan_parent_id).single()).data : null;
 
   return (
     <div className="flex flex-col gap-6">
       {notice ? <Notice tone={notice === "cancel" ? "info" : "success"}>{s.notices[notice]}</Notice> : null}
       {!stripeConfigured() ? <Notice tone="warning">{s.notConfigured}</Notice> : null}
       {status === "past_due" || status === "unpaid" ? <Notice tone="error">{s.pastDue}</Notice> : null}
+      {parent ? <Notice tone="info">{fmt(s.includedIn, { plan: current.name, shop: parent.name })}</Notice> : null}
 
       <Card title={s.current}>
         <div className="flex flex-col gap-3">
@@ -74,6 +77,7 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
         </div>
       </Card>
 
+      {parent ? null : (
       <BillingPanel
         plans={plans.filter((p) => p.isPublic || p.id === current.id).map((p) => ({ id: p.id, name: p.name, sortOrder: p.sortOrder, isPublic: p.isPublic, contactOnly: p.contactOnly, limits: p.limits, prices: p.prices, copy: p.copy, feeBps: p.feeBps, feeFixed: p.feeFixed, feeMin: p.feeMin, trialDays: p.trialDays, bookable: { monthly: Boolean(p.stripe.price_month_id), yearly: Boolean(p.stripe.price_year_id) } }))}
         currentPlanId={current.id}
@@ -85,6 +89,7 @@ async function Billing({ t, locale, searchParams }: { t: Dictionary; locale: "de
         locale={locale}
         canManage={canManage && stripeConfigured()}
       />
+      )}
 
       {canManage ? <FeeOverview tenantId={tenant.id} t={t} locale={locale} /> : null}
     </div>

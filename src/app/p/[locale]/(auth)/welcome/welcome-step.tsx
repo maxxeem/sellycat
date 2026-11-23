@@ -16,6 +16,8 @@ export async function Welcome({ searchParams, additional: wanted = false }: { se
   if (!auth.user) redirect(wanted ? "/login?next=/new-shop" : "/login?next=/welcome");
   const [{ data: mine }, mode, query, { data: staff }] = await Promise.all([supabase.rpc("my_tenants"), getSignupMode(), searchParams, supabase.rpc("is_staff")]);
   const additional = wanted && Boolean(mine && mine.length > 0);
+  // Room in a plan that includes several shops (Business): no code needed, the shop joins that plan.
+  const room = additional ? ((await supabase.rpc("included_shop_room")).data ?? 0) : 0;
   if (mine && mine.length > 0 && !additional) redirect("/dashboard");
   const raw = typeof query.code === "string" ? query.code : "";
   const initial = raw ? await checkCode(raw) : null;
@@ -25,7 +27,8 @@ export async function Welcome({ searchParams, additional: wanted = false }: { se
       email={auth.user.email ?? ""}
       suggestedName={name}
       root={(siteHost() || DEFAULT_ROOT).split(":")[0]}
-      needsCode={codeRequired(mode) && staff !== true}
+      needsCode={codeRequired(mode) && staff !== true && room === 0}
+      includedRoom={room}
       initialCode={initial?.ok ? initial.code : ""}
       additional={additional}
     />

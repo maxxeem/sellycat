@@ -25,6 +25,7 @@ function cardLines(plan: Plan, previous: Plan | null, l: Labels, currency: Curre
     x.deals_live === null ? l.dealsUnlimited : fmt(l.deals, { n: x.deals_live }),
     x.seats === 1 ? l.seatsOne : fmt(l.seats, { n: x.seats ?? "∞" }),
   ];
+  if (x.shops > 1) out.push(fmt(l.shops, { n: x.shops }));
   if (!previous) out.push(l.basics);
   if (!x.branding && (p?.branding ?? true)) out.push(l.noBranding);
   if (x.custom_domain && !p?.custom_domain) out.push(l.customDomain);

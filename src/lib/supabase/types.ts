@@ -2230,6 +2230,7 @@ export type Database = {
           pending_interval: string | null
           pending_plan_id: string | null
           plan_id: string
+          plan_parent_id: string | null
           reply_to: string | null
           shop_settings: Json
           slug: string
@@ -2260,6 +2261,7 @@ export type Database = {
           pending_interval?: string | null
           pending_plan_id?: string | null
           plan_id?: string
+          plan_parent_id?: string | null
           reply_to?: string | null
           shop_settings?: Json
           slug: string
@@ -2290,6 +2292,7 @@ export type Database = {
           pending_interval?: string | null
           pending_plan_id?: string | null
           plan_id?: string
+          plan_parent_id?: string | null
           reply_to?: string | null
           shop_settings?: Json
           slug?: string
@@ -2320,6 +2323,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_plan_parent_id_fkey"
+            columns: ["plan_parent_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -3030,6 +3040,7 @@ export type Database = {
         Args: { p_at: string; p_windows: Json }
         Returns: boolean
       }
+      included_shop_room: { Args: never; Returns: number }
       invite_preview: {
         Args: { p_token: string }
         Returns: {
@@ -3066,6 +3077,7 @@ export type Database = {
         Returns: boolean
       }
       plan_limit: { Args: { p_key: string; p_tenant: string }; Returns: number }
+      plan_shops: { Args: { p_plan: string }; Returns: number }
       platform_analytics: {
         Args: { p_from: string; p_to: string }
         Returns: Json

@@ -10,7 +10,8 @@ export type PlanPrices = Record<Interval, Partial<Record<Currency, number>>>;
 
 export const LIMIT_NUMBERS = ["deals_live", "seats"] as const;
 export const LIMIT_FLAGS = ["custom_domain", "custom_mail_domain", "api", "branding"] as const;
-export type PlanLimits = { deals_live: number | null; seats: number | null; custom_domain: boolean; custom_mail_domain: boolean; api: boolean; branding: boolean };
+/** `shops`: shops one subscription includes (Business: up to 5; 1 = only this shop). */
+export type PlanLimits = { deals_live: number | null; seats: number | null; shops: number; custom_domain: boolean; custom_mail_domain: boolean; api: boolean; branding: boolean };
 
 export type PlanCopy = { tagline: string; badge: string };
 export type PlanRow = {
@@ -63,7 +64,7 @@ export function parsePlanPrices(raw: unknown): PlanPrices {
 export function parseLimits(raw: unknown): PlanLimits {
   const r = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const num = (v: unknown) => (typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : null);
-  return { deals_live: num(r.deals_live), seats: num(r.seats), custom_domain: r.custom_domain === true, custom_mail_domain: r.custom_mail_domain === true, api: r.api === true, branding: r.branding === true };
+  return { deals_live: num(r.deals_live), seats: num(r.seats), shops: Math.max(1, num(r.shops) ?? 1), custom_domain: r.custom_domain === true, custom_mail_domain: r.custom_mail_domain === true, api: r.api === true, branding: r.branding === true };
 }
 
 function parseCopy(raw: unknown): Record<"de" | "en", PlanCopy> {
