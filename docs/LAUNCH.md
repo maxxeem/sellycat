@@ -1,6 +1,6 @@
 # Launch-Check (Stand 23.11.2026)
 
-Ergebnis: **Production läuft seit 23.11.2026 unter https://sellycat.com** (Landing, Preise, Hilfe, Login; Registrierung pausiert, nur Warteliste). Es fehlen noch Stripe Live, eigenes SMTP für Auth-Mails, Google-Anmeldung, der erste Staff-Admin und das GitHub-Secret für die Migrationen. Die Schritte unten der Reihe nach; ✅ = erledigt, ⬜ = offen, 👤 = nur Jan (Konten, Zahlungen, Verträge).
+Ergebnis: **Production läuft seit 23.11.2026 unter https://sellycat.com** (Landing, Preise, Hilfe, Login; Registrierung pausiert, nur Warteliste). Es fehlen noch Stripe Live, eigenes SMTP für Auth-Mails, Google-Anmeldung, das Passwort und TOTP des ersten Staff-Admins und das GitHub-Secret für die Migrationen. Die Schritte unten der Reihe nach; ✅ = erledigt, ⬜ = offen, 👤 = nur Jan (Konten, Zahlungen, Verträge).
 
 ## 1. Qualität (erledigt)
 
@@ -18,7 +18,7 @@ Ergebnis: **Production läuft seit 23.11.2026 unter https://sellycat.com** (Land
 - ⬜👤 Eigenes SMTP (Mailgun, `mail.sellycat.com`) unter Authentication → Emails → SMTP Settings. Ohne eigenes SMTP verschickt Supabase Auth-Mails nur an Mitglieder der Organisation (auch Staging hat noch keins). Mail-Vorlagen sind Supabase-Standard (wie Staging).
 - ⬜ Google-Anmeldung: in Google Cloud einen OAuth-Client (Web) mit Redirect-URI `https://<projekt>.supabase.co/auth/v1/callback` anlegen, Client-ID und -Secret in Supabase → Authentication → Providers → Google eintragen (je für Staging und Production).
 - ⬜ Storage-Buckets kommen aus den Migrationen; prüfen, dass `shop-media` öffentlich und `support` privat ist.
-- ⬜ Erster Staff-Admin: Konto per Einladung anlegen, in `platform_staff` eintragen, TOTP einrichten (Registrierung ist in Production pausiert, `signup_mode = paused`).
+- ✅ Erster Staff-Admin: jan@my105.ch eingeladen und als `superadmin` in `platform_staff` eingetragen (23.11.2026). ⬜👤 Passwort über den Link in der Einladung setzen, unter `/admin` TOTP einrichten.
 
 ## 3. Vercel Production (Branch `release`)
 
