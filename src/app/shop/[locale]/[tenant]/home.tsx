@@ -18,6 +18,9 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
   // Online but imprint, terms or privacy missing: header and hero, no deals.
   if (!shop.legalComplete) return <ShopHome shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }} theme={shop.theme} t={t} deals={[]} categories={[]} notice={t.notReady} />;
   if (category && !categories.some((c) => c.slug === category)) notFound();
+  const listed = listedDeals(deals);
+  // No deal to show yet on the start page: same «opens soon» note as before the legal texts.
+  if (!category && !listed.length) return <ShopHome shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }} theme={shop.theme} t={t} deals={[]} categories={[]} notice={t.notReady} />;
   const base = shop.primaryHost ? `https://${shop.primaryHost}` : "";
   return (
     <>
@@ -26,7 +29,7 @@ export async function CachedHome({ tenantId, category }: { tenantId: string; cat
       shop={{ name: shop.name, currency: shop.currency, locale: shop.locale }}
       theme={shop.theme}
       t={t}
-      deals={sortDeals(listedDeals(deals), parseDealOrder(shop.settings.deal_order))}
+      deals={sortDeals(listed, parseDealOrder(shop.settings.deal_order))}
       categories={categories}
       activeCategory={category}
       now={new Date()}
