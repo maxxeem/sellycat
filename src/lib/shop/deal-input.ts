@@ -42,6 +42,8 @@ export type DealForm = {
   featured: boolean;
   /** Announce before the sales start: no price, no buying, countdown to the start. */
   teaser: boolean;
+  /** Send this deal to the deal alert subscribers when it goes live. */
+  alert: boolean;
   /** Partner settlement for this deal: off, after sale or after redemption. */
   settleMode: "off" | "sale" | "redemption";
   settleKind: "percent" | "fixed";
@@ -142,6 +144,7 @@ export function dealRow(f: DealForm) {
     show_stock_bar: f.showStockBar && f.totalQty !== "",
     featured: f.featured,
     teaser: f.teaser && Boolean(zurichLocalToIso(f.salesStart)),
+    alert_skip: !f.alert,
     settle_mode: f.settleMode,
     settle_kind: f.settleKind,
     settle_commission_bps: f.settleKind === "percent" ? (commissionBps(f.settleCommission) ?? 0) : 0,
@@ -159,7 +162,7 @@ type DealRowIn = {
   max_per_order: number | null; max_per_buyer: number | null; sales_start: string | null; sales_end: string | null;
   redeem_validity: "none" | "until_date" | "days_after_purchase"; redeem_until: string | null; redeem_days: number | null;
   redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool";
-  show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean; teaser?: boolean;
+  show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean; teaser?: boolean; alert_skip?: boolean;
   settle_mode?: string; settle_kind?: string; settle_commission_bps?: number; settle_payout_cents?: number | null;
 };
 
@@ -198,6 +201,7 @@ export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: strin
     showStockBar: d.show_stock_bar ?? false,
     featured: d.featured,
     teaser: d.teaser ?? false,
+    alert: !d.alert_skip,
     settleMode: d.settle_mode === "sale" || d.settle_mode === "redemption" ? d.settle_mode : "off",
     settleKind: d.settle_kind === "fixed" ? "fixed" : "percent",
     settleCommission: d.settle_commission_bps ? String(d.settle_commission_bps / 100) : "",

@@ -30,6 +30,7 @@ function cardLines(plan: Plan, previous: Plan | null, l: Labels, currency: Curre
   if (!x.branding && (p?.branding ?? true)) out.push(l.noBranding);
   if (x.custom_domain && !p?.custom_domain) out.push(l.customDomain);
   if (x.custom_mail_domain && !p?.custom_mail_domain) out.push(l.mailDomain);
+  if (x.deal_alert && !p?.deal_alert) out.push(l.dealAlert);
   if (x.api && !p?.api) out.push(l.api);
   return out;
 }

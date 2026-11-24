@@ -31,6 +31,7 @@ export function PricingTable({ plans, locale, currency }: { plans: Plan[]; local
       t.features.wallet,
       p.limits.custom_domain ? t.features.domain : t.features.subdomain,
       p.limits.custom_mail_domain ? t.features.mailDomain : null,
+      p.limits.deal_alert ? t.features.dealAlert : null,
       p.limits.api ? t.features.api : null,
       p.limits.branding ? t.features.branding : t.features.noBranding,
     ].filter((f): f is string => Boolean(f));

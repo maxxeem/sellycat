@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { DealAlert } from "./deal-alert";
 import { SocialIcons } from "./social-icons";
 import { socialUrl } from "@/lib/shop/social";
 import { Mail, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 import { shopImage } from "@/lib/shop/image";
-import { footerLogo, headerLook, type ShopTheme } from "@/lib/shop/theme";
+import { alertLook, footerLogo, headerLook, type ShopTheme } from "@/lib/shop/theme";
 import type { ShopTexts } from "./shop-texts";
 import { CookieSettingsLink } from "./consent";
 
@@ -21,6 +22,7 @@ export function ShopFrame({
   inert = false,
   branding = false,
   cookieSettings = false,
+  dealAlert = false,
 }: {
   name: string;
   theme: ShopTheme;
@@ -32,6 +34,8 @@ export function ShopFrame({
   branding?: boolean;
   /** The shop uses consent-based analytics: offer a link to change the choice. */
   cookieSettings?: boolean;
+  /** Offer the deal alert in the header (switched on by the shop, plan feature). */
+  dealAlert?: boolean;
 }) {
   // Two logo variants: the stylesheet shows the one that fits the header's background.
   const forLight = theme.logoLight || theme.logoDark;
@@ -57,6 +61,7 @@ export function ShopFrame({
               <span className="shop-heading truncate text-xl font-bold">{name}</span>
             )}
           </Link>
+          {dealAlert ? <DealAlert shop={name} look={alertLook(theme)} t={t} inert={inert} /> : null}
         </div>
       </header>
       <main className="flex-1">{children}</main>

@@ -132,6 +132,23 @@ export function footerLogo(theme: ShopTheme): string {
 
 const ANGLE = { down: "180deg", right: "90deg", diagonal: "135deg" } as const;
 
+/** The header's ground as one colour (gradient: its middle; no fill: the page background). */
+export function headerBase(theme: ShopTheme): string {
+  const h = theme.header;
+  return h.fill === "none" ? theme.colors.background : h.fill === "color" ? h.from : mix(h.from, h.to, 0.5);
+}
+
+/** The logo variant made for the header's ground, "" without a logo. */
+export function headerLogo(theme: ShopTheme): string {
+  return headerLook(theme).tone === "dark" ? theme.logoDark || theme.logoLight : theme.logoLight || theme.logoDark;
+}
+
+/** Deal alert button: filled on a picture, outlined in the primary colour where that reads, else in the text colour. */
+export function alertLook(theme: ShopTheme): "filled" | "primary" | "text" {
+  if (theme.header.style === "integrated" && theme.hero.enabled && heroPictures(theme.hero)) return "filled";
+  return contrastRatio(theme.colors.primary, headerBase(theme)) >= 3 ? "primary" : "text";
+}
+
 /** Header background (CSS value), its text colour and whether it reads as dark. */
 export function headerLook(theme: ShopTheme): { background: string; text: string; tone: "light" | "dark" } {
   const h = theme.header;

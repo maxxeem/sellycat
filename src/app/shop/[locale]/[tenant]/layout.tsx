@@ -49,7 +49,7 @@ async function Shell({ tenant, children }: { tenant: Promise<string>; children: 
         <link key={href} rel="stylesheet" href={href} precedence="default" />
       ))}
       <style>{SHOP_CSS + pageChromeCss(shop.theme) + inlined.join("") + fonts.faces}</style>
-      <ShopFrame name={shop.name} theme={shop.theme} t={t} contact={{ email: shop.settings.contact_email, phone: shop.settings.contact_phone }} branding={shop.settings.branding === true} cookieSettings={Boolean(shop.settings.ga4_id || shop.settings.meta_pixel_id)}>
+      <ShopFrame name={shop.name} theme={shop.theme} t={t} contact={{ email: shop.settings.contact_email, phone: shop.settings.contact_phone }} branding={shop.settings.branding === true} dealAlert={shop.settings.deal_alert === true} cookieSettings={Boolean(shop.settings.ga4_id || shop.settings.meta_pixel_id)}>
         {children}
       </ShopFrame>
       {shop.settings.ga4_id || shop.settings.meta_pixel_id ? <ConsentBanner ga4={shop.settings.ga4_id} metaPixel={shop.settings.meta_pixel_id} t={t} /> : null}

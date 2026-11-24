@@ -1,0 +1,125 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import { Badge, Card, Notice, PageHeader, Skeleton, Table, buttonClass, tdClass, thClass } from "@/components/ui";
+import { requireTenant } from "@/lib/dashboard/context";
+import { fmt, type Dictionary } from "@/lib/i18n";
+import { fromParams } from "@/lib/i18n/params";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { AlertSwitch, RemoveButton } from "./controls";
+
+export const metadata = { title: "Deal-Alarm" };
+const PAGE = 50;
+
+export default async function DealAlertPage({ params, searchParams }: PageProps<"/p/[locale]/dashboard/deal-alert">) {
+  const { t, locale } = await fromParams(params);
+  return (
+    <>
+      <PageHeader title={t.dealAlertAdmin.title} description={t.dealAlertAdmin.intro} />
+      <Suspense fallback={<Skeleton className="h-96" />}>
+        <Alert t={t} locale={locale} searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+async function Alert({ t, locale, searchParams }: { t: Dictionary; locale: string; searchParams: PageProps<"/p/[locale]/dashboard/deal-alert">["searchParams"] }) {
+  const { tenant, supabase } = await requireTenant("admin");
+  const a = t.dealAlertAdmin;
+  const page = Math.max(1, Number((await searchParams).page) || 1);
+  const admin = createAdminClient();
+  const [{ data: allowed }, { data: info }, list, { count: active }, { data: history }, { data: payments }] = await Promise.all([
+    admin.rpc("plan_allows", { p_tenant: tenant.id, p_feature: "deal_alert" }),
+    supabase.from("tenants").select("deal_alert_at").eq("id", tenant.id).single(),
+    supabase.from("deal_alert_subscribers").select("id, email, status, created_at", { count: "exact" }).eq("tenant_id", tenant.id).order("created_at", { ascending: false }).range((page - 1) * PAGE, page * PAGE - 1),
+    supabase.from("deal_alert_subscribers").select("id", { count: "exact", head: true }).eq("tenant_id", tenant.id).eq("status", "confirmed"),
+    supabase.rpc("deal_alert_history", { p_tenant: tenant.id }),
+    admin.from("stripe_accounts").select("charges_enabled").eq("tenant_id", tenant.id).maybeSingle(),
+  ]);
+  const on = Boolean(info?.deal_alert_at);
+  const date = (iso: string) => new Date(iso).toLocaleString(locale === "de" ? "de-CH" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zurich" });
+  const total = list.count ?? 0;
+  return (
+    <div className="flex flex-col gap-6">
+      {allowed !== true ? (
+        <Notice tone="warning">
+          {a.notOnPlan}{" "}
+          <Link href="/dashboard/billing" className="font-semibold underline">{a.toPlans}</Link>
+        </Notice>
+      ) : null}
+      {allowed === true && on && !payments?.charges_enabled ? <Notice tone="warning">{a.needsPayments}</Notice> : null}
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 font-semibold">
+              <span className={`h-2.5 w-2.5 rounded-full ${on && allowed ? "bg-success" : "bg-line"}`} />
+              {on && allowed ? a.isOn : a.isOff}
+            </p>
+            <p className="mt-0.5 text-sm text-muted">{on && allowed ? a.onHint : a.offHint}</p>
+          </div>
+          {allowed === true || on ? <AlertSwitch on={on} /> : null}
+        </div>
+      </Card>
+
+      <Card
+        title={fmt(a.subscribers, { count: active ?? 0 })}
+        description={a.subscribersHint}
+        actions={total ? <a href="/api/dashboard/export?kind=deal-alert" className={buttonClass.secondary}>{a.export}</a> : undefined}
+      >
+        {list.data?.length ? (
+          <div className="-mx-5 -mb-5">
+            <Table>
+              <thead>
+                <tr>
+                  <th className={thClass}>{a.email}</th>
+                  <th className={thClass}>{a.status}</th>
+                  <th className={`${thClass} hidden sm:table-cell`}>{a.since}</th>
+                  <th className={thClass} />
+                </tr>
+              </thead>
+              <tbody>
+                {list.data.map((s) => (
+                  <tr key={s.id} data-testid="alert-subscriber">
+                    <td className={`${tdClass} break-all font-medium`}>{s.email}</td>
+                    <td className={tdClass}><Badge tone={s.status === "confirmed" ? "green" : "amber"}>{s.status === "confirmed" ? a.confirmed : a.pending}</Badge></td>
+                    <td className={`${tdClass} hidden text-muted sm:table-cell`}>{date(s.created_at)}</td>
+                    <td className={`${tdClass} text-right`}><RemoveButton id={s.id} email={s.email} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+            {total > PAGE ? (
+              <div className="flex items-center justify-between px-5 py-3 text-sm">
+                {page > 1 ? <Link href={`/dashboard/deal-alert?page=${page - 1}`} className="font-semibold">← {a.newer}</Link> : <span />}
+                {page * PAGE < total ? <Link href={`/dashboard/deal-alert?page=${page + 1}`} className="font-semibold">{a.older} →</Link> : <span />}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted">{a.noSubscribers}</p>
+        )}
+      </Card>
+
+      <Card title={a.history} description={a.historyHint}>
+        {history?.length ? (
+          <ul className="flex flex-col divide-y divide-line">
+            {history.map((h) => (
+              <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                <span className="min-w-0">
+                  <Link href={`/dashboard/deals/${h.deal_id}`} className="font-semibold hover:underline">{h.title}</Link>
+                  <span className="block text-xs text-muted">{date(h.created_at)}</span>
+                </span>
+                <span className="text-muted">
+                  {fmt(a.sentOf, { sent: h.sent, total: h.recipients })}
+                  {h.open ? ` · ${fmt(a.openCount, { count: h.open })}` : ""}
+                  {h.failed ? ` · ${fmt(a.failedCount, { count: h.failed })}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">{a.noHistory}</p>
+        )}
+      </Card>
+    </div>
+  );
+}

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { kickDealAlerts } from "@/lib/alerts/deal-alert";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { dealRow, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { EMPTY_DOC } from "@/lib/shop/rich-text";
@@ -61,6 +62,7 @@ export async function setDealState(id: string, state: "draft" | "published" | "e
   const { error } = await supabase.from("deals").update({ state }).eq("id", id).eq("tenant_id", tenant.id);
   if (error) return { ok: false, message: error.message.includes("legal pages missing") ? "legalMissing" : error.message.includes("plan limit deals_live") ? "planLimit" : "error" };
   refreshShop(tenant.id);
+  if (state === "published") kickDealAlerts();
   revalidatePath("/p/[locale]/dashboard/deals", "layout");
   return { ok: true };
 }

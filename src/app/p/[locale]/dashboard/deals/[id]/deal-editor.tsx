@@ -552,6 +552,7 @@ export function DealEditor(props: {
               <Check label={d.showCountdown} checked={form.showCountdown} onChange={(v) => set("showCountdown", v)} />
               <Check label={form.totalQty ? d.showStockBar : d.showStockBarNeedsQty} checked={form.showStockBar && form.totalQty !== ""} disabled={!form.totalQty} onChange={(v) => set("showStockBar", v)} />
               <Check label={d.featured} checked={form.featured} onChange={(v) => set("featured", v)} />
+              <Check label={d.alert} checked={form.alert} onChange={(v) => set("alert", v)} />
             </div>
           </Card>
         </div>

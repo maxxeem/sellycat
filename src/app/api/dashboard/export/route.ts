@@ -7,7 +7,7 @@ const MAX_ROWS = 20_000;
 
 /**
  * CSV downloads of the current shop (editor and up; reads through RLS):
- * `?kind=vouchers[&status=…&q=…]` and `?kind=redemptions`.
+ * `?kind=vouchers[&status=…&q=…]`, `?kind=redemptions` and (admin) `?kind=deal-alert`.
  */
 export async function GET(request: Request) {
   const tenant = await getCurrentTenant();
@@ -69,6 +69,16 @@ export async function GET(request: Request) {
         r.vouchers?.orders?.number,
       ]),
     ]);
+  } else if (kind === "deal-alert") {
+    if (!roleAtLeast(tenant.role, "admin")) return new Response("Not found", { status: 404 });
+    // Only confirmed addresses (with the proof of consent) leave the system.
+    const rows: Array<{ email: string; created_at: string; confirmed_at: string | null }> = [];
+    for (let from = 0; from < MAX_ROWS; from += 1000) {
+      const { data } = await supabase.from("deal_alert_subscribers").select("email, created_at, confirmed_at").eq("tenant_id", tenant.id).eq("status", "confirmed").order("created_at").order("id").range(from, from + 999);
+      rows.push(...(data ?? []));
+      if ((data?.length ?? 0) < 1000) break;
+    }
+    csv = toCsv([["E-Mail", "Angemeldet", "Bestätigt"], ...rows.map((r) => [r.email, csvDate(r.created_at), csvDate(r.confirmed_at)])]);
   } else {
     return new Response("Unknown export", { status: 400 });
   }

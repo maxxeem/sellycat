@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
+import { dealAlertConfirmMail, dealAlertMail, esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
 
 const brand: MailBrand = { shopName: "Velo <Deals>", locale: "de", primary: "#ff4b23", logoUrl: "https://x.supabase.co/logo.svg", shopUrl: "https://velo.sellycat.com" };
 const v = { title: "Service-Paket", partner: "Velo Huber", code: "ABCD-EFGH-JKMN", valueCents: 5000, currency: "CHF", validUntil: "2027-06-30T21:59:59Z", link: "https://velo.sellycat.com/v/tok" };
@@ -48,5 +48,21 @@ describe("waitlistTeamMail", () => {
     expect(m.text).toContain("E-Mail: a@b.ch");
     expect(m.text).toContain("Name: –");
     expect(m.text).toContain("https://sellycat.com/login?next=x");
+  });
+  it("deal alert mail shows price, saving, deal link and the way out", () => {
+    const band = { background: "#180f26", text: "#ffffff", logoUrl: null };
+    const deal = { title: "Sonos <Roam>", subtitle: null, priceCents: 14900, compareAtCents: 19900, currency: "CHF", image: null, left: 10, url: "https://velo.sellycat.com/d/sonos" };
+    const m = dealAlertMail({ brand, band, deal, unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok" });
+    expect(m.subject).toMatch(/^Neuer Deal: Sonos <Roam> für CHF.149$/);
+    expect(m.html).toContain("Sonos &lt;Roam&gt;");
+    expect(m.html).toContain("-25%");
+    expect(m.html).toContain("10 Stück verfügbar");
+    expect(m.html).toContain("https://velo.sellycat.com/d/sonos");
+    expect(m.html).toContain("https://velo.sellycat.com/alert/off/tok");
+    expect(m.text).toContain("https://velo.sellycat.com/alert/off/tok");
+    const plain = dealAlertMail({ brand, band, deal: { ...deal, compareAtCents: null, left: null }, unsubscribeUrl: "u" });
+    expect(plain.html).not.toContain("<s ");
+    expect(plain.html).not.toContain("verfügbar");
+    expect(dealAlertConfirmMail({ brand, band, url: "https://velo.sellycat.com/alert/confirm/tok" }).html).toContain("/alert/confirm/tok");
   });
 });

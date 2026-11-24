@@ -342,6 +342,162 @@ export type Database = {
           },
         ]
       }
+      deal_alert_sends: {
+        Row: {
+          alert_id: string
+          attempts: number
+          error: string | null
+          next_at: string
+          status: string
+          subscriber_id: string
+          tenant_id: string
+        }
+        Insert: {
+          alert_id: string
+          attempts?: number
+          error?: string | null
+          next_at?: string
+          status?: string
+          subscriber_id: string
+          tenant_id: string
+        }
+        Update: {
+          alert_id?: string
+          attempts?: number
+          error?: string | null
+          next_at?: string
+          status?: string
+          subscriber_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_alert_sends_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "deal_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_alert_sends_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "deal_alert_subscribers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_alert_sends_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_alert_subscribers: {
+        Row: {
+          confirm_count: number
+          confirm_hash: string | null
+          confirm_sent_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          status: string
+          tenant_id: string
+          token: string
+        }
+        Insert: {
+          confirm_count?: number
+          confirm_hash?: string | null
+          confirm_sent_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          status?: string
+          tenant_id: string
+          token: string
+        }
+        Update: {
+          confirm_count?: number
+          confirm_hash?: string | null
+          confirm_sent_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          tenant_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_alert_subscribers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_alert_tick: {
+        Row: {
+          id: boolean
+          token: string | null
+          url: string | null
+        }
+        Insert: {
+          id?: boolean
+          token?: string | null
+          url?: string | null
+        }
+        Update: {
+          id?: boolean
+          token?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      deal_alerts: {
+        Row: {
+          created_at: string
+          deal_id: string
+          id: string
+          recipients: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          id?: string
+          recipients?: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          id?: string
+          recipients?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_alerts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_images: {
         Row: {
           alt: string | null
@@ -435,6 +591,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          alert_skip: boolean
           archived_at: string | null
           barcode_type: Database["public"]["Enums"]["barcode_type"] | null
           category_id: string | null
@@ -483,6 +640,7 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          alert_skip?: boolean
           archived_at?: string | null
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
           category_id?: string | null
@@ -531,6 +689,7 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          alert_skip?: boolean
           archived_at?: string | null
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
           category_id?: string | null
@@ -2222,6 +2381,7 @@ export type Database = {
           created_by: string | null
           currency: string
           current_period_end: string | null
+          deal_alert_at: string | null
           fee_override_bps: number | null
           fee_override_fixed: number | null
           id: string
@@ -2255,6 +2415,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           current_period_end?: string | null
+          deal_alert_at?: string | null
           fee_override_bps?: number | null
           fee_override_fixed?: number | null
           id?: string
@@ -2288,6 +2449,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           current_period_end?: string | null
+          deal_alert_at?: string | null
           fee_override_bps?: number | null
           fee_override_fixed?: number | null
           id?: string
@@ -2983,6 +3145,47 @@ export type Database = {
         }
         Returns: string
       }
+      deal_alert_claim: {
+        Args: { p_limit: number }
+        Returns: {
+          alert_id: string
+          deal_id: string
+          email: string
+          subscriber_id: string
+          tenant_id: string
+          token: string
+        }[]
+      }
+      deal_alert_done: {
+        Args: {
+          p_alert: string
+          p_error?: string
+          p_ok: boolean
+          p_subscriber: string
+        }
+        Returns: undefined
+      }
+      deal_alert_due: { Args: never; Returns: string[] }
+      deal_alert_history: {
+        Args: { p_tenant: string }
+        Returns: {
+          created_at: string
+          deal_id: string
+          failed: number
+          id: string
+          open: number
+          recipients: number
+          sent: number
+          title: string
+        }[]
+      }
+      deal_alert_live: {
+        Args: { d: Database["public"]["Tables"]["deals"]["Row"] }
+        Returns: boolean
+      }
+      deal_alert_start: { Args: never; Returns: number }
+      deal_alert_tick_claim: { Args: { p_token: string }; Returns: boolean }
+      deal_alert_wake: { Args: never; Returns: undefined }
       deal_has_sales: { Args: { p_deal: string }; Returns: boolean }
       fee_lines: {
         Args: { p_month: string; p_tenant: string }

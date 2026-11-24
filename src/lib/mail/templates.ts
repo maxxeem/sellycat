@@ -1,6 +1,6 @@
 import { fmt, getDictionary } from "@/lib/i18n";
 import { readableOn } from "@/lib/design/color";
-import { formatMoney } from "@/lib/shop/deal-status";
+import { formatMoney, savingsPercent } from "@/lib/shop/deal-status";
 
 /**
  * Buyer-facing mails in the shop's language and colours. Pure (data in, subject/HTML/text out),
@@ -442,5 +442,75 @@ ${button(i.brand, `${i.siteUrl}/dashboard/billing`, w.toBilling)}
     subject: subjectLine(fmt(w.planSubject, { plan: i.planName })),
     html,
     text: [fmt(w.planHeading, { plan: i.planName }), "", hello, fmt(w.planIntro, { plan: i.planName, shop: i.shopName }), w.planNext, "", `${w.toBilling}: ${i.siteUrl}/dashboard/billing`, w.planInvoices].join("\n"),
+  };
+}
+
+/** Colours and logo of a shop's own header, as the band on top of its deal alert mails. */
+export type MailBand = { background: string; text: string; logoUrl: string | null };
+
+function bandLayout(brand: MailBrand, band: MailBand, top: string, body: string, footer: string, preheader: string) {
+  return `<!doctype html><html lang="${brand.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(brand.shopName)}</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111111;">
+<div style="display:none;max-height:0;overflow:hidden;">${esc(preheader)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;"><tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;">
+<tr><td style="padding:22px 28px;background:${band.background};">${band.logoUrl ? `<img src="${esc(band.logoUrl)}" alt="${esc(brand.shopName)}" height="40" style="display:block;height:40px;width:auto;max-width:220px;border:0;color:${band.text};font-size:18px;font-weight:700;">` : `<p style="margin:0;font-size:20px;font-weight:700;color:${band.text};">${esc(brand.shopName)}</p>`}</td></tr>
+${top}<tr><td style="padding:28px;font-size:16px;line-height:1.5;">${body}</td></tr>
+</table>
+<p style="max-width:540px;margin:16px auto 0;font-size:12px;line-height:1.6;color:#71717a;">${footer}</p>
+</td></tr></table></body></html>`;
+}
+
+/** Double opt-in of the deal alert. */
+export function dealAlertConfirmMail(i: { brand: MailBrand; band: MailBand; url: string }): Mail {
+  const m = getDictionary(i.brand.locale).mail.dealAlert;
+  const v = { shop: i.brand.shopName };
+  return {
+    subject: subjectLine(fmt(m.confirmSubject, v)),
+    html: bandLayout(
+      i.brand,
+      i.band,
+      "",
+      `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(m.confirmHeading)}</h1><p style="margin:0;">${esc(fmt(m.confirmText, v))}</p>${button(i.brand, i.url, m.confirmButton)}<p style="margin:0;font-size:13px;color:#71717a;">${esc(m.confirmIgnore)}</p>`,
+      esc(fmt(m.confirmFooter, v)),
+      fmt(m.confirmText, v),
+    ),
+    text: [m.confirmHeading, "", fmt(m.confirmText, v), "", `${m.confirmButton}: ${i.url}`, "", m.confirmIgnore].join("\n"),
+  };
+}
+
+/** A deal that just went live, to everyone with an active deal alert. */
+export function dealAlertMail(i: {
+  brand: MailBrand;
+  band: MailBand;
+  deal: { title: string; subtitle: string | null; priceCents: number; compareAtCents: number | null; currency: string; image: string | null; left: number | null; url: string };
+  unsubscribeUrl: string;
+}): Mail {
+  const m = getDictionary(i.brand.locale).mail.dealAlert;
+  const d = i.deal;
+  const money = (c: number) => formatMoney(c, d.currency, i.brand.locale);
+  const percent = savingsPercent(d.priceCents, d.compareAtCents);
+  const saved = percent && d.compareAtCents ? fmt(m.saved, { amount: money(d.compareAtCents - d.priceCents) }) : null;
+  const facts = [saved, d.left !== null ? fmt(m.left, { count: d.left }) : null].filter((x): x is string => Boolean(x)).join(" · ");
+  const v = { shop: i.brand.shopName };
+  const link = (href: string, label: string) => `<a href="${esc(href)}" style="color:#71717a;text-decoration:underline;">${esc(label)}</a>`;
+  const t = getDictionary(i.brand.locale).shop;
+  return {
+    subject: subjectLine(fmt(m.subject, { title: d.title, price: money(d.priceCents) })),
+    html: bandLayout(
+      i.brand,
+      i.band,
+      d.image ? `<tr><td><a href="${esc(d.url)}"><img src="${esc(d.image)}" alt="${esc(d.title)}" width="560" style="display:block;width:100%;height:auto;border:0;"></a></td></tr>\n` : "",
+      `<span style="display:inline-block;background:${i.brand.primary};color:${readableOn(i.brand.primary)};border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;">${esc(m.badge)}${percent ? ` · -${percent}%` : ""}</span>
+<h1 style="margin:14px 0 8px;font-size:26px;line-height:1.2;">${esc(d.title)}</h1>
+${d.subtitle ? `<p style="margin:0;color:#52525b;">${esc(d.subtitle)}</p>` : ""}
+<p style="margin:18px 0 4px;"><strong style="font-size:26px;">${esc(money(d.priceCents))}</strong>${percent && d.compareAtCents ? ` <s style="margin-left:8px;color:#71717a;">${esc(money(d.compareAtCents))}</s>` : ""}</p>
+${facts ? `<p style="margin:0;font-size:14px;color:#52525b;">${esc(facts)}</p>` : ""}
+${button(i.brand, d.url, m.button)}
+<p style="margin:0;font-size:13px;color:#71717a;">${esc(m.after)}</p>`,
+      `${esc(fmt(m.footer, v))} ${link(i.unsubscribeUrl, m.unsubscribe)} · ${link(`${i.brand.shopUrl}/impressum`, t.imprint)} · ${link(`${i.brand.shopUrl}/datenschutz`, t.privacy)}`,
+      facts || d.subtitle || d.title,
+    ),
+    text: [d.title, d.subtitle, "", `${money(d.priceCents)}${facts ? ` (${facts})` : ""}`, "", `${m.button}: ${d.url}`, "", m.after, "", fmt(m.footer, v), `${m.unsubscribe}: ${i.unsubscribeUrl}`].filter((x) => x !== null).join("\n"),
   };
 }

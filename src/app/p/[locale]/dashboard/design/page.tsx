@@ -23,11 +23,12 @@ export default async function DesignPage({ params }: PageProps<"/p/[locale]/dash
 
 async function Design() {
   const { tenant, supabase } = await requireTenant("editor");
-  const [{ data: theme }, { data: info }, { data: categories }, deals] = await Promise.all([
+  const [{ data: theme }, { data: info }, { data: categories }, deals, { data: profile }] = await Promise.all([
     supabase.from("shop_themes").select("draft, published, published_at, updated_at").eq("tenant_id", tenant.id).maybeSingle(),
     supabase.from("tenants").select("name, currency, locale").eq("id", tenant.id).single(),
     supabase.from("categories").select("name, slug").eq("tenant_id", tenant.id).order("sort_order"),
     getShopDeals(tenant.id),
+    supabase.rpc("shop_profile", { p_tenant: tenant.id }),
   ]);
   const draft = theme?.draft && Object.keys(theme.draft as object).length ? theme.draft : theme?.published;
   return (
@@ -36,6 +37,7 @@ async function Design() {
       initial={parseTheme(draft)}
       hasUnpublished={Boolean(theme && JSON.stringify(theme.draft) !== JSON.stringify(theme.published))}
       shop={{ name: info?.name ?? "", currency: info?.currency ?? "CHF", locale: info?.locale === "en" ? "en" : "de" }}
+      dealAlert={(profile?.[0]?.settings as { deal_alert?: boolean } | undefined)?.deal_alert === true}
       deals={listedDeals(deals).slice(0, 6)}
       categories={categories ?? []}
     />

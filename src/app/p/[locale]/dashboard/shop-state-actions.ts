@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { kickDealAlerts } from "@/lib/alerts/deal-alert";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { parseNotice, type ShopState } from "@/lib/shop/shop-state";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,6 +15,7 @@ export async function setShopState(next: Exclude<ShopState, "building">): Promis
   if (error) return { ok: false };
   await admin.from("platform_audit_log").insert({ actor_id: user.id, action: `shop.${next}`, tenant_id: tenant.id, target_type: "tenant", target_id: tenant.id });
   refreshShop(tenant.id);
+  if (next === "online") kickDealAlerts();
   revalidatePath("/p/[locale]/dashboard", "layout");
   return { ok: true };
 }

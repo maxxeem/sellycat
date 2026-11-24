@@ -24,7 +24,7 @@ import { colorsFromLogo, importFromWebsite, saveTheme } from "./actions";
 
 type ColorKey = keyof ShopTheme["colors"];
 
-export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUnpublished: boolean; shop: ShopInfo; deals: DealView[]; categories: Array<{ name: string; slug: string }> }) {
+export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUnpublished: boolean; dealAlert: boolean; shop: ShopInfo; deals: DealView[]; categories: Array<{ name: string; slug: string }> }) {
   const { t } = useI18n();
   const g = t.design;
   const [theme, setTheme] = useState<ShopTheme>(props.initial);
@@ -317,7 +317,7 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
               ))}
               <style>{SHOP_CSS + fonts.faces}</style>
               <div className="shop-root min-h-dvh" style={themeStyle(theme)} {...themeAttrs(theme)}>
-                <ShopFrame name={props.shop.name} theme={theme} t={t.shop} inert>
+                <ShopFrame name={props.shop.name} theme={theme} t={t.shop} dealAlert={props.dealAlert} inert>
                   <ShopHome shop={props.shop} theme={theme} t={t.shop} deals={sampleDeals} categories={props.categories} inert />
                 </ShopFrame>
               </div>

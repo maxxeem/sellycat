@@ -30,6 +30,8 @@ export async function sendMail(input: {
   replyTo?: string | null;
   tag?: string;
   attachments?: Attachment[];
+  /** Extra message headers (e.g. List-Unsubscribe). */
+  headers?: Record<string, string>;
 }): Promise<MailResult> {
   if (!mailConfigured()) return { ok: false, error: "Mailversand nicht konfiguriert (MAILGUN_API_KEY/MAILGUN_DOMAIN)." };
   if (isReservedAddress(input.to)) return { ok: true, id: "skipped-reserved-domain", skipped: true };
@@ -42,6 +44,7 @@ export async function sendMail(input: {
   body.append("html", input.html);
   body.append("text", input.text);
   if (input.replyTo) body.append("h:Reply-To", input.replyTo);
+  for (const [k, v] of Object.entries(input.headers ?? {})) body.append(`h:${k}`, v);
   if (input.tag) body.append("o:tag", input.tag);
   for (const a of input.attachments ?? []) body.append("attachment", new Blob([a.content as BlobPart], { type: a.contentType }), a.filename);
   try {
