@@ -23,20 +23,38 @@ export function pageChromeCss(theme: ShopTheme): string {
 }
 
 /**
- * Hero rules of one device class: `hiddenFor` is the `data-show` value that hides the hero there
- * ("desktop" = hero only on desktop, so hidden on phones). The header only merges with a hero, and
- * the deals only move up over a fading picture, where the hero is visible.
+ * Hero rules of one device class. Each device has its own background (`data-desktop` /
+ * `data-mobile`: image, fill, header, plain); a header in one block with the hero follows its tone.
  */
-function heroDeviceCss(hiddenFor: "desktop" | "mobile"): string {
-  const visible = `:not([data-show="${hiddenFor}"]):not([style*="display: none"]):not([style*="display: none"] *)`;
-  const root = (hero: string) => `.shop-root[data-header="integrated"]:has(${hero}${visible}) .shop-header`;
+function heroDeviceCss(device: "desktop" | "mobile"): string {
+  const phone = device === "mobile";
+  const v = phone ? "-mobile" : "";
+  const hero = (kind: string) => `.shop-hero[data-${device}="${kind}"]`;
+  const visible = `:not([style*="display: none"]):not([style*="display: none"] *)`;
+  const header = (sel: string) => `.shop-root[data-header="integrated"]:has(${sel}${visible}) .shop-header`;
+  const fade = (kind: string) => `.shop-hero-fade[data-${device}="${kind}"]`;
+  const pad = (top: string, bottom: string) => `{padding-top:${top};padding-bottom:${bottom};}`;
+  const soft = phone ? "7rem" : "11rem";
+  const mask = `linear-gradient(to bottom,#000 calc(100% - ${soft}),transparent)`;
   return [
-    `.shop-hero[data-show="${hiddenFor}"]{display:none;}`,
-    `${root(".shop-hero")}{background:transparent;}`,
-    `${root(".shop-hero-image")}{color:#fff;}`,
-    `${root(".shop-hero-image")} .shop-logo-for-light{display:none;}`,
-    `${root(".shop-hero-image")} .shop-logo-for-dark{display:block;}`,
-    `.shop-hero-fade:not([data-show="${hiddenFor}"]) + .shop-below{position:relative;margin-top:${hiddenFor === "desktop" ? "-5rem" : "-8.5rem"};}`,
+    `.shop-hero{background:var(--hero-bg${v});color:var(--hero-text${v});}`,
+    `.shop-hero-img{object-position:var(--hero-pos${v});}`,
+    `.shop-hero:not([data-${device}="image"]) .shop-hero-media{display:none;}`,
+    `.shop-root[data-header="integrated"]:has(.shop-hero${visible}) .shop-header{background:transparent;}`,
+    ...["dark", "light"].flatMap((tone) => {
+      const h = header(`.shop-hero[data-${device}-tone="${tone}"]:not([data-${device}="plain"])`);
+      return [`${h}{color:${tone === "dark" ? "#fff" : "#111"};}`, `${h} .shop-logo-for-light{display:${tone === "dark" ? "none" : "block"};}`, `${h} .shop-logo-for-dark{display:${tone === "dark" ? "block" : "none"};}`];
+    }),
+    `${hero("image")} .shop-hero-text{display:flex;flex-direction:column;justify-content:flex-end;min-height:${phone ? "20rem" : "26rem"};}`,
+    `${hero("image")} .shop-hero-text${phone ? pad("3rem", "3rem") : pad("5rem", "5rem")}`,
+    `${hero("fill")} .shop-hero-text,${hero("header")} .shop-hero-text${phone ? pad("2.25rem", "2.25rem") : pad("3rem", "3rem")}`,
+    // Text only: the same distance above the headline and below the text up to the deals.
+    `${hero("plain")} .shop-hero-text${phone ? pad("1.75rem", ".5rem") : pad("2.5rem", "1.25rem")}`,
+    `${hero("plain")} + .shop-below .shop-list-top{height:1.5rem;}`,
+    `${fade("image")} .shop-hero-text{min-height:${phone ? "24rem" : "30rem"};padding-bottom:${phone ? "7.5rem" : "11.5rem"};}`,
+    `${fade("image")} .shop-hero-media{-webkit-mask-image:${mask};mask-image:${mask};}`,
+    `${fade("image")} + .shop-below{position:relative;margin-top:${phone ? "-5rem" : "-8.5rem"};}`,
+    `${fade("image")} + .shop-below .shop-chip:not([aria-current="page"]){background:var(--shop-bg);}`,
   ].join("\n");
 }
 
@@ -104,26 +122,8 @@ export const SHOP_CSS = `
 }
 .shop-header[data-tone="dark"] .shop-logo-for-light{display:none;}
 .shop-header[data-tone="dark"] .shop-logo-for-dark{display:block;}
-.shop-root[data-header="integrated"] .shop-hero{background:var(--shop-header-bg);color:var(--shop-on-header);}
-.shop-root[data-header="integrated"] .shop-hero.shop-hero-fade{background:transparent;}
-@media (max-width:639.98px){${heroDeviceCss("desktop")}}
-@media (min-width:640px){${heroDeviceCss("mobile")}}
-.shop-hero-img{object-position:var(--hero-pos);}
-.shop-hero-text{padding-top:3rem;padding-bottom:3rem;}
-.shop-hero-line .shop-hero-text{min-height:20rem;}
-.shop-hero-fade .shop-hero-text{min-height:24rem;padding-bottom:7.5rem;}
-.shop-hero-fade .shop-hero-media{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 7rem),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 7rem),transparent);}
-.shop-hero-fade + .shop-below .shop-chip:not([aria-current="page"]){background:var(--shop-bg);}
-@media (max-width:639.98px){.shop-hero-img{object-position:var(--hero-pos-mobile);}}
-@media (min-width:640px){
-.shop-hero-text{padding-top:5rem;padding-bottom:5rem;}
-.shop-hero-filled .shop-hero-text{padding-top:3rem;padding-bottom:3rem;}
-.shop-hero-plain .shop-hero-text{padding-top:2.5rem;padding-bottom:1.25rem;}
-.shop-hero-plain + .shop-below .shop-list-top{height:1.5rem;}
-.shop-hero-line .shop-hero-text{min-height:26rem;}
-.shop-hero-fade .shop-hero-text{min-height:30rem;padding-bottom:11.5rem;}
-.shop-hero-fade .shop-hero-media{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 11rem),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 11rem),transparent);}
-}
+@media (max-width:639.98px){${heroDeviceCss("mobile")}}
+@media (min-width:640px){${heroDeviceCss("desktop")}}
 .shop-root[data-header="integrated"] .shop-hero{margin-top:calc(-1 * var(--shop-header-h));padding-top:var(--shop-header-h);}
 .shop-hero-top-shade{display:none;}
 .shop-root[data-header="integrated"] .shop-hero-top-shade{display:block;}

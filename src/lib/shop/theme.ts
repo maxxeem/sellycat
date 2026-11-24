@@ -26,6 +26,24 @@ export const fontSchema = z.object({
 });
 export type ThemeFont = z.infer<typeof fontSchema>;
 
+/** Background of the hero on one device: the picture, a colour, a gradient or none (text only, compact). */
+const heroBackdrop = z.object({
+  kind: z.enum(["image", "color", "gradient", "none"]).default("image"),
+  from: hex.default("#ff4b23"),
+  to: hex.default("#7a1fa2"),
+  direction: z.enum(["down", "right", "diagonal"]).default("diagonal"),
+});
+export type HeroBackdrop = z.infer<typeof heroBackdrop>;
+const HERO_BACKDROP: HeroBackdrop = { kind: "image", from: "#ff4b23", to: "#7a1fa2", direction: "diagonal" };
+
+/** Themes saved with the former «show only on …» choice: the other device keeps the text without picture. */
+function upgradeHero(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object" || !("show" in raw)) return raw;
+  const { show, ...hero } = raw as Record<string, unknown>;
+  const none = { ...HERO_BACKDROP, kind: "none" };
+  return { ...hero, ...(show === "desktop" && !hero.mobile ? { mobile: none } : {}), ...(show === "mobile" && !hero.desktop ? { desktop: none } : {}) };
+}
+
 export const themeSchema = z.object({
   colors: z
     .object({
@@ -60,25 +78,30 @@ export const themeSchema = z.object({
     })
     .default({ style: "bar", fill: "none", from: "#ff4b23", to: "#7a1fa2", direction: "diagonal" }),
   /**
-   * `show`: on which screens the hero appears (mobile = below 640 px). `imageMobile`: own picture
-   * for phones, else `image`. `focus…` (0–100 %): the point of that picture that stays visible when
-   * it is cropped. `edge`: the picture ends with a line or fades into the page (deals overlap it).
+   * Hero, always on every screen; `desktop` (and tablet) and `mobile` (below 640 px) choose their own
+   * background. `imageMobile`: own picture for phones, else `image`. `focus…` (0–100 %): the point of
+   * that picture that stays visible when it is cropped. `edge`: a picture ends with a line or fades
+   * into the page (deals overlap it).
    */
-  hero: z
-    .object({
-      enabled: z.boolean().default(true),
-      title: z.string().max(120).default(""),
-      subtitle: z.string().max(240).default(""),
-      image: url,
-      focusX: z.number().min(0).max(100).default(50),
-      focusY: z.number().min(0).max(100).default(50),
-      show: z.enum(["both", "desktop", "mobile"]).default("both"),
-      imageMobile: url,
-      focusMobileX: z.number().min(0).max(100).default(50),
-      focusMobileY: z.number().min(0).max(100).default(50),
-      edge: z.enum(["line", "fade"]).default("line"),
-    })
-    .default({ enabled: true, title: "", subtitle: "", image: "", focusX: 50, focusY: 50, show: "both", imageMobile: "", focusMobileX: 50, focusMobileY: 50, edge: "line" }),
+  hero: z.preprocess(
+    upgradeHero,
+    z
+      .object({
+        enabled: z.boolean().default(true),
+        title: z.string().max(120).default(""),
+        subtitle: z.string().max(240).default(""),
+        image: url,
+        focusX: z.number().min(0).max(100).default(50),
+        focusY: z.number().min(0).max(100).default(50),
+        imageMobile: url,
+        focusMobileX: z.number().min(0).max(100).default(50),
+        focusMobileY: z.number().min(0).max(100).default(50),
+        edge: z.enum(["line", "fade"]).default("line"),
+        desktop: heroBackdrop.default(HERO_BACKDROP),
+        mobile: heroBackdrop.default(HERO_BACKDROP),
+      })
+      .default({ enabled: true, title: "", subtitle: "", image: "", focusX: 50, focusY: 50, imageMobile: "", focusMobileX: 50, focusMobileY: 50, edge: "line", desktop: HERO_BACKDROP, mobile: HERO_BACKDROP }),
+  ),
   logoLight: url,
   logoDark: url,
   /** Optional logo in the footer (above the icons), separate from the header logo. */
@@ -116,12 +139,23 @@ function fontStack(font: ThemeFont): string {
   return `"${font.family.replace(/"/g, "")}", ${SYSTEM_STACK}`;
 }
 
-/** The hero picture per device with its focus point; a missing one falls back to the other device's. */
-export function heroPictures(hero: ShopTheme["hero"]): { desktop: { url: string; position: string }; mobile: { url: string; position: string } } | null {
-  const desktop = { url: hero.image, position: `${hero.focusX}% ${hero.focusY}%` };
-  const mobile = { url: hero.imageMobile, position: `${hero.focusMobileX}% ${hero.focusMobileY}%` };
-  if (!desktop.url && !mobile.url) return null;
-  return { desktop: desktop.url ? desktop : mobile, mobile: mobile.url ? mobile : desktop };
+export type HeroLook = { kind: "image" | "fill" | "header" | "plain"; url: string; position: string; background: string; text: string; tone: "light" | "dark" };
+
+/** How the hero looks on one device (a picture without an upload counts as none). */
+export function heroLook(theme: ShopTheme, device: "desktop" | "mobile"): HeroLook {
+  const h = theme.hero;
+  const b = h[device];
+  const own = device === "mobile" && h.imageMobile;
+  const url = own ? h.imageMobile : h.image;
+  const plain: HeroLook = { kind: "plain", url: "", position: "", background: "transparent", text: theme.colors.text, tone: theme.mode };
+  if (b.kind === "image" && url) return { ...plain, kind: "image", url, position: own ? `${h.focusMobileX}% ${h.focusMobileY}%` : `${h.focusX}% ${h.focusY}%`, text: "#ffffff", tone: "dark" };
+  if (b.kind === "color" || b.kind === "gradient") {
+    const text = readableOn(b.kind === "color" ? b.from : mix(b.from, b.to, 0.5), "#111111", "#ffffff");
+    return { ...plain, kind: "fill", background: b.kind === "color" ? b.from : `linear-gradient(${ANGLE[b.direction]}, ${b.from}, ${b.to})`, text, tone: text === "#ffffff" ? "dark" : "light" };
+  }
+  // Header and hero as one coloured block: the hero keeps the header's ground.
+  if (theme.header.style === "integrated" && theme.header.fill !== "none") return { ...plain, kind: "header", background: "var(--shop-header-bg)", text: headerLook(theme).text, tone: headerLook(theme).tone };
+  return plain;
 }
 
 /** The footer logo for the footer's background (surface colour), "" without one. */
@@ -145,7 +179,11 @@ export function headerLogo(theme: ShopTheme): string {
 
 /** Deal alert button: filled on a picture, outlined in the primary colour where that reads, else in the text colour. */
 export function alertLook(theme: ShopTheme): "filled" | "primary" | "text" {
-  if (theme.header.style === "integrated" && theme.hero.enabled && heroPictures(theme.hero)) return "filled";
+  if (theme.header.style === "integrated" && theme.hero.enabled) {
+    const kinds = [heroLook(theme, "desktop").kind, heroLook(theme, "mobile").kind];
+    if (kinds.includes("fill")) return "text";
+    if (kinds.includes("image")) return "filled";
+  }
   return contrastRatio(theme.colors.primary, headerBase(theme)) >= 3 ? "primary" : "text";
 }
 

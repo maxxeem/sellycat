@@ -19,8 +19,8 @@ import { FONT_ACCEPT, checkFontFile, familyFromFile, fontCssFormat } from "@/lib
 import { isGoogleFont } from "@/lib/design/google-fonts";
 import { SOCIAL_ICON } from "@/components/shop/social-icons";
 import { SOCIAL_LABEL, SOCIAL_NETWORKS, socialUrl, type SocialNetwork } from "@/lib/shop/social";
-import { contrastIssues, themeFontCss, type ShopTheme, type ThemeFont } from "@/lib/shop/theme";
-import { colorsFromLogo, importFromWebsite, saveTheme } from "./actions";
+import { contrastIssues, heroLook, themeFontCss, type HeroBackdrop, type ShopTheme, type ThemeFont } from "@/lib/shop/theme";
+import { importFromWebsite, saveTheme } from "./actions";
 
 type ColorKey = keyof ShopTheme["colors"];
 
@@ -218,32 +218,36 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
 
           <Card title={g.hero}>
             <div className="flex flex-col gap-4">
-              <Segmented
-                label={g.heroShow}
-                value={theme.hero.enabled ? theme.hero.show : "none"}
-                onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, enabled: v !== "none", show: v === "none" ? th.hero.show : v } }))}
-                options={[["both", g.heroShowBoth], ["desktop", g.heroShowDesktop], ["mobile", g.heroShowMobile], ["none", g.heroShowNone]]}
-              />
+              <label className="flex items-center gap-3 text-sm">
+                <input type="checkbox" checked={theme.hero.enabled} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, enabled: e.target.checked } }))} className="h-4 w-4 accent-[var(--coral)]" />
+                {g.heroEnabled}
+              </label>
               <Field label={g.heroTitle}>
                 <Input value={theme.hero.title} maxLength={120} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, title: e.target.value } }))} placeholder={props.shop.name} />
               </Field>
               <Field label={g.heroSubtitle}>
                 <Input value={theme.hero.subtitle} maxLength={240} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, subtitle: e.target.value } }))} />
               </Field>
-              {theme.hero.image || theme.hero.imageMobile ? (
-                <div>
-                  <Segmented label={g.heroEdge} value={theme.hero.edge} onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, edge: v } }))} options={[["line", g.heroEdgeLine], ["fade", g.heroEdgeFade]]} />
-                  <p className="mt-1.5 text-xs text-muted">{g.heroEdgeHint}</p>
-                </div>
-              ) : null}
-              <HeroGuide />
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
-              {theme.hero.image ? (
-                <HeroFocus label={g.heroFocus} devices={theme.hero.imageMobile ? ["desktop"] : ["desktop", "mobile"]} image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} />
-              ) : null}
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.imageMobile} label={g.heroImageMobile} hint={g.hintHeroMobile} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, imageMobile: url, focusMobileX: 50, focusMobileY: 50 } }))} />
-              {theme.hero.imageMobile ? (
-                <HeroFocus label={g.heroFocusMobile} devices={theme.hero.image ? ["mobile"] : ["desktop", "mobile"]} image={theme.hero.imageMobile} x={theme.hero.focusMobileX} y={theme.hero.focusMobileY} onChange={(focusMobileX, focusMobileY) => update((th) => ({ ...th, hero: { ...th.hero, focusMobileX, focusMobileY } }))} />
+              <HeroBackdropField title={g.heroDesktop} value={theme.hero.desktop} presets={Object.values(theme.colors)} onChange={(desktop) => update((th) => ({ ...th, hero: { ...th.hero, desktop } }))}>
+                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
+                {theme.hero.image ? (
+                  <HeroFocus label={g.heroFocus} devices={theme.hero.mobile.kind === "image" && !theme.hero.imageMobile ? ["desktop", "mobile"] : ["desktop"]} image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} />
+                ) : null}
+              </HeroBackdropField>
+              <HeroBackdropField title={g.heroMobile} value={theme.hero.mobile} presets={Object.values(theme.colors)} onChange={(mobile) => update((th) => ({ ...th, hero: { ...th.hero, mobile } }))}>
+                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.imageMobile} label={g.heroImageMobile} hint={g.hintHeroMobile} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, imageMobile: url, focusMobileX: 50, focusMobileY: 50 } }))} />
+                {theme.hero.imageMobile ? (
+                  <HeroFocus label={g.heroFocus} devices={["mobile"]} image={theme.hero.imageMobile} x={theme.hero.focusMobileX} y={theme.hero.focusMobileY} onChange={(focusMobileX, focusMobileY) => update((th) => ({ ...th, hero: { ...th.hero, focusMobileX, focusMobileY } }))} />
+                ) : null}
+              </HeroBackdropField>
+              {heroLook(theme, "desktop").kind === "image" || heroLook(theme, "mobile").kind === "image" ? (
+                <>
+                  <div className="border-t border-line pt-4">
+                    <Segmented label={g.heroEdge} value={theme.hero.edge} onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, edge: v } }))} options={[["line", g.heroEdgeLine], ["fade", g.heroEdgeFade]]} />
+                    <p className="mt-1.5 text-xs text-muted">{g.heroEdgeHint}</p>
+                  </div>
+                  <HeroGuide />
+                </>
               ) : null}
             </div>
           </Card>
@@ -252,24 +256,6 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
             <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoLight} label={g.logoLight} hint={g.hintLogo} height="h-32" tone="light" onChange={(url) => update((th) => ({ ...th, logoLight: url }))} />
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoDark} label={g.logoDark} hint={g.hintLogo} height="h-32" tone="dark" onChange={(url) => update((th) => ({ ...th, logoDark: url }))} />
-              {theme.logoLight || theme.logoDark ? (
-                <button
-                  type="button"
-                  className={`${buttonClass.secondary} self-start`}
-                  disabled={importing}
-                  onClick={() =>
-                    startImport(async () => {
-                      const r = await colorsFromLogo(theme.logoLight || theme.logoDark);
-                      setSuggestion(r.ok ? r.suggestion : undefined);
-                      setImportError(r.ok ? null : "nothing");
-                      setImportPartial(false);
-                      if (r.ok) document.getElementById("branding-import")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    })
-                  }
-                >
-                  <Wand2 className="h-4 w-4" aria-hidden /> {importing ? t.common.loading : g.logoColors}
-                </button>
-              ) : null}
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.favicon} label={g.favicon} hint={g.hintFavicon} height="h-32" accept="image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" onChange={(url) => update((th) => ({ ...th, favicon: url }))} />
               <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.socialImage} label={g.socialImage} hint={g.hintSocial} height="h-32" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, socialImage: url }))} />
             </div>
@@ -455,6 +441,26 @@ function SocialLinksField({ value, onChange }: { value: ShopTheme["socialLinks"]
           <Plus className="h-4 w-4" /> {g.socialAdd}
         </button>
       ) : null}
+    </div>
+  );
+}
+
+/** Background of the hero on one device; `children` are the picture controls. */
+function HeroBackdropField({ title, value, presets, onChange, children }: { title: string; value: HeroBackdrop; presets: string[]; onChange: (v: HeroBackdrop) => void; children: ReactNode }) {
+  const { t } = useI18n();
+  const g = t.design;
+  return (
+    <div className="flex flex-col gap-4 border-t border-line pt-4">
+      <Segmented label={title} value={value.kind} onChange={(kind) => onChange({ ...value, kind })} options={[["image", g.heroBgImage], ["color", g.fillColor], ["gradient", g.fillGradient], ["none", g.heroBgNone]]} />
+      {value.kind === "image" ? children : null}
+      {value.kind === "color" || value.kind === "gradient" ? (
+        <ColorFieldGroup>
+          <ColorField label={value.kind === "gradient" ? g.gradientFrom : g.fillColor} value={value.from} onChange={(from) => onChange({ ...value, from })} presets={presets} doneLabel={t.common.close} />
+          {value.kind === "gradient" ? <ColorField label={g.gradientTo} value={value.to} onChange={(to) => onChange({ ...value, to })} presets={presets} doneLabel={t.common.close} /> : null}
+        </ColorFieldGroup>
+      ) : null}
+      {value.kind === "gradient" ? <Segmented label={g.direction} value={value.direction} onChange={(direction) => onChange({ ...value, direction })} options={[["down", g.dirDown], ["right", g.dirRight], ["diagonal", g.dirDiagonal]]} /> : null}
+      {value.kind === "none" ? <p className="text-xs text-muted">{g.heroBgNoneHint}</p> : null}
     </div>
   );
 }

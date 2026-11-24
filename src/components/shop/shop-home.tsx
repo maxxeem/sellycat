@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { heroPictures, type ShopTheme } from "@/lib/shop/theme";
+import { heroLook, type ShopTheme } from "@/lib/shop/theme";
 import { ShopDealList } from "./shop-deal-list";
 import { shopImage } from "@/lib/shop/image";
 import type { ShopTexts } from "./shop-texts";
@@ -46,32 +46,30 @@ export function ShopHome({
   );
 }
 
-/** 1×1 transparent GIF: what a device loads instead of the picture when the hero is hidden there. */
+/** 1×1 transparent GIF: what a device without a hero picture loads instead. */
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
-const MOBILE = "(max-width: 639.98px)";
 
-/** Title area: own picture per device, hard or fading lower edge, compact without a picture (rules in SHOP_CSS). */
+/** Title area: own background per device (data-desktop / data-mobile, rules in SHOP_CSS). */
 function Hero({ theme, title }: { theme: ShopTheme; title: string }) {
-  const { subtitle, show, edge } = theme.hero;
-  const pictures = heroPictures(theme.hero);
-  // A coloured block (header and hero in one) keeps even padding inside; otherwise the text sits on the page.
-  const filled = theme.header.style === "integrated" && theme.header.fill !== "none";
-  const kind = pictures ? (edge === "fade" ? "shop-hero-image shop-hero-fade" : "shop-hero-image shop-hero-line") : filled ? "shop-hero-filled" : "shop-hero-plain";
-  const desktop = pictures ? shopImage(pictures.desktop.url, "100vw") : null;
-  const mobile = pictures ? shopImage(pictures.mobile.url, "100vw") : null;
-  const mobileSrc = show === "desktop" ? BLANK : (mobile?.srcSet ?? mobile?.src);
+  const { subtitle, edge } = theme.hero;
+  const d = heroLook(theme, "desktop");
+  const m = heroLook(theme, "mobile");
+  const desktop = d.url ? shopImage(d.url, "100vw") : { src: BLANK };
+  const mobile = m.url ? shopImage(m.url, "100vw") : { src: BLANK };
   return (
     <section
-      className={`shop-hero relative overflow-hidden ${kind}`}
-      data-show={show}
+      className={`shop-hero relative overflow-hidden ${edge === "fade" ? "shop-hero-fade" : ""}`}
+      data-desktop={d.kind}
+      data-mobile={m.kind}
+      data-desktop-tone={d.tone}
+      data-mobile-tone={m.tone}
       data-testid="shop-hero"
-      style={pictures ? ({ "--hero-pos": pictures.desktop.position, "--hero-pos-mobile": pictures.mobile.position } as CSSProperties) : undefined}
+      style={{ "--hero-pos": d.position, "--hero-pos-mobile": m.position, "--hero-bg": d.background, "--hero-bg-mobile": m.background, "--hero-text": d.text, "--hero-text-mobile": m.text } as CSSProperties}
     >
-      {desktop ? (
+      {d.url || m.url ? (
         <div className="shop-hero-media absolute inset-0" aria-hidden>
           <picture>
-            <source media={MOBILE} srcSet={mobileSrc} sizes="100vw" />
-            {show === "mobile" ? <source srcSet={BLANK} /> : null}
+            <source media="(max-width: 639.98px)" srcSet={mobile.srcSet ?? mobile.src} sizes="100vw" />
             <img {...desktop} alt="" className="shop-hero-img absolute inset-0 h-full w-full object-cover" fetchPriority="high" />
           </picture>
           <div className={edge === "fade" ? "absolute inset-0 bg-black/40" : "absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/10"} />
@@ -79,11 +77,10 @@ function Hero({ theme, title }: { theme: ShopTheme; title: string }) {
           <div className="shop-hero-top-shade absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/55 to-transparent" />
         </div>
       ) : null}
-      <div className={`shop-hero-text relative mx-auto w-full max-w-6xl px-4 sm:px-6 ${pictures ? "flex flex-col justify-end text-white" : ""}`}>
+      <div className="shop-hero-text relative mx-auto w-full max-w-6xl px-4 sm:px-6">
         <h1 className="shop-heading max-w-3xl text-4xl font-bold leading-tight tracking-tight sm:text-5xl">{title}</h1>
-        {subtitle ? <p className={`mt-4 max-w-2xl text-lg ${pictures ? "text-white/90" : ""}`}>{subtitle}</p> : null}
+        {subtitle ? <p className="mt-4 max-w-2xl text-lg opacity-90">{subtitle}</p> : null}
       </div>
     </section>
   );
 }
-
