@@ -39,6 +39,11 @@ export type DealView = {
   images: Array<{ url: string; alt: string | null; width?: number | null; height?: number | null }>;
   partner: { name: string; logo_url: string | null; website_url: string | null } | null;
   category: { name: string; slug: string } | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_noindex?: boolean;
+  /** Plain text of the description (search snippets, structured data). */
+  descriptionText?: string;
   locations: Array<{ id: string; name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null; opening_hours: string | null; hours?: unknown }>;
 };
 

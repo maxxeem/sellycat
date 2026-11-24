@@ -21,12 +21,14 @@ import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { BARCODE_TYPES, commissionBps, slugifyTitle, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { dealStatus, formatMoney, parseMoney } from "@/lib/shop/deal-status";
-import { RICH_TEXT_EXTENSIONS } from "@/lib/shop/rich-text";
+import type { SeoTexts } from "@/lib/shop/seo";
+import { RICH_TEXT_EXTENSIONS, docToText } from "@/lib/shop/rich-text";
 import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 import { archiveDeal, deleteDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 import { AiImport } from "./ai-import";
+import { SeoPanel } from "./seo-panel";
 import { PoolPanel } from "./pool-panel";
 import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
 
@@ -44,6 +46,9 @@ export function DealEditor(props: {
   categories: Array<{ id: string; name: string; slug: string }>;
   shop: ShopInfo;
   theme: ShopTheme;
+  /** Shop-language texts for the generated search title and description. */
+  seoTexts: SeoTexts;
+  shopUrl: string;
   legalComplete: boolean;
   canArchive: boolean;
   archived: boolean;
@@ -122,6 +127,9 @@ export function DealEditor(props: {
       show_countdown: form.showCountdown,
       show_stock_bar: form.showStockBar && form.totalQty !== "",
       featured: form.featured,
+      seo_title: form.seoTitle,
+      seo_description: form.seoDescription,
+      descriptionText: docToText(form.description, 1500),
       images: form.images.map((i) => ({ url: i.url, alt: i.alt || null })),
       partner: partner ? { name: partner.name, logo_url: partner.logo_url, website_url: partner.website_url } : null,
       category: props.categories.find((c) => c.id === form.categoryId) ?? null,
@@ -562,6 +570,10 @@ export function DealEditor(props: {
               <Check label={d.featured} checked={form.featured} onChange={(v) => set("featured", v)} />
               <Check label={d.alert} checked={form.alert} onChange={(v) => set("alert", v)} />
             </div>
+          </Card>
+
+          <Card title={d.seo.title} description={d.seo.intro}>
+            <SeoPanel form={form} view={view} shop={props.shop} shopUrl={props.shopUrl} seoTexts={props.seoTexts} set={set} />
           </Card>
         </div>
 

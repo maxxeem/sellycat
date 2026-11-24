@@ -1,7 +1,11 @@
 import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
-import { CachedHome } from "./home";
+import { CachedHome, homeMetadata } from "./home";
 import { TrackShopView } from "./track-shop-view";
+
+export async function generateMetadata({ params }: PageProps<"/shop/[locale]/[tenant]">) {
+  return homeMetadata((await params).tenant, null);
+}
 
 /** Shop start page. */
 export default function ShopIndex({ params }: PageProps<"/shop/[locale]/[tenant]">) {

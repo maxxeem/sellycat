@@ -618,6 +618,9 @@ export type Database = {
           reserved_qty: number
           sales_end: string | null
           sales_start: string | null
+          seo_description: string | null
+          seo_noindex: boolean
+          seo_title: string | null
           settle_commission_bps: number
           settle_kind: string
           settle_mode: string
@@ -667,6 +670,9 @@ export type Database = {
           reserved_qty?: number
           sales_end?: string | null
           sales_start?: string | null
+          seo_description?: string | null
+          seo_noindex?: boolean
+          seo_title?: string | null
           settle_commission_bps?: number
           settle_kind?: string
           settle_mode?: string
@@ -716,6 +722,9 @@ export type Database = {
           reserved_qty?: number
           sales_end?: string | null
           sales_start?: string | null
+          seo_description?: string | null
+          seo_noindex?: boolean
+          seo_title?: string | null
           settle_commission_bps?: number
           settle_kind?: string
           settle_mode?: string

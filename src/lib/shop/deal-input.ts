@@ -44,6 +44,10 @@ export type DealForm = {
   teaser: boolean;
   /** Send this deal to the deal alert subscribers when it goes live. */
   alert: boolean;
+  /** Own search title/description ("" = generated) and "keep out of search engines". */
+  seoTitle: string;
+  seoDescription: string;
+  seoNoindex: boolean;
   /** Partner settlement for this deal: off, after sale or after redemption. */
   settleMode: "off" | "sale" | "redemption";
   settleKind: "percent" | "fixed";
@@ -145,6 +149,9 @@ export function dealRow(f: DealForm) {
     featured: f.featured,
     teaser: f.teaser && Boolean(zurichLocalToIso(f.salesStart)),
     alert_skip: !f.alert,
+    seo_title: f.seoTitle.trim().slice(0, 120) || null,
+    seo_description: f.seoDescription.trim().slice(0, 320) || null,
+    seo_noindex: f.seoNoindex,
     settle_mode: f.settleMode,
     settle_kind: f.settleKind,
     settle_commission_bps: f.settleKind === "percent" ? (commissionBps(f.settleCommission) ?? 0) : 0,
@@ -163,6 +170,7 @@ type DealRowIn = {
   redeem_validity: "none" | "until_date" | "days_after_purchase"; redeem_until: string | null; redeem_days: number | null;
   redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool";
   show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean; teaser?: boolean; alert_skip?: boolean;
+  seo_title?: string | null; seo_description?: string | null; seo_noindex?: boolean;
   settle_mode?: string; settle_kind?: string; settle_commission_bps?: number; settle_payout_cents?: number | null;
 };
 
@@ -202,6 +210,9 @@ export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: strin
     featured: d.featured,
     teaser: d.teaser ?? false,
     alert: !d.alert_skip,
+    seoTitle: d.seo_title ?? "",
+    seoDescription: d.seo_description ?? "",
+    seoNoindex: d.seo_noindex ?? false,
     settleMode: d.settle_mode === "sale" || d.settle_mode === "redemption" ? d.settle_mode : "off",
     settleKind: d.settle_kind === "fixed" ? "fixed" : "percent",
     settleCommission: d.settle_commission_bps ? String(d.settle_commission_bps / 100) : "",

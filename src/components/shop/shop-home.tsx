@@ -33,7 +33,7 @@ export function ShopHome({
 }) {
   return (
     <>
-      {theme.hero.enabled ? <Hero theme={theme} title={theme.hero.title || shop.name} /> : null}
+      {theme.hero.enabled ? <Hero theme={theme} title={theme.hero.title || shop.name} /> : <h1 className="sr-only">{shop.name}</h1>}
 
       <div className="shop-below">
       {notice ? (

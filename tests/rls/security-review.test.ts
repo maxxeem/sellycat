@@ -58,6 +58,7 @@ describe.skipIf(!rlsEnabled)("RLS security review", () => {
 
   it("hides settlement terms of deals from anon", async () => {
     const pub = anon();
+    expect((await pub.from("deals").select("seo_title, seo_description, seo_noindex").eq("tenant_id", a.tenantId)).error).toBeNull();
     expect((await pub.from("deals").select("settle_commission_bps").eq("tenant_id", a.tenantId)).error).not.toBeNull();
     expect((await pub.from("deals").select("slug, price_cents").eq("tenant_id", a.tenantId)).data).toEqual([{ slug: "live", price_cents: 2000 }]);
     expect((await a.client.from("deals").select("settle_commission_bps").eq("tenant_id", a.tenantId)).data).toEqual([{ settle_commission_bps: 1500 }]);

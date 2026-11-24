@@ -11,6 +11,7 @@ import { addCategory, deleteCategory, saveBilling, saveLegal, saveShopSettings, 
 
 function Status({ state }: { state: FormState }) {
   const { t } = useI18n();
+  if (state?.error === "googleVerification") return <Notice tone="error">{t.settings.googleVerificationError}</Notice>;
   if (state?.error) return <Notice tone="error">{t.common.error}</Notice>;
   if (state?.ok) return <Notice tone="success">{t.common.saved}</Notice>;
   return null;
@@ -49,7 +50,10 @@ export function ShopSettingsForm({ values }: { values: Record<string, string> })
           <Input name="contactPhone" type="tel" defaultValue={values.contactPhone} />
         </Field>
       </div>
-      <Field label={s.seoDescription}>
+      <Field label={s.seoTitle} hint={s.seoTitleHint}>
+        <Input name="seoTitle" defaultValue={values.seoTitle} maxLength={120} />
+      </Field>
+      <Field label={s.seoDescription} hint={s.seoDescriptionHint}>
         <textarea name="seoDescription" defaultValue={values.seoDescription} rows={2} maxLength={300} className={inputClass} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -60,6 +64,9 @@ export function ShopSettingsForm({ values }: { values: Record<string, string> })
           <Input name="replyTo" type="email" defaultValue={values.replyTo} />
         </Field>
       </div>
+      <Field label={s.googleVerification} hint={s.googleVerificationHint}>
+        <Input name="googleVerification" defaultValue={values.googleVerification} maxLength={300} />
+      </Field>
       <p className="pt-2 text-sm font-semibold">{s.analytics}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={s.ga4}>

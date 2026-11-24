@@ -60,6 +60,8 @@ async function Settings({ t }: { t: Dictionary }) {
             locale: info?.locale ?? "de",
             contactEmail: s.contact_email ?? "",
             contactPhone: s.contact_phone ?? "",
+            seoTitle: s.seo_title ?? "",
+            googleVerification: s.google_verification ?? "",
             seoDescription: s.seo_description ?? "",
             mailFromName: info?.mail_from_name ?? "",
             replyTo: info?.reply_to ?? "",

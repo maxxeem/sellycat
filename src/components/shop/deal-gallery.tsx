@@ -43,7 +43,7 @@ export function DealGallery({ images, title, t }: { images: Picture[]; title: st
           {images.map((img, i) => (
             <button key={img.url} type="button" onClick={() => setZoom(i)} className="relative w-full shrink-0 snap-center cursor-zoom-in" aria-label={fmt(t.galleryOpen, { n: i + 1 })}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img {...shopImage(img.url, "(min-width: 1024px) 60vw, 100vw")} alt={img.alt ?? title} className="aspect-[16/10] w-full object-cover" loading={i ? "lazy" : "eager"} fetchPriority={i ? "auto" : "high"} draggable={false} />
+              <img {...shopImage(img.url, "(min-width: 1024px) 60vw, 100vw")} alt={img.alt || title} className="aspect-[16/10] w-full object-cover" loading={i ? "lazy" : "eager"} fetchPriority={i ? "auto" : "high"} draggable={false} />
             </button>
           ))}
         </div>
@@ -165,7 +165,7 @@ function Lightbox({ images, title, start, t, onClose }: { images: Picture[]; tit
           {images.map((img, i) => (
             <div key={img.url} className="flex h-full w-full shrink-0 snap-center items-center justify-center p-2 sm:px-20 sm:py-4" onClick={(e) => e.target === e.currentTarget && onClose(index)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img {...shopImage(img.url, "100vw")} alt={img.alt ?? title} className="max-h-full max-w-full select-none object-contain" loading={Math.abs(i - start) > 1 ? "lazy" : "eager"} draggable={false} />
+              <img {...shopImage(img.url, "100vw")} alt={img.alt || title} className="max-h-full max-w-full select-none object-contain" loading={Math.abs(i - start) > 1 ? "lazy" : "eager"} draggable={false} />
             </div>
           ))}
         </div>

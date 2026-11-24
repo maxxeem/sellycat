@@ -4,6 +4,9 @@ import { Skeleton } from "@/components/ui";
 import { requireTenant } from "@/lib/dashboard/context";
 import { LOCALES } from "@/lib/i18n/locales";
 import { dealToForm } from "@/lib/shop/deal-input";
+import { shopBase } from "@/lib/shop/seo";
+import { siteHost } from "@/lib/site/hosts";
+import { shopTexts } from "@/components/shop/shop-texts";
 import { reusableTexts } from "@/lib/shop/reuse";
 import { parseTheme } from "@/lib/shop/theme";
 import { DealEditor } from "./deal-editor";
@@ -29,7 +32,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
   const id = await idPromise;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { tenant, supabase } = await requireTenant("editor");
-  const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }, { count: poolUsed }] = await Promise.all([
+  const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }, { count: poolUsed }, { data: domain }] = await Promise.all([
     supabase.from("deals").select("*, deal_images(url, alt, sort_order), deal_locations(location_id)").eq("id", id).eq("tenant_id", tenant.id).maybeSingle(),
     supabase.from("partners").select("id, name, logo_url, website_url, partner_locations(id, name, street, zip, city, lat, lng, opening_hours, hours)").eq("tenant_id", tenant.id).order("name"),
     supabase.from("categories").select("id, name, slug").eq("tenant_id", tenant.id).order("sort_order"),
@@ -39,6 +42,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
     // Conditions and FAQ of the shop's other deals, newest first, to reuse as a starting point.
     supabase.from("deals").select("title, terms, faq").eq("tenant_id", tenant.id).neq("id", id).order("updated_at", { ascending: false }).limit(200),
     supabase.from("code_pool").select("id", { count: "exact", head: true }).eq("deal_id", id).not("voucher_id", "is", null),
+    supabase.from("tenant_domains").select("hostname").eq("tenant_id", tenant.id).eq("is_primary", true).maybeSingle(),
   ]);
   if (!deal) notFound();
   const [staff, { data: hasSales }] = await Promise.all([getStaffUser(), supabase.rpc("deal_has_sales", { p_deal: deal.id })]);
@@ -55,6 +59,8 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
       categories={categories ?? []}
       shop={{ name: info?.name ?? "", currency: info?.currency ?? "CHF", locale: info?.locale === "en" ? "en" : "de" }}
       theme={parseTheme(theme?.published && Object.keys(theme.published as object).length ? theme.published : theme?.draft)}
+      seoTexts={shopTexts(info?.locale === "en" ? "en" : "de").seo}
+      shopUrl={shopBase(domain?.hostname ?? null, siteHost())}
       legalComplete={Boolean(legal)}
       reuse={reusableTexts(others ?? [])}
       canArchive={tenant.role === "owner" || tenant.role === "admin"}

@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { DealView } from "@/components/shop/types";
 import { createPublicClient } from "@/lib/supabase/admin";
 import { isListed, type RedeemWindow } from "./deal-status";
+import { docToText } from "./rich-text";
 import { docToHtml } from "./rich-text-server";
 import { isShopState, type ShopNotice, type ShopState } from "./shop-state";
 import { parseTheme, type ShopTheme } from "./theme";
@@ -21,7 +22,7 @@ export type ShopProfile = {
   locale: "de" | "en";
   currency: string;
   theme: ShopTheme;
-  settings: { contact_email: string | null; contact_phone: string | null; ga4_id: string | null; meta_pixel_id: string | null; seo_description: string | null; deal_order?: string | null; branding?: boolean; deal_alert?: boolean };
+  settings: { contact_email: string | null; contact_phone: string | null; ga4_id: string | null; meta_pixel_id: string | null; seo_description: string | null; seo_title?: string | null; google_verification?: string | null; deal_order?: string | null; branding?: boolean; deal_alert?: boolean };
   legalComplete: boolean;
   primaryHost: string | null;
   /** The shop's Stripe account can take payments (else the buy button stays disabled). */
@@ -56,7 +57,7 @@ export async function getShopProfile(tenantId: string): Promise<ShopProfile | nu
 }
 
 const DEAL_SELECT =
-  "id, slug, title, subtitle, description, terms, faq, deal_type, price_cents, compare_at_cents, value_cents, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, teaser, view_count, max_per_order, redeem_validity, redeem_until, redeem_days, redeem_windows, show_remaining, show_countdown, show_stock_bar, featured, sort_order, published_at, deal_images(url, alt, width, height, sort_order), partners(name, logo_url, website_url), categories(name, slug), deal_locations(partner_locations(id, name, street, zip, city, lat, lng, opening_hours, hours))";
+  "id, slug, title, subtitle, description, terms, faq, deal_type, price_cents, compare_at_cents, value_cents, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, teaser, view_count, max_per_order, redeem_validity, redeem_until, redeem_days, redeem_windows, show_remaining, show_countdown, show_stock_bar, featured, sort_order, published_at, seo_title, seo_description, seo_noindex, deal_images(url, alt, width, height, sort_order), partners(name, logo_url, website_url), categories(name, slug), deal_locations(partner_locations(id, name, street, zip, city, lat, lng, opening_hours, hours))";
 
 type DealRow = Record<string, unknown> & {
   deal_images: Array<{ url: string; alt: string | null; width: number | null; height: number | null; sort_order: number }> | null;
@@ -101,6 +102,10 @@ function toView(row: DealRow, withHtml: boolean): DealView {
     sort_order: r.sort_order,
     published_at: r.published_at,
     view_count: r.view_count,
+    seo_title: r.seo_title,
+    seo_description: r.seo_description,
+    seo_noindex: r.seo_noindex,
+    descriptionText: withHtml ? docToText(row.description, 1500) : undefined,
     images: [...(row.deal_images ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(({ url, alt, width, height }) => ({ url, alt, width, height })),
     partner: row.partners,
     category: row.categories,
