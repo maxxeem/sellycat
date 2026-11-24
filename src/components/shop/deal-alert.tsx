@@ -41,7 +41,7 @@ export function DealAlert({ shop, look, t, inert }: { shop: string; look: "fille
   return (
     <>
       <button ref={button} type="button" onClick={show} tabIndex={inert ? -1 : undefined} aria-haspopup="dialog" aria-expanded={open} className={`shop-alert-btn shop-alert-${look}`} data-testid="deal-alert-open">
-        <Bell className="h-[18px] w-[18px] shrink-0" aria-hidden /> {a.title}
+        <Bell className="h-5 w-5 shrink-0" strokeWidth={1.75} absoluteStrokeWidth aria-hidden /> {a.title}
       </button>
       {inert ? null : (
         // A click on the backdrop hits the dialog itself.

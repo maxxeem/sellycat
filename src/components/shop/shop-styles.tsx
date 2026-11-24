@@ -85,15 +85,18 @@ export const SHOP_CSS = `
 .shop-root:has(.shop-gate-closed) footer[data-testid="shop-footer"]{margin-top:0;}
 .shop-root[data-header-fill="none"][data-header="bar"] .shop-header{border-bottom:1px solid var(--shop-line);}
 .shop-logo-for-dark{display:none;}
-.shop-alert-btn{display:inline-flex;align-items:center;gap:.45rem;flex-shrink:0;height:2.5rem;padding:0 .95rem;border-radius:var(--shop-radius-button);border:1.5px solid currentColor;font-size:.875rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .15s ease,color .15s ease;}
+.shop-alert-btn{display:inline-flex;align-items:center;gap:.45rem;flex-shrink:0;height:2.5rem;padding:0 .95rem;border-radius:var(--shop-radius-button);border:1.5px solid currentColor;font-size:.9375rem;line-height:1;font-weight:700;font-synthesis:none;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;white-space:nowrap;cursor:pointer;transition:background .15s ease,color .15s ease;}
 .shop-alert-primary{color:var(--shop-primary);}
+.shop-alert-btn svg{transform-origin:50% 10%;}
+@keyframes shop-bell{0%,20%,100%{transform:rotate(0)}2%{transform:rotate(16deg)}5%{transform:rotate(-14deg)}8%{transform:rotate(11deg)}11%{transform:rotate(-8deg)}14%{transform:rotate(5deg)}17%{transform:rotate(-3deg)}}
+@media (prefers-reduced-motion:no-preference){.shop-alert-btn[aria-expanded="false"] svg{animation:shop-bell 5s ease-in-out 2s infinite;}}
 .shop-alert-filled,.shop-alert-primary:hover,.shop-alert-btn[aria-expanded="true"]{background:var(--shop-primary);border-color:var(--shop-primary);color:var(--shop-on-primary);}
 .shop-alert-dialog{position:fixed;inset:auto 0 0 0;margin:0;padding:0;width:100%;max-width:none;max-height:90dvh;overflow:auto;border:0;border-radius:1.5rem 1.5rem 0 0;background:var(--shop-surface);color:var(--shop-text);font-family:var(--shop-font-body);}
 .shop-alert-dialog::backdrop{background:rgb(0 0 0/.6);}
 .shop-alert-body{position:relative;padding:.9rem 1.25rem calc(2rem + env(safe-area-inset-bottom));}
 .shop-alert-grab{display:block;width:2.75rem;height:.3rem;margin:0 auto 1.25rem;border-radius:99px;background:var(--shop-line);}
 @media (min-width:640px){
-.shop-alert-btn{height:2.75rem;padding:0 1.25rem;font-size:.95rem;}
+.shop-alert-btn{height:2.75rem;padding:0 1.25rem;font-size:1rem;}
 .shop-alert-dialog{inset:var(--alert-top) var(--alert-right) auto auto;width:25rem;border:1px solid var(--shop-line);border-radius:1.1rem;box-shadow:0 30px 80px rgb(0 0 0/.45);}
 .shop-alert-dialog::backdrop{background:transparent;}
 .shop-alert-body{padding:1.75rem;}
