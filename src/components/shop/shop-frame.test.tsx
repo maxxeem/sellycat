@@ -34,8 +34,8 @@ describe("ShopFrame footer", () => {
 
   it("shows no icon row without links, and the menus start on the left", () => {
     expect(html(DEFAULT_THEME)).not.toContain("shop-social");
-    expect(html(DEFAULT_THEME)).toContain("lg:grid-cols-[1fr_1fr_1.4fr]");
-    expect(html({ ...DEFAULT_THEME, socialLinks: [{ network: "website", url: "my105.ch" }] })).toContain("lg:grid-cols-[1.4fr_1fr_1fr]");
+    expect(html(DEFAULT_THEME)).toContain("sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)]");
+    expect(html({ ...DEFAULT_THEME, socialLinks: [{ network: "website", url: "my105.ch" }] })).toContain("sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]");
   });
 
   it("fills the screen so the footer sits at the bottom (previews fill their box)", () => {

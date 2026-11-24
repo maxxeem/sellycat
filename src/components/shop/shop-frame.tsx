@@ -66,13 +66,13 @@ export function ShopFrame({
       </header>
       <main className="flex-1">{children}</main>
       <footer className="mt-20 border-t border-[var(--shop-line)] bg-[var(--shop-surface)] text-sm text-[var(--shop-muted)]" data-testid="shop-footer">
-        <div className={`mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 ${firstColumn ? "lg:grid-cols-[1.4fr_1fr_1fr]" : "lg:grid-cols-[1fr_1fr_1.4fr]"}`}>
-          {/* Footer logo, icons and contact; without any of them, the menus start on the left. */}
+        <div className={`mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:px-6 ${firstColumn ? "sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]" : "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)]"}`}>
+          {/* All blocks below each other (phone) or all in one row, never a mix. Footer logo, icons and contact; without any of them, the menus start on the left. */}
           {firstColumn ? (
           <div className="flex flex-col gap-4">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img {...shopImage(logo, "220px")} alt={name} loading="lazy" className="mb-2 h-auto max-h-20 w-auto max-w-[220px] self-start object-contain" data-testid="shop-footer-logo" />
+              <img {...shopImage(logo, "220px")} alt={name} loading="lazy" className="mb-2 h-auto max-h-14 w-auto max-w-[160px] self-start object-contain" data-testid="shop-footer-logo" />
             ) : null}
             <SocialIcons links={theme.socialLinks} inert={inert} />
             {contact?.email || contact?.phone ? (
