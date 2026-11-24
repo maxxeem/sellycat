@@ -68,7 +68,6 @@ describe.skipIf(!rlsEnabled)("RLS deal alert", () => {
   });
 
   it("due are only deals that went live since switching on", async () => {
-    // Mail queue is worked off below on purpose by these calls only; staging has no such shops live.
     await db.from("tenants").update({ deal_alert_at: ago(-5) }).eq("id", a.tenantId);
     const make = async (key: string, extra: Record<string, unknown> = {}) => {
       const { data, error } = await db.from("deals").insert({ tenant_id: a.tenantId, slug: key, title: key, price_cents: 1000, state: "published", published_at: new Date().toISOString(), ...extra } as never).select("id").single();
@@ -98,7 +97,11 @@ describe.skipIf(!rlsEnabled)("RLS deal alert", () => {
     const { data: sends } = await db.from("deal_alert_sends").select("subscriber_id, status").eq("alert_id", alerts![0].id);
     expect(sends).toHaveLength(1);
     const [x, y] = await Promise.all([db.rpc("deal_alert_claim", { p_limit: 50 }), db.rpc("deal_alert_claim", { p_limit: 50 })]);
-    const got = [...(x.data ?? []), ...(y.data ?? [])].filter((w) => w.tenant_id === a.tenantId);
+    const all = [...(x.data ?? []), ...(y.data ?? [])];
+    // Mails of other shops on staging go straight back into the queue.
+    for (const w of all.filter((w) => w.tenant_id !== a.tenantId))
+      await db.from("deal_alert_sends").update({ status: "pending", attempts: 0, next_at: new Date().toISOString() }).eq("alert_id", w.alert_id).eq("subscriber_id", w.subscriber_id);
+    const got = all.filter((w) => w.tenant_id === a.tenantId);
     expect(got.map((w) => w.email)).toEqual([`yes-${run}@example.com`]);
     await db.rpc("deal_alert_done", { p_alert: alerts![0].id, p_subscriber: got[0].subscriber_id, p_ok: true });
     expect((await a.client.rpc("deal_alert_history", { p_tenant: a.tenantId })).data?.[0]).toMatchObject({ title: "before", recipients: 1, sent: 1, open: 0 });
