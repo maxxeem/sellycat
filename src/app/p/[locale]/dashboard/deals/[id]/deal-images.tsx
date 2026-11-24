@@ -93,7 +93,7 @@ export function DealImages({
       <input
         ref={input}
         type="file"
-        accept={IMAGE_TYPES}
+        accept={`${IMAGE_TYPES},image/avif,.avif`}
         multiple
         className="sr-only"
         tabIndex={-1}

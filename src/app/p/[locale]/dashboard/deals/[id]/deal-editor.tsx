@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Archive, ArchiveRestore, Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { acceptedFiles, uploadMedia } from "@/components/image-upload";
+import { avifToJpeg, isAvif } from "@/lib/shop/avif";
 import { DealImages, IMAGE_TYPES } from "./deal-images";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -164,12 +165,19 @@ export function DealEditor(props: {
     });
 
   const addImages = async (picked: FileList | File[] | null) => {
-    const files = picked ? acceptedFiles(picked, IMAGE_TYPES) : [];
-    if (!files.length) return;
+    const files = Array.from(picked ?? []).filter((f) => isAvif(f) || acceptedFiles([f], IMAGE_TYPES).length);
+    if (!files.length) {
+      if (picked?.length) setMessage({ tone: "error", text: d.imagesHint });
+      return;
+    }
     setUploading(true);
     try {
       const urls: string[] = [];
-      for (const file of Array.from(files).slice(0, 12 - form.images.length)) urls.push(await uploadMedia(props.tenantId, "deals", file));
+      for (const file of files.slice(0, 12 - form.images.length)) {
+        const ready = isAvif(file) ? await avifToJpeg(file).catch(() => null) : file;
+        if (!ready) throw new Error(fmt(d.imageUnreadable, { file: file.name }));
+        urls.push(await uploadMedia(props.tenantId, "deals", ready));
+      }
       setForm((f) => ({ ...f, images: [...f.images, ...urls.map((url) => ({ url, alt: "" }))] }));
     } catch (e) {
       setMessage({ tone: "error", text: e instanceof Error ? e.message : t.common.error });
