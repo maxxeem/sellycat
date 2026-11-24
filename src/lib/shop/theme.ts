@@ -59,7 +59,11 @@ export const themeSchema = z.object({
       direction: z.enum(["down", "right", "diagonal"]).default("diagonal"),
     })
     .default({ style: "bar", fill: "none", from: "#ff4b23", to: "#7a1fa2", direction: "diagonal" }),
-  /** `focusX`/`focusY` (0–100 %): the point of the picture that stays visible when it is cropped. */
+  /**
+   * `show`: on which screens the hero appears (mobile = below 640 px). `imageMobile`: own picture
+   * for phones, else `image`. `focus…` (0–100 %): the point of that picture that stays visible when
+   * it is cropped. `edge`: the picture ends with a line or fades into the page (deals overlap it).
+   */
   hero: z
     .object({
       enabled: z.boolean().default(true),
@@ -68,10 +72,18 @@ export const themeSchema = z.object({
       image: url,
       focusX: z.number().min(0).max(100).default(50),
       focusY: z.number().min(0).max(100).default(50),
+      show: z.enum(["both", "desktop", "mobile"]).default("both"),
+      imageMobile: url,
+      focusMobileX: z.number().min(0).max(100).default(50),
+      focusMobileY: z.number().min(0).max(100).default(50),
+      edge: z.enum(["line", "fade"]).default("line"),
     })
-    .default({ enabled: true, title: "", subtitle: "", image: "", focusX: 50, focusY: 50 }),
+    .default({ enabled: true, title: "", subtitle: "", image: "", focusX: 50, focusY: 50, show: "both", imageMobile: "", focusMobileX: 50, focusMobileY: 50, edge: "line" }),
   logoLight: url,
   logoDark: url,
+  /** Optional logo in the footer (above the icons), separate from the header logo. */
+  footerLogoLight: url,
+  footerLogoDark: url,
   favicon: url,
   socialImage: url,
   footerLinks: z.array(z.object({ label: z.string().max(60), url: z.string().max(500) })).max(12).default([]),
@@ -102,6 +114,20 @@ const SYSTEM_STACK = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Robot
 function fontStack(font: ThemeFont): string {
   if (font.source === "system" || !font.family) return SYSTEM_STACK;
   return `"${font.family.replace(/"/g, "")}", ${SYSTEM_STACK}`;
+}
+
+/** The hero picture per device with its focus point; a missing one falls back to the other device's. */
+export function heroPictures(hero: ShopTheme["hero"]): { desktop: { url: string; position: string }; mobile: { url: string; position: string } } | null {
+  const desktop = { url: hero.image, position: `${hero.focusX}% ${hero.focusY}%` };
+  const mobile = { url: hero.imageMobile, position: `${hero.focusMobileX}% ${hero.focusMobileY}%` };
+  if (!desktop.url && !mobile.url) return null;
+  return { desktop: desktop.url ? desktop : mobile, mobile: mobile.url ? mobile : desktop };
+}
+
+/** The footer logo for the footer's background (surface colour), "" without one. */
+export function footerLogo(theme: ShopTheme): string {
+  const dark = readableOn(theme.colors.surface, "#111111", "#ffffff") === "#ffffff";
+  return dark ? theme.footerLogoDark || theme.footerLogoLight : theme.footerLogoLight || theme.footerLogoDark;
 }
 
 const ANGLE = { down: "180deg", right: "90deg", diagonal: "135deg" } as const;

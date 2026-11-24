@@ -218,19 +218,33 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
 
           <Card title={g.hero}>
             <div className="flex flex-col gap-4">
-              <label className="flex items-center gap-3 text-sm">
-                <input type="checkbox" checked={theme.hero.enabled} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, enabled: e.target.checked } }))} className="h-4 w-4 accent-[var(--coral)]" />
-                {g.heroEnabled}
-              </label>
+              <Segmented
+                label={g.heroShow}
+                value={theme.hero.enabled ? theme.hero.show : "none"}
+                onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, enabled: v !== "none", show: v === "none" ? th.hero.show : v } }))}
+                options={[["both", g.heroShowBoth], ["desktop", g.heroShowDesktop], ["mobile", g.heroShowMobile], ["none", g.heroShowNone]]}
+              />
               <Field label={g.heroTitle}>
                 <Input value={theme.hero.title} maxLength={120} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, title: e.target.value } }))} placeholder={props.shop.name} />
               </Field>
               <Field label={g.heroSubtitle}>
                 <Input value={theme.hero.subtitle} maxLength={240} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, subtitle: e.target.value } }))} />
               </Field>
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
+              {theme.hero.image || theme.hero.imageMobile ? (
+                <div>
+                  <Segmented label={g.heroEdge} value={theme.hero.edge} onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, edge: v } }))} options={[["line", g.heroEdgeLine], ["fade", g.heroEdgeFade]]} />
+                  <p className="mt-1.5 text-xs text-muted">{g.heroEdgeHint}</p>
+                </div>
+              ) : null}
               <HeroGuide />
-              {theme.hero.image ? <HeroFocus image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} /> : null}
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
+              {theme.hero.image ? (
+                <HeroFocus label={g.heroFocus} devices={theme.hero.imageMobile ? ["desktop"] : ["desktop", "mobile"]} image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} />
+              ) : null}
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.imageMobile} label={g.heroImageMobile} hint={g.hintHeroMobile} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, imageMobile: url, focusMobileX: 50, focusMobileY: 50 } }))} />
+              {theme.hero.imageMobile ? (
+                <HeroFocus label={g.heroFocusMobile} devices={theme.hero.image ? ["mobile"] : ["desktop", "mobile"]} image={theme.hero.imageMobile} x={theme.hero.focusMobileX} y={theme.hero.focusMobileY} onChange={(focusMobileX, focusMobileY) => update((th) => ({ ...th, hero: { ...th.hero, focusMobileX, focusMobileY } }))} />
+              ) : null}
             </div>
           </Card>
 
@@ -263,6 +277,15 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
 
           <Card title={g.footer}>
             <div className="flex flex-col gap-2">
+              <div className="mb-3">
+                <p className="text-sm font-semibold">{g.footerLogo}</p>
+                <p className="mb-3 text-xs text-muted">{g.footerLogoHint}</p>
+                <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
+                  <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.footerLogoLight} label={g.footerLogoLight} height="h-28" tone="light" onChange={(url) => update((th) => ({ ...th, footerLogoLight: url }))} />
+                  <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.footerLogoDark} label={g.footerLogoDark} height="h-28" tone="dark" onChange={(url) => update((th) => ({ ...th, footerLogoDark: url }))} />
+                </div>
+              </div>
+              <p className="border-t border-line pt-4 text-sm font-semibold">{g.footerLinksTitle}</p>
               {theme.footerLinks.map((l, i) => (
                 <div key={i} className="flex gap-2">
                   <Input value={l.label} placeholder={g.linkLabel} onChange={(e) => update((th) => ({ ...th, footerLinks: th.footerLinks.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) }))} />
@@ -456,7 +479,7 @@ function HeroGuide() {
  * Focus point of the header picture: a click on the whole picture sets the point that stays
  * visible; next to it the crops the shop shows on a wide screen and on a phone.
  */
-function HeroFocus({ image, x, y, onChange }: { image: string; x: number; y: number; onChange: (x: number, y: number) => void }) {
+function HeroFocus({ label, devices, image, x, y, onChange }: { label: string; devices: PreviewDevice[]; image: string; x: number; y: number; onChange: (x: number, y: number) => void }) {
   const { t } = useI18n();
   const g = t.design;
   const position = `${x}% ${y}%`;
@@ -468,7 +491,7 @@ function HeroFocus({ image, x, y, onChange }: { image: string; x: number; y: num
   return (
     <div className="flex flex-col gap-3 text-sm">
       <div>
-        <p className="font-semibold">{g.heroFocus}</p>
+        <p className="font-semibold">{label}</p>
         <p className="text-xs text-muted">{g.heroFocusHint}</p>
       </div>
       {/* The whole picture (at most 18rem high); the dot marks the focus point. */}
@@ -476,7 +499,7 @@ function HeroFocus({ image, x, y, onChange }: { image: string; x: number; y: num
       <div
         role="slider"
         tabIndex={0}
-        aria-label={g.heroFocus}
+        aria-label={label}
         aria-valuetext={`${x} % / ${y} %`}
         aria-valuenow={x}
         onPointerDown={(e) => {
@@ -502,17 +525,21 @@ function HeroFocus({ image, x, y, onChange }: { image: string; x: number; y: num
         <span className="pointer-events-none absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-coral/70 shadow-[0_0_0_2px_rgba(0,0,0,0.45)]" style={{ left: `${x}%`, top: `${y}%` }} aria-hidden />
       </div>
       </div>
-      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] items-end gap-3">
+      <div className={`grid items-end gap-3 ${devices.length === 2 ? "grid-cols-[minmax(0,3fr)_minmax(0,1fr)]" : devices[0] === "mobile" ? "max-w-40" : ""}`}>
+        {devices.includes("desktop") ? (
         <figure className="flex flex-col gap-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt="" className="aspect-[18/5] w-full rounded-input border border-line object-cover" style={{ objectPosition: position }} />
           <figcaption className="flex items-center gap-1 text-xs text-muted"><Monitor className="h-3.5 w-3.5" aria-hidden /> {g.previewDesktop}</figcaption>
         </figure>
+        ) : null}
+        {devices.includes("mobile") ? (
         <figure className="flex flex-col gap-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt="" className="aspect-[6/5] w-full rounded-input border border-line object-cover" style={{ objectPosition: position }} />
           <figcaption className="flex items-center gap-1 text-xs text-muted"><Smartphone className="h-3.5 w-3.5" aria-hidden /> {g.previewMobile}</figcaption>
         </figure>
+        ) : null}
       </div>
     </div>
   );

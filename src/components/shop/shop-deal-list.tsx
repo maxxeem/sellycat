@@ -82,7 +82,7 @@ export function ShopDealList({
           ))}
         </nav>
       ) : (
-        <div className="h-8" />
+        <div className="shop-list-top h-8" />
       )}
 
       {!visible.length ? <p className="py-16 text-center text-[var(--shop-muted)]">{t.noDeals}</p> : null}

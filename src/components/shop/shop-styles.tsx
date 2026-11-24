@@ -23,6 +23,24 @@ export function pageChromeCss(theme: ShopTheme): string {
 }
 
 /**
+ * Hero rules of one device class: `hiddenFor` is the `data-show` value that hides the hero there
+ * ("desktop" = hero only on desktop, so hidden on phones). The header only merges with a hero, and
+ * the deals only move up over a fading picture, where the hero is visible.
+ */
+function heroDeviceCss(hiddenFor: "desktop" | "mobile"): string {
+  const visible = `:not([data-show="${hiddenFor}"]):not([style*="display: none"]):not([style*="display: none"] *)`;
+  const root = (hero: string) => `.shop-root[data-header="integrated"]:has(${hero}${visible}) .shop-header`;
+  return [
+    `.shop-hero[data-show="${hiddenFor}"]{display:none;}`,
+    `${root(".shop-hero")}{background:transparent;}`,
+    `${root(".shop-hero-image")}{color:#fff;}`,
+    `${root(".shop-hero-image")} .shop-logo-for-light{display:none;}`,
+    `${root(".shop-hero-image")} .shop-logo-for-dark{display:block;}`,
+    `.shop-hero-fade:not([data-show="${hiddenFor}"]) + .shop-below{position:relative;margin-top:${hiddenFor === "desktop" ? "-5rem" : "-8.5rem"};}`,
+  ].join("\n");
+}
+
+/**
  * Component classes of the shop, written once against the --shop-* variables. Kept as a plain
  * stylesheet so the editor preview and the shop render identically.
  * Next 16 keeps the previous page mounted but hidden (inline `display: none`), so the header
@@ -70,10 +88,25 @@ export const SHOP_CSS = `
 .shop-header[data-tone="dark"] .shop-logo-for-light{display:none;}
 .shop-header[data-tone="dark"] .shop-logo-for-dark{display:block;}
 .shop-root[data-header="integrated"] .shop-hero{background:var(--shop-header-bg);color:var(--shop-on-header);}
-.shop-root[data-header="integrated"]:has(.shop-hero:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header{background:transparent;}
-.shop-root[data-header="integrated"]:has(.shop-hero-image:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header{color:#fff;}
-.shop-root[data-header="integrated"]:has(.shop-hero-image:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header .shop-logo-for-light{display:none;}
-.shop-root[data-header="integrated"]:has(.shop-hero-image:not([style*="display: none"]):not([style*="display: none"] *)) .shop-header .shop-logo-for-dark{display:block;}
+.shop-root[data-header="integrated"] .shop-hero.shop-hero-fade{background:transparent;}
+@media (max-width:639.98px){${heroDeviceCss("desktop")}}
+@media (min-width:640px){${heroDeviceCss("mobile")}}
+.shop-hero-img{object-position:var(--hero-pos);}
+.shop-hero-text{padding-top:3rem;padding-bottom:3rem;}
+.shop-hero-line .shop-hero-text{min-height:20rem;}
+.shop-hero-fade .shop-hero-text{min-height:24rem;padding-bottom:7.5rem;}
+.shop-hero-fade .shop-hero-media{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 7rem),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 7rem),transparent);}
+.shop-hero-fade + .shop-below .shop-chip:not([aria-current="page"]){background:var(--shop-bg);}
+@media (max-width:639.98px){.shop-hero-img{object-position:var(--hero-pos-mobile);}}
+@media (min-width:640px){
+.shop-hero-text{padding-top:5rem;padding-bottom:5rem;}
+.shop-hero-filled .shop-hero-text{padding-top:3rem;padding-bottom:3rem;}
+.shop-hero-plain .shop-hero-text{padding-top:2.5rem;padding-bottom:1.25rem;}
+.shop-hero-plain + .shop-below .shop-list-top{height:1.5rem;}
+.shop-hero-line .shop-hero-text{min-height:26rem;}
+.shop-hero-fade .shop-hero-text{min-height:30rem;padding-bottom:11.5rem;}
+.shop-hero-fade .shop-hero-media{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 11rem),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 11rem),transparent);}
+}
 .shop-root[data-header="integrated"] .shop-hero{margin-top:calc(-1 * var(--shop-header-h));padding-top:var(--shop-header-h);}
 .shop-hero-top-shade{display:none;}
 .shop-root[data-header="integrated"] .shop-hero-top-shade{display:block;}

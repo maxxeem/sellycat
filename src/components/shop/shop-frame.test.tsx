@@ -22,6 +22,16 @@ describe("ShopFrame footer", () => {
     expect(h).not.toContain('aria-label="LinkedIn"');
   });
 
+  it("shows the optional footer logo made for the footer background, above the icons", () => {
+    const own = { ...logos, footerLogoLight: "https://example.com/f-light.png", footerLogoDark: "https://example.com/f-dark.png", socialLinks: [{ network: "website" as const, url: "my105.ch" }] };
+    const img = (h: string) => h.match(/<img[^>]*data-testid="shop-footer-logo"[^>]*>/)?.[0] ?? "";
+    const light = html({ ...own, colors: { ...own.colors, surface: "#f5f5f5" } });
+    expect(img(light)).toContain("f-light.png");
+    expect(img(html({ ...own, colors: { ...own.colors, surface: "#1c1c1c" } }))).toContain("f-dark.png");
+    expect(img(html({ ...own, footerLogoDark: "", colors: { ...own.colors, surface: "#1c1c1c" } }))).toContain("f-light.png");
+    expect(light.indexOf("shop-footer-logo")).toBeLessThan(light.indexOf("shop-social"));
+  });
+
   it("shows no icon row without links, and the menus start on the left", () => {
     expect(html(DEFAULT_THEME)).not.toContain("shop-social");
     expect(html(DEFAULT_THEME)).toContain("lg:grid-cols-[1fr_1fr_1.4fr]");
