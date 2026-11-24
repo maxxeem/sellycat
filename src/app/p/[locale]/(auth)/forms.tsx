@@ -8,7 +8,7 @@ import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { slugify } from "@/lib/site/hosts";
 import { GoogleButton, OrDivider } from "@/components/google-button";
-import { forgotAction, loginAction, setPasswordAction, signupAction, type AuthState } from "./actions";
+import { forgotAction, loginAction, resendConfirmationAction, setPasswordAction, signupAction, type AuthState } from "./actions";
 
 function useMessage(state: AuthState) {
   const { t } = useI18n();
@@ -53,10 +53,11 @@ export function LoginForm({ google = false }: { google?: boolean }) {
 export function ForgotForm() {
   const { t } = useI18n();
   const [state, action, pending] = useActionState(forgotAction, null);
-  const { notice } = useMessage(state);
+  const { error, notice } = useMessage(state);
   if (notice) return <Notice tone="success">{notice}</Notice>;
   return (
     <form action={action} className="flex flex-col gap-4">
+      {error ? <Notice tone="error">{error}</Notice> : null}
       <p className="text-sm text-muted">{t.auth.forgotText}</p>
       <Field label={t.common.email}>
         <Input name="email" type="email" autoComplete="email" required />
@@ -88,6 +89,29 @@ export function SetPasswordForm() {
   );
 }
 
+/** Sends the confirmation mail again; without a known address it asks for it. */
+export function ResendForm({ email }: { email?: string }) {
+  const { t } = useI18n();
+  const [state, action, pending] = useActionState(resendConfirmationAction, null);
+  const { error, notice } = useMessage(state);
+  if (notice) return <Notice tone="success">{notice}</Notice>;
+  return (
+    <form action={action} className="flex flex-col gap-4" data-testid="resend-form">
+      {email ? (
+        <input type="hidden" name="email" value={email} />
+      ) : (
+        <Field label={t.common.email}>
+          <Input name="email" type="email" autoComplete="email" required />
+        </Field>
+      )}
+      {error ? <Notice tone="error">{error}</Notice> : null}
+      <button type="submit" disabled={pending} className={buttonClass.secondary}>
+        {pending ? t.common.loading : t.auth.resendConfirm}
+      </button>
+    </form>
+  );
+}
+
 export function SignupForm({ root, code = "", onChangeCode, google = false }: { root: string; code?: string; onChangeCode?: () => void; google?: boolean }) {
   const { t, locale } = useI18n();
   const [state, action, pending] = useActionState(signupAction, null);
@@ -95,7 +119,14 @@ export function SignupForm({ root, code = "", onChangeCode, google = false }: { 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  if (notice) return <Notice tone="success">{notice}</Notice>;
+  if (notice)
+    return (
+      <div className="flex flex-col gap-4">
+        <Notice tone="success">{notice}</Notice>
+        <p className="text-sm text-muted">{t.auth.checkMailHint}</p>
+        {state?.email ? <ResendForm email={state.email} /> : null}
+      </div>
+    );
   const shownSlug = slugTouched ? slug : slugify(name);
   return (
     <form action={action} className="flex flex-col gap-4">

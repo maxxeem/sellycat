@@ -3,6 +3,7 @@ import { codeRequired } from "@/lib/access/rules";
 import { checkCode } from "@/lib/access/server";
 import { getSignupMode } from "@/lib/platform/settings";
 import { DEFAULT_ROOT, siteHost } from "@/lib/site/hosts";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { WelcomeForm } from "./welcome-form";
 
@@ -19,6 +20,8 @@ export async function Welcome({ searchParams, additional: wanted = false }: { se
   // Room in a plan that includes several shops (Business): no code needed, the shop joins that plan.
   const room = additional ? ((await supabase.rpc("included_shop_room")).data ?? 0) : 0;
   if (mine && mine.length > 0 && !additional) redirect("/dashboard");
+  // A code already redeemed by this account (shop not created yet) is not asked for again.
+  const { data: held } = await createAdminClient().from("invite_code_uses").select("id").eq("user_id", auth.user.id).eq("status", "confirmed").is("tenant_id", null).limit(1).maybeSingle();
   const raw = typeof query.code === "string" ? query.code : "";
   const initial = raw ? await checkCode(raw) : null;
   const name = typeof auth.user.user_metadata?.full_name === "string" ? auth.user.user_metadata.full_name : "";
@@ -27,7 +30,7 @@ export async function Welcome({ searchParams, additional: wanted = false }: { se
       email={auth.user.email ?? ""}
       suggestedName={name}
       root={(siteHost() || DEFAULT_ROOT).split(":")[0]}
-      needsCode={codeRequired(mode) && staff !== true && room === 0}
+      needsCode={codeRequired(mode) && staff !== true && room === 0 && !held}
       includedRoom={room}
       initialCode={initial?.ok ? initial.code : ""}
       additional={additional}

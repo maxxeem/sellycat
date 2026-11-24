@@ -5,6 +5,7 @@ import { z } from "zod";
 import { isSignupMode, WAITLIST_STATUSES } from "@/lib/access/rules";
 import { createCodes, inviteFromWaitlist, updateCode, type CodePerks } from "@/lib/access/staff";
 import { SETTINGS_TAG } from "@/lib/platform/settings";
+import { sendAuthMail } from "@/lib/auth/auth-mail";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { zurichLocalToIso } from "@/lib/shop/time";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -78,6 +79,22 @@ export async function createCodesAction(_: CreateCodesState, form: FormData): Pr
     refresh();
   }
   return r;
+}
+
+/** A new confirmation mail for someone who signed up with a code but has not confirmed yet. */
+export async function resendConfirmationAction(useId: string): Promise<"sent" | "confirmed" | "failed"> {
+  const staff = await editor();
+  if (!z.uuid().safeParse(useId).success) return "failed";
+  const db = createAdminClient();
+  const { data: use } = await db.from("invite_code_uses").select("user_id").eq("id", useId).maybeSingle();
+  if (!use?.user_id) return "failed";
+  const { data } = await db.auth.admin.getUserById(use.user_id);
+  if (!data.user?.email) return "failed";
+  if (data.user.email_confirmed_at) return "confirmed";
+  const r = await sendAuthMail("reconfirm", data.user.email);
+  if (!r.ok) return "failed";
+  await audit(staff.id, "invite_code.resend_confirmation", { type: "invite_code_use", id: useId });
+  return "sent";
 }
 
 export type SaveState = { ok: boolean } | null;

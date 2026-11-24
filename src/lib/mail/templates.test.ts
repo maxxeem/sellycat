@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealAlertConfirmMail, dealAlertMail, esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
+import { authMail, dealAlertConfirmMail, dealAlertMail, esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
 
 const brand: MailBrand = { shopName: "Velo <Deals>", locale: "de", primary: "#ff4b23", logoUrl: "https://x.supabase.co/logo.svg", shopUrl: "https://velo.sellycat.com" };
 const v = { title: "Service-Paket", partner: "Velo Huber", code: "ABCD-EFGH-JKMN", valueCents: 5000, currency: "CHF", validUntil: "2027-06-30T21:59:59Z", link: "https://velo.sellycat.com/v/tok" };
@@ -64,5 +64,16 @@ describe("waitlistTeamMail", () => {
     expect(plain.html).not.toContain("<s ");
     expect(plain.html).not.toContain("verfügbar");
     expect(dealAlertConfirmMail({ brand, band, url: "https://velo.sellycat.com/alert/confirm/tok" }).html).toContain("/alert/confirm/tok");
+  });
+});
+
+describe("authMail", () => {
+  it("carries the link and Sellycat's own footer, not the waitlist one", () => {
+    for (const kind of ["confirm", "reconfirm", "recovery", "invite"] as const) {
+      const m = authMail({ kind, brand, url: "https://sellycat.com/auth/continue?token_hash=abc&type=magiclink" });
+      expect(m.text).toContain("token_hash=abc&type=magiclink");
+      expect(m.html).toContain("token_hash=abc&amp;type=magiclink");
+      expect(m.text).not.toContain("Warteliste");
+    }
   });
 });

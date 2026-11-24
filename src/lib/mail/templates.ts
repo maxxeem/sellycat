@@ -290,7 +290,7 @@ ${button(i.brand, i.url, s.button)}
 
 // ---------------------------------------------------------------- waitlist (Sellycat as sender)
 
-function accessMail(i: { brand: MailBrand; subject: string; heading: string; name: string | null; text: string; button: { href: string; label: string }; extraHtml?: string; extraText?: string; after?: string }): Mail {
+function accessMail(i: { brand: MailBrand; subject: string; heading: string; name: string | null; text: string; button: { href: string; label: string }; extraHtml?: string; extraText?: string; after?: string; footer?: string }): Mail {
   const a = getDictionary(i.brand.locale).access.mail;
   const hello = i.name ? fmt(a.hello, { name: i.name }) : a.helloAnon;
   const html = layout(
@@ -301,12 +301,12 @@ function accessMail(i: { brand: MailBrand; subject: string; heading: string; nam
 ${i.extraHtml ?? ""}
 ${button(i.brand, i.button.href, i.button.label)}
 ${i.after ? `<p style="margin:0;font-size:14px;color:#52525b;">${esc(i.after)}</p>` : ""}`,
-    esc(a.footer),
+    esc(i.footer ?? a.footer),
   );
   return {
     subject: subjectLine(i.subject),
     html,
-    text: [i.heading, "", `${hello},`, "", i.text, ...(i.extraText ? ["", i.extraText] : []), "", `${i.button.label}: ${i.button.href}`, ...(i.after ? ["", i.after] : []), "", a.footer].join("\n"),
+    text: [i.heading, "", `${hello},`, "", i.text, ...(i.extraText ? ["", i.extraText] : []), "", `${i.button.label}: ${i.button.href}`, ...(i.after ? ["", i.after] : []), "", i.footer ?? a.footer].join("\n"),
   };
 }
 
@@ -331,6 +331,15 @@ ${button(i.brand, i.url, "Im Staff-Bereich öffnen")}`,
     "Sellycat Warteliste",
   );
   return { subject: subjectLine(head), html, text: [head, "", ...rows.map(([k, v]) => `${k}: ${v}`), "", i.url].join("\n") };
+}
+
+export type AuthMailKind = "confirm" | "reconfirm" | "recovery" | "invite";
+
+/** Sellycat account mails: confirm the address, reset the password, accept an owner invitation. */
+export function authMail(i: { kind: AuthMailKind; brand: MailBrand; url: string }): Mail {
+  const a = getDictionary(i.brand.locale).access.accountMail;
+  const m = a[i.kind];
+  return accessMail({ brand: i.brand, subject: m.subject, heading: m.heading, name: null, text: m.text, button: { href: i.url, label: m.button }, after: a.valid, footer: a.footer });
 }
 
 /** Double opt-in after joining the waitlist. */

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { TENANT_COOKIE } from "@/lib/auth/tenants";
 import { z } from "zod";
-import { apexUrl, siteHost, DEFAULT_ROOT, validateSlug } from "@/lib/site/hosts";
+import { siteHost, DEFAULT_ROOT, validateSlug } from "@/lib/site/hosts";
 import { safeNext } from "@/lib/site/routing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -14,26 +14,39 @@ import { LEGAL_VERSION } from "@/lib/legal/docs";
 import { codeRequired, normaliseCode } from "@/lib/access/rules";
 import { clientIp, countCodeFailure, networkOf, rateLimit } from "@/lib/access/server";
 import { after } from "next/server";
+import { createSignup, resendConfirmation, sendAuthMail } from "@/lib/auth/auth-mail";
 import { sendWelcomeMail } from "@/lib/mail/onboarding";
 
 /** Error/notice keys map to the `auth` dictionary on the client. */
-export type AuthState = { error?: string; notice?: string; field?: string } | null;
+export type AuthState = { error?: string; notice?: string; field?: string; email?: string } | null;
+
+/** Mails per address and hour (confirmation and password reset). */
+const AUTH_MAILS_PER_HOUR = 5;
 
 export async function loginAction(_: AuthState, form: FormData): Promise<AuthState> {
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error?.code === "email_not_confirmed") {
+    // Only reached with the right password, so this reveals nothing: send a new link right away.
+    if (await rateLimit("auth-mail", email.toLowerCase(), AUTH_MAILS_PER_HOUR, 3600)) after(() => resendConfirmation(email));
+    return { error: "emailNotConfirmed" };
+  }
   if (error) return { error: "loginFailed" };
+  // Confirmed, but the signup never got to create the shop (link used up or opened elsewhere):
+  // the held invite use is finished now, at the first sign-in.
+  const { data: open } = await createAdminClient().from("invite_code_uses").select("id").eq("user_id", data.user.id).in("status", ["pending", "released"]).is("tenant_id", null).limit(1);
+  if (open?.length) await provisionFromSignup();
   redirect(safeNext(String(form.get("next") ?? "")));
 }
 
 export async function forgotAction(_: AuthState, form: FormData): Promise<AuthState> {
   const email = String(form.get("email") ?? "").trim();
   if (email) {
-    const supabase = await createClient();
-    // Same answer whether or not the account exists (no account enumeration).
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${apexUrl()}/auth/continue?next=/set-password` });
+    // Same answer (and timing) whether or not the account exists (no account enumeration).
+    if (!(await rateLimit("auth-mail-net", networkOf(await clientIp()), 20, 3600))) return { error: "rateLimited" };
+    if (await rateLimit("auth-mail", email.toLowerCase(), AUTH_MAILS_PER_HOUR, 3600)) after(() => sendAuthMail("recovery", email));
   }
   return { notice: "forgotSent" };
 }
@@ -80,30 +93,51 @@ export async function signupAction(_: AuthState, form: FormData): Promise<AuthSt
   if (code) {
     use = (await db.rpc("claim_invite_code", { p_code: code, p_email: email })).data ?? null;
     if (!use) {
-      await countCodeFailure();
-      return { error: "codeInvalid", field: "code" };
+      // A one-time code already held by this address' first, unconfirmed try: just a new mail.
+      const { data: mine } = await db.from("invite_code_uses").select("id, invite_codes!inner(code)").eq("email", email.toLowerCase()).eq("status", "pending").eq("invite_codes.code", code).limit(1);
+      if (!mine?.length) {
+        await countCodeFailure();
+        return { error: "codeInvalid", field: "code" };
+      }
     }
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${apexUrl()}/auth/continue?next=/dashboard`,
-      // Read back after email confirmation to create the shop (provisionFromSignup).
-      // Which terms were accepted, and when (evidence for the contract; see /legal).
-      data: { shop_name: shopName, shop_slug: slug, locale, terms_version: LEGAL_VERSION, terms_accepted_at: new Date().toISOString() },
-    },
-  });
-  // An existing address comes back without identities: same answer, but the slot is released.
-  const fresh = !error && data.user && (data.user.identities?.length ?? 0) > 0;
-  if (use) {
-    if (fresh) await db.rpc("attach_invite_user", { p_use: use, p_user: data.user!.id });
-    else await db.rpc("release_invite_use", { p_use: use });
+  // A known address gets the same answer (and a new link if it is still unconfirmed).
+  const mayMail = await rateLimit("auth-mail", email.toLowerCase(), AUTH_MAILS_PER_HOUR, 3600);
+  const { data: knownId } = await db.rpc("auth_user_id", { p_email: email });
+  if (knownId || (code && !use)) {
+    if (use) await db.rpc("release_invite_use", { p_use: use });
+    if (mayMail) after(() => resendConfirmation(email));
+    return { notice: "signupCheckMail", email };
   }
-  if (error) return { error: "linkInvalid" };
-  return { notice: "signupCheckMail" };
+
+  const created = await createSignup(email, password, locale, {
+    // Read back after email confirmation to create the shop (provisionFromSignup).
+    // Which terms were accepted, and when (evidence for the contract; see /legal).
+    shop_name: shopName,
+    shop_slug: slug,
+    locale,
+    terms_version: LEGAL_VERSION,
+    terms_accepted_at: new Date().toISOString(),
+  });
+  if (!created.ok) {
+    if (use) await db.rpc("release_invite_use", { p_use: use });
+    console.error("[signup]", created.code, created.error);
+    return { error: created.code === "weak_password" ? "passwordWeak" : "signupFailed" };
+  }
+  if (use) await db.rpc("attach_invite_user", { p_use: use, p_user: created.userId });
+  // The account is there even if the mail fails: the check-mail step can send it again.
+  if (mayMail) after(() => created.send());
+  return { notice: "signupCheckMail", email };
+}
+
+/** "Send again" (after signup, or on an expired link): silent about which addresses exist. */
+export async function resendConfirmationAction(_: AuthState, form: FormData): Promise<AuthState> {
+  const email = String(form.get("email") ?? "").trim();
+  if (!z.email().safeParse(email).success) return { error: "linkInvalid", field: "email" };
+  if (!(await rateLimit("auth-mail-net", networkOf(await clientIp()), 20, 3600))) return { error: "rateLimited" };
+  if (await rateLimit("auth-mail", email.toLowerCase(), AUTH_MAILS_PER_HOUR, 3600)) after(() => resendConfirmation(email));
+  return { notice: "confirmResent" };
 }
 
 /**
@@ -176,11 +210,11 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
 
   // A code counts in every mode (plan, trial, coupon); without one only open signup (or staff) passes.
   if (!included && (code || (codeRequired(mode) && !staff))) {
-    if (!code) return { error: "codeRequired", field: "code" };
     // A use confirmed on an earlier try that found no shop yet (slug taken meanwhile) is reused,
     // so a retry never spends a second slot (a one-time code would otherwise lock the person out).
     const { data: held } = await db.from("invite_code_uses").select("id").eq("user_id", user.id).eq("status", "confirmed").is("tenant_id", null).limit(1).maybeSingle();
     if (!held) {
+      if (!code) return { error: "codeRequired", field: "code" };
       // The account exists already (Google): claim, attach and confirm the use in one go.
       const use = (await db.rpc("claim_invite_code", { p_code: code, p_email: user.email })).data ?? null;
       if (!use) {

@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { sendAuthMail } from "@/lib/auth/auth-mail";
 import { audit, requireStaff } from "@/lib/platform/staff";
-import { apexUrl, DEFAULT_ROOT, siteHost, validateSlug } from "@/lib/site/hosts";
+import { DEFAULT_ROOT, siteHost, validateSlug } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registerDomain } from "@/lib/vercel/domains";
 
@@ -19,7 +20,7 @@ const tenantSchema = z.object({
 });
 
 /**
- * Staff creates a customer: tenant + primary subdomain + owner. The owner gets Supabase's
+ * Staff creates a customer: tenant + primary subdomain + owner. The owner gets an
  * invitation mail (or, if the account exists already, is simply added).
  */
 export async function createTenant(_: StaffFormState, form: FormData): Promise<StaffFormState> {
@@ -35,13 +36,11 @@ export async function createTenant(_: StaffFormState, form: FormData): Promise<S
 
   // Owner account: invite a new user, or reuse an existing one.
   let ownerId: string | null = null;
-  const invite = await db.auth.admin.inviteUserByEmail(ownerEmail, { redirectTo: `${apexUrl()}/auth/continue?next=/set-password` });
-  if (invite.data.user) ownerId = invite.data.user.id;
-  else {
-    const { data } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    ownerId = data.users.find((u) => u.email?.toLowerCase() === ownerEmail.toLowerCase())?.id ?? null;
-  }
-  if (!ownerId) return { error: invite.error?.message ?? "owner" };
+  const invite = await sendAuthMail("invite", ownerEmail, locale);
+  if (!invite.ok && invite.error === "mail") return { error: "mail" };
+  if (invite.ok) ownerId = invite.userId;
+  else ownerId = (await db.rpc("auth_user_id", { p_email: ownerEmail })).data ?? null;
+  if (!ownerId) return { error: invite.ok ? "owner" : invite.error };
 
   const { data: tenant, error } = await db.from("tenants").insert({ name, slug, locale, plan_id: planId, created_by: staff.id }).select("id").single();
   if (error || !tenant) return { error: error?.code === "23505" ? "slug taken" : (error?.message ?? "insert failed") };

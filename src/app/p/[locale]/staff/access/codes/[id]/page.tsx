@@ -11,6 +11,7 @@ import { isoToZurichLocal } from "@/lib/shop/time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CopyLink } from "../code-forms";
 import { STATE_TONE } from "../shared";
+import { ResendButton } from "./resend-button";
 import { EditCode } from "./edit-code";
 
 export default async function CodePage({ params }: PageProps<"/p/[locale]/staff/access/codes/[id]">) {
@@ -79,6 +80,11 @@ async function Code({ t, locale, params }: { t: Dictionary; locale: Locale; para
                   <td className={tdClass}>{u.email}</td>
                   <td className={tdClass}>
                     <Badge tone={u.status === "confirmed" ? "green" : u.status === "pending" ? "amber" : "neutral"}>{c.useStates[u.status]}</Badge>
+                    {u.status === "pending" && staff.role === "superadmin" ? (
+                      <div className="mt-1">
+                        <ResendButton useId={u.id} />
+                      </div>
+                    ) : null}
                   </td>
                   <td className={tdClass}>
                     {u.tenant_id && u.tenants ? (

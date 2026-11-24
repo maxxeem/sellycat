@@ -1,18 +1,23 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Notice } from "@/components/ui";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Notice, buttonClass } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { provisionFromSignup } from "../../actions";
+import { ResendForm } from "../../forms";
 import { safeNext } from "@/lib/site/routing";
 
 /**
  * Turns whatever the auth mail carried into a session: a PKCE `code`, a `token_hash` (custom
  * mail templates) or tokens in the URL fragment (Supabase's default invite links). Then creates
  * the shop from the signup data (first login only) and moves on to `next`.
+ *
+ * A `token_hash` is only redeemed by a click: mail scanners open links (some even run scripts), and
+ * a one-time link opened by the scanner would be used up before the person sees it.
  *
  * The browser client also redeems a `code` on its own (`detectSessionInUrl`), so our own exchange
  * can lose that race and fail although the user is signed in. A failure therefore only counts
@@ -25,7 +30,11 @@ export function ContinueAuth() {
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
 
-  useEffect(() => {
+  const needsClick = Boolean(search.get("token_hash") && search.get("type"));
+  const recovery = search.get("next")?.startsWith("/set-password") ?? false;
+  const [busy, setBusy] = useState(false);
+
+  const redeem = useCallback(() => {
     // A link is single-use: never redeem it twice (re-render, Strict Mode).
     if (started.current) return;
     started.current = true;
@@ -54,5 +63,47 @@ export function ContinueAuth() {
     })();
   }, [router, search]);
 
-  return failed ? <Notice tone="error">{t.auth.linkInvalid}</Notice> : <p className="text-sm text-muted">{t.common.loading}</p>;
+  useEffect(() => {
+    if (!needsClick) redeem();
+  }, [needsClick, redeem]);
+
+  if (failed)
+    return (
+      <div className="flex flex-col gap-4" data-testid="continue-failed">
+        <Notice tone="error">{t.auth.linkInvalid}</Notice>
+        {recovery ? (
+          <Link href="/forgot" className={buttonClass.primary}>
+            {t.auth.requestNewLink}
+          </Link>
+        ) : (
+          <>
+            <p className="text-sm text-muted">{t.auth.linkUsedHint}</p>
+            <Link href="/login" className={buttonClass.primary}>
+              {t.auth.loginSubmit}
+            </Link>
+            <p className="text-sm text-muted">{t.auth.linkResendHint}</p>
+            <ResendForm />
+          </>
+        )}
+      </div>
+    );
+  if (needsClick)
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-muted">{recovery ? t.auth.continueRecoveryText : t.auth.continueConfirmText}</p>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            redeem();
+          }}
+          className={buttonClass.primary}
+          data-testid="continue-button"
+        >
+          {busy ? t.common.loading : recovery ? t.auth.continueRecovery : t.auth.continueConfirm}
+        </button>
+      </div>
+    );
+  return <p className="text-sm text-muted">{t.common.loading}</p>;
 }
