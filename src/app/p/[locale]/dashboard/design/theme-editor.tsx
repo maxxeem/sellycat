@@ -1,25 +1,22 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Loader2, Monitor, Plus, Smartphone, Trash2, Upload, Wand2 } from "lucide-react";
-import { useMemo, useState, useTransition, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, ImageIcon, ImagePlay, LayoutGrid, Monitor, Palette, PanelBottom, PanelTop, Plus, Smartphone, Trash2, Type, Wand2, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { ColorField, ColorFieldGroup } from "@/components/color-field";
-import { FontPicker } from "@/components/font-picker";
-import { ImageUpload, uploadMedia } from "@/components/image-upload";
+import { ImageUpload } from "@/components/image-upload";
 import { ShopFrame } from "@/components/shop/shop-frame";
 import { ShopHome } from "@/components/shop/shop-home";
 import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
 import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles";
 import type { DealView, ShopInfo } from "@/components/shop/types";
-import { Card, Field, Input, Notice, Select, buttonClass } from "@/components/ui";
+import { Field, Input, Notice, buttonClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { normaliseHex } from "@/lib/design/color";
 import type { BrandingSuggestion } from "@/lib/design/brand-parse";
-import { FONT_ACCEPT, checkFontFile, familyFromFile, fontCssFormat } from "@/lib/design/font-file";
 import { isGoogleFont } from "@/lib/design/google-fonts";
-import { SOCIAL_ICON } from "@/components/shop/social-icons";
-import { SOCIAL_LABEL, SOCIAL_NETWORKS, socialUrl, type SocialNetwork } from "@/lib/shop/social";
 import { contrastIssues, heroLook, themeFontCss, type HeroBackdrop, type ShopTheme, type ThemeFont } from "@/lib/shop/theme";
+import { FontField, HeroBackdropField, HeroFocus, HeroGuide, Part, Section, Segmented, SocialLinksField } from "./theme-fields";
 import { importFromWebsite, saveTheme } from "./actions";
 
 type ColorKey = keyof ShopTheme["colors"];
@@ -38,9 +35,27 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
   const [importPartial, setImportPartial] = useState(false);
   const [importing, startImport] = useTransition();
 
+  // One section at a time; `#<id>` in the address opens it directly.
+  const [open, setOpen] = useState<string | null>(null);
+  const [heroDevice, setHeroDevice] = useState<PreviewDevice>("desktop");
+  useEffect(() => {
+    const openHash = () => {
+      const id = window.location.hash.slice(1);
+      if (id) setOpen(id);
+    };
+    openHash();
+    window.addEventListener("hashchange", openHash);
+    return () => window.removeEventListener("hashchange", openHash);
+  }, []);
+  // The section above closes, so the opened one would jump out of view.
+  useEffect(() => {
+    if (open) document.getElementById(open)?.scrollIntoView({ block: "nearest" });
+  }, [open]);
+
   const update = (fn: (t: ShopTheme) => ShopTheme) => {
     setTheme(fn);
     setDirty(true);
+    setMessage(null);
   };
   const setColor = (key: ColorKey, value: string) => update((th) => ({ ...th, colors: { ...th.colors, [key]: value } }));
   const setFont = (which: "heading" | "body", font: ThemeFont) => update((th) => ({ ...th, fonts: { ...th.fonts, [which]: font } }));
@@ -91,23 +106,223 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
     ["warning", g.warning],
   ];
 
+  const sec = (id: string, icon: LucideIcon, title: string, summary: ReactNode) => ({ id, icon, title, summary, open: open === id, onToggle: () => setOpen(open === id ? null : id) });
+  const colorField = (key: ColorKey, label: string) => <ColorField key={key} label={label} value={theme.colors[key]} onChange={(hex) => setColor(key, hex)} presets={Object.values(theme.colors)} doneLabel={t.common.close} />;
+  // What each closed section currently contains.
+  const join = (...parts: Array<string | false>) => parts.filter(Boolean).join(" · ");
+  const fontName = (f: ThemeFont) => (f.source === "system" ? g.fontSystem : f.family || g.fontSystem);
+  const backdropName = (kind: HeroBackdrop["kind"]) => ({ image: g.heroBgImage, color: g.fillColor, gradient: g.fillGradient, none: g.heroBgNone })[kind];
+  const colorSummary = (
+    <span className="mt-1 flex items-center gap-1.5">
+      {COLORS.slice(0, 5).map(([key]) => (
+        <span key={key} className="h-3.5 w-3.5 rounded-full border border-line" style={{ background: theme.colors[key] }} />
+      ))}
+      <span className="ml-1">{theme.mode === "dark" ? g.dark : g.light}</span>
+    </span>
+  );
+  const logoSummary = join(Boolean(theme.logoLight || theme.logoDark) && "Logo", Boolean(theme.favicon) && g.favicon, Boolean(theme.socialImage) && g.socialImage) || g.noneYet;
+  const fontSummary = [...new Set([fontName(theme.fonts.heading), fontName(theme.fonts.body)])].join(" · ");
+  const headerSummary = join(theme.header.style === "integrated" ? g.headerIntegrated : g.headerBar, theme.header.fill === "color" ? g.fillColor : theme.header.fill === "gradient" && g.fillGradient);
+  const heroSummary = theme.hero.enabled ? `${g.heroTabDesktop}: ${backdropName(theme.hero.desktop.kind)} · ${g.heroTabMobile}: ${backdropName(theme.hero.mobile.kind)}` : g.off;
+  const dealsSummary = join(
+    { grid: g.layoutGrid, list: g.layoutList, featured: g.layoutFeatured }[theme.listLayout],
+    { flat: g.cardFlat, bordered: g.cardBordered, elevated: g.cardElevated }[theme.cardStyle],
+    { solid: g.buttonSolid, outline: g.buttonOutline, pill: g.buttonPill }[theme.buttonStyle],
+  );
+  const footerSummary = join(Boolean(theme.footerLogoLight || theme.footerLogoDark) && "Logo", theme.footerLinks.length > 0 && fmt(g.linkCount, { n: theme.footerLinks.length }), theme.socialLinks.length > 0 && fmt(g.socialCount, { n: theme.socialLinks.length })) || g.noneYet;
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="sticky top-0 z-20 -mx-4 flex flex-wrap items-center gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8">
+      <div className="sticky top-[66px] z-20 -mx-4 flex flex-wrap items-center gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:top-0">
         <h1 className="text-xl font-bold">{g.title}</h1>
         {dirty ? <span className="text-sm text-warn">{g.unpublished}</span> : null}
         <div className="ml-auto flex gap-2">
           <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => save(false)}>{t.common.save}</button>
           <button type="button" className={buttonClass.primary} disabled={pending} onClick={() => save(true)} data-testid="theme-publish">{g.publish}</button>
         </div>
+        {/* Inside the bar: visible however far the sections are scrolled. */}
+        {message ? <div className="w-full" role="status"><Notice tone={message.tone}>{message.text}</Notice></div> : null}
       </div>
       <p className="text-sm text-muted">{g.intro}</p>
-      {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
 
       <div className="grid gap-6 2xl:grid-cols-[440px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-6">
-          <div id="branding-import" className="scroll-mt-24">
-            <Card title={g.importTitle} description={g.importHint}>
+        <div className="flex min-w-0 flex-col gap-6" data-testid="design-sections">
+          <div>
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted">{g.groupBrand}</p>
+            <div className="rounded-card border border-line bg-surface-2 shadow-card">
+            <Section {...sec("logos", ImageIcon, g.images, logoSummary)}>
+              <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoLight} label={g.logoLight} hint={g.hintLogo} height="h-32" tone="light" onChange={(url) => update((th) => ({ ...th, logoLight: url }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoDark} label={g.logoDark} hint={g.hintLogo} height="h-32" tone="dark" onChange={(url) => update((th) => ({ ...th, logoDark: url }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.favicon} label={g.favicon} hint={g.hintFavicon} height="h-32" accept="image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" onChange={(url) => update((th) => ({ ...th, favicon: url }))} />
+              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.socialImage} label={g.socialImage} hint={g.hintSocial} height="h-32" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, socialImage: url }))} />
+              </div>
+            </Section>
+            <Section {...sec("colors", Palette, g.colors, colorSummary)} warn={issues.length > 0}>
+              <Segmented
+                label={g.mode}
+                value={theme.mode}
+                onChange={(v) =>
+                  update((th) => ({
+                    ...th,
+                    mode: v,
+                    // Switching the mode flips the grounds so the shop stays readable; colours can be tuned afterwards.
+                    colors: v === th.mode ? th.colors : { ...th.colors, background: v === "dark" ? "#111111" : "#ffffff", surface: v === "dark" ? "#1c1c1c" : "#f5f5f5", text: v === "dark" ? "#ffffff" : "#111111" },
+                  }))
+                }
+                options={[["light", g.light], ["dark", g.dark]]}
+              />
+              <ColorFieldGroup>
+                {COLORS.slice(0, 5).map(([key, label]) => colorField(key, label))}
+              </ColorFieldGroup>
+              {issues.length ? (
+                <Notice tone="error">
+                  <AlertTriangle className="mr-1 inline h-4 w-4" aria-hidden />
+                  {fmt(g.contrastWarn, { pairs: issues.map((i) => `${i.pair} (${i.ratio}:1)`).join(", ") })}
+                </Notice>
+              ) : (
+                <p className="flex items-center gap-2 text-sm text-success">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden /> {g.contrastOk}
+                </p>
+              )}
+              <details className="text-sm">
+                <summary className="cursor-pointer font-semibold">{g.moreColors}</summary>
+                <div className="mt-3">
+                  <ColorFieldGroup>{COLORS.slice(5).map(([key, label]) => colorField(key, label))}</ColorFieldGroup>
+                </div>
+              </details>
+            </Section>
+            <Section {...sec("fonts", Type, g.fonts, fontSummary)}>
+              <FontField label={g.headingFont} value={theme.fonts.heading} onChange={(f) => setFont("heading", f)} tenantId={props.tenantId} />
+              <FontField label={g.bodyFont} value={theme.fonts.body} onChange={(f) => setFont("body", f)} tenantId={props.tenantId} />
+            </Section>
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted">{g.groupLayout}</p>
+            <div className="rounded-card border border-line bg-surface-2 shadow-card">
+            <Section {...sec("header", PanelTop, g.header, headerSummary)}>
+              <p className="text-xs text-muted">{g.headerHint}</p>
+              <Segmented label={g.headerStyle} value={theme.header.style} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, style: v } }))} options={[["bar", g.headerBar], ["integrated", g.headerIntegrated]]} />
+              <Segmented label={g.headerFill} value={theme.header.fill} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, fill: v } }))} options={[["none", g.fillNone], ["color", g.fillColor], ["gradient", g.fillGradient]]} />
+              {theme.header.fill !== "none" ? (
+                <ColorFieldGroup>
+                  <ColorField label={theme.header.fill === "gradient" ? g.gradientFrom : g.fillColor} value={theme.header.from} onChange={(hex) => update((th) => ({ ...th, header: { ...th.header, from: hex } }))} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
+                  {theme.header.fill === "gradient" ? (
+                    <ColorField label={g.gradientTo} value={theme.header.to} onChange={(hex) => update((th) => ({ ...th, header: { ...th.header, to: hex } }))} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
+                  ) : null}
+                </ColorFieldGroup>
+              ) : null}
+              {theme.header.fill === "gradient" ? (
+                <Segmented label={g.direction} value={theme.header.direction} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, direction: v } }))} options={[["down", g.dirDown], ["right", g.dirRight], ["diagonal", g.dirDiagonal]]} />
+              ) : null}
+            </Section>
+            <Section {...sec("hero", ImagePlay, g.hero, heroSummary)}>
+              <label className="flex items-center gap-3 text-sm">
+                <input type="checkbox" checked={theme.hero.enabled} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, enabled: e.target.checked } }))} className="h-4 w-4 accent-[var(--coral)]" />
+                {g.heroEnabled}
+              </label>
+              {theme.hero.enabled ? (
+                <>
+              <Field label={g.heroTitle}>
+                <Input value={theme.hero.title} maxLength={120} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, title: e.target.value } }))} placeholder={props.shop.name} />
+              </Field>
+              <Field label={g.heroSubtitle}>
+                <Input value={theme.hero.subtitle} maxLength={240} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, subtitle: e.target.value } }))} />
+              </Field>
+              <Part>
+                {/* Background per device; the preview follows. */}
+                <div className="grid grid-cols-2 gap-1 rounded-button border border-line bg-surface p-1 text-sm" role="tablist" aria-label={g.heroBackground}>
+                  {(["desktop", "mobile"] as const).map((dev) => (
+                    <button
+                      key={dev}
+                      type="button"
+                      role="tab"
+                      aria-selected={heroDevice === dev}
+                      onClick={() => {
+                        setHeroDevice(dev);
+                        setDevice(dev);
+                      }}
+                      className={`flex items-center justify-center gap-2 rounded-input px-2 py-1.5 font-semibold ${heroDevice === dev ? "bg-surface-2 text-ink shadow-card" : "text-muted hover:text-ink"}`}
+                      data-testid={`hero-tab-${dev}`}
+                    >
+                      {dev === "desktop" ? <Monitor className="h-4 w-4" aria-hidden /> : <Smartphone className="h-4 w-4" aria-hidden />}
+                      {dev === "desktop" ? g.heroDesktop : g.heroTabMobile}
+                    </button>
+                  ))}
+                </div>
+                <div hidden={heroDevice !== "desktop"}>
+              <HeroBackdropField title={g.heroBackground} value={theme.hero.desktop} presets={Object.values(theme.colors)} onChange={(desktop) => update((th) => ({ ...th, hero: { ...th.hero, desktop } }))}>
+                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
+                {theme.hero.image ? (
+                  <HeroFocus label={g.heroFocus} devices={theme.hero.mobile.kind === "image" && !theme.hero.imageMobile ? ["desktop", "mobile"] : ["desktop"]} image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} />
+                ) : null}
+              </HeroBackdropField>
+                </div>
+                <div hidden={heroDevice !== "mobile"}>
+              <HeroBackdropField title={g.heroBackground} value={theme.hero.mobile} presets={Object.values(theme.colors)} onChange={(mobile) => update((th) => ({ ...th, hero: { ...th.hero, mobile } }))}>
+                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.imageMobile} label={g.heroImageMobile} hint={g.hintHeroMobile} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, imageMobile: url, focusMobileX: 50, focusMobileY: 50 } }))} />
+                {theme.hero.imageMobile ? (
+                  <HeroFocus label={g.heroFocus} devices={["mobile"]} image={theme.hero.imageMobile} x={theme.hero.focusMobileX} y={theme.hero.focusMobileY} onChange={(focusMobileX, focusMobileY) => update((th) => ({ ...th, hero: { ...th.hero, focusMobileX, focusMobileY } }))} />
+                ) : null}
+              </HeroBackdropField>
+                </div>
+              </Part>
+              {heroLook(theme, "desktop").kind === "image" || heroLook(theme, "mobile").kind === "image" ? (
+                <Part>
+                  <div>
+                    <Segmented label={g.heroEdge} value={theme.hero.edge} onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, edge: v } }))} options={[["line", g.heroEdgeLine], ["fade", g.heroEdgeFade]]} />
+                    <p className="mt-1.5 text-xs text-muted">{g.heroEdgeHint}</p>
+                  </div>
+                  <HeroGuide />
+                </Part>
+              ) : null}
+                </>
+              ) : null}
+            </Section>
+            <Section {...sec("deals", LayoutGrid, g.dealsSection, dealsSummary)}>
+              <Segmented label={g.layout} value={theme.listLayout} onChange={(v) => update((th) => ({ ...th, listLayout: v }))} options={[["grid", g.layoutGrid], ["list", g.layoutList], ["featured", g.layoutFeatured]]} />
+              <Segmented label={g.cardStyle} value={theme.cardStyle} onChange={(v) => update((th) => ({ ...th, cardStyle: v }))} options={[["flat", g.cardFlat], ["bordered", g.cardBordered], ["elevated", g.cardElevated]]} />
+              <Segmented label={g.buttonStyle} value={theme.buttonStyle} onChange={(v) => update((th) => ({ ...th, buttonStyle: v }))} options={[["solid", g.buttonSolid], ["outline", g.buttonOutline], ["pill", g.buttonPill]]} />
+              <Field label={`${g.radius}: ${theme.radius}px`}>
+                <input type="range" min={0} max={28} value={theme.radius} onChange={(e) => update((th) => ({ ...th, radius: Number(e.target.value) }))} className="accent-[var(--coral)]" />
+              </Field>
+            </Section>
+            <Section {...sec("footer", PanelBottom, g.footer, footerSummary)}>
+              <Part title={g.footerLogo} hint={g.footerLogoHint}>
+                <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
+                  <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.footerLogoLight} label={g.footerLogoLight} height="h-28" tone="light" onChange={(url) => update((th) => ({ ...th, footerLogoLight: url }))} />
+                  <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.footerLogoDark} label={g.footerLogoDark} height="h-28" tone="dark" onChange={(url) => update((th) => ({ ...th, footerLogoDark: url }))} />
+                </div>
+              </Part>
+              <Part title={g.footerLinksTitle}>
+                <div className="flex flex-col gap-2">
+              {theme.footerLinks.map((l, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input value={l.label} placeholder={g.linkLabel} onChange={(e) => update((th) => ({ ...th, footerLinks: th.footerLinks.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) }))} />
+                  <Input value={l.url} placeholder="https://…" onChange={(e) => update((th) => ({ ...th, footerLinks: th.footerLinks.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) }))} />
+                  <button type="button" className="p-2 text-danger" aria-label={g.remove} onClick={() => update((th) => ({ ...th, footerLinks: th.footerLinks.filter((_, j) => j !== i) }))}>
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => update((th) => ({ ...th, footerLinks: [...th.footerLinks, { label: "", url: "" }] }))}>
+                <Plus className="h-4 w-4" /> {g.addLink}
+              </button>
+                </div>
+              </Part>
+              <Part>
+              <SocialLinksField value={theme.socialLinks} onChange={(socialLinks) => update((th) => ({ ...th, socialLinks }))} />
+              </Part>
+            </Section>
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted">{g.groupTools}</p>
+            <div className="rounded-card border border-line bg-surface-2 shadow-card">
+            <Section {...sec("branding-import", Wand2, g.importTitle, g.importSummary)}>
+              <p className="text-xs text-muted">{g.importHint}</p>
+              <div>
               <form
                 className="flex gap-2"
                 onSubmit={(e) => {
@@ -144,149 +359,10 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
                   <button type="button" className={`${buttonClass.primary} self-start`} onClick={() => applySuggestion(suggestion)}>{g.importApply}</button>
                 </div>
               ) : null}
-            </Card>
-          </div>
-
-          <Card title={g.colors}>
-            <div className="flex flex-col gap-4">
-              <ColorFieldGroup>
-                {COLORS.map(([key, label]) => (
-                  <ColorField key={key} label={label} value={theme.colors[key]} onChange={(hex) => setColor(key, hex)} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
-                ))}
-              </ColorFieldGroup>
-              {issues.length ? (
-                <Notice tone="error">
-                  <AlertTriangle className="mr-1 inline h-4 w-4" aria-hidden />
-                  {fmt(g.contrastWarn, { pairs: issues.map((i) => `${i.pair} (${i.ratio}:1)`).join(", ") })}
-                </Notice>
-              ) : (
-                <p className="flex items-center gap-2 text-sm text-success">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden /> {g.contrastOk}
-                </p>
-              )}
-            </div>
-          </Card>
-
-          <Card title={g.fonts}>
-            <div className="flex flex-col gap-5">
-              <FontField label={g.headingFont} value={theme.fonts.heading} onChange={(f) => setFont("heading", f)} tenantId={props.tenantId} />
-              <FontField label={g.bodyFont} value={theme.fonts.body} onChange={(f) => setFont("body", f)} tenantId={props.tenantId} />
-            </div>
-          </Card>
-
-          <Card title={g.shape}>
-            <div className="flex flex-col gap-4">
-              <Field label={`${g.radius}: ${theme.radius}px`}>
-                <input type="range" min={0} max={28} value={theme.radius} onChange={(e) => update((th) => ({ ...th, radius: Number(e.target.value) }))} className="accent-[var(--coral)]" />
-              </Field>
-              <Segmented label={g.buttonStyle} value={theme.buttonStyle} onChange={(v) => update((th) => ({ ...th, buttonStyle: v }))} options={[["solid", g.buttonSolid], ["outline", g.buttonOutline], ["pill", g.buttonPill]]} />
-              <Segmented label={g.cardStyle} value={theme.cardStyle} onChange={(v) => update((th) => ({ ...th, cardStyle: v }))} options={[["flat", g.cardFlat], ["bordered", g.cardBordered], ["elevated", g.cardElevated]]} />
-              <Segmented label={g.layout} value={theme.listLayout} onChange={(v) => update((th) => ({ ...th, listLayout: v }))} options={[["grid", g.layoutGrid], ["list", g.layoutList], ["featured", g.layoutFeatured]]} />
-              <Segmented
-                label={g.mode}
-                value={theme.mode}
-                onChange={(v) =>
-                  update((th) => ({
-                    ...th,
-                    mode: v,
-                    // Switching the mode flips the grounds so the shop stays readable; colours can be tuned afterwards.
-                    colors: v === th.mode ? th.colors : { ...th.colors, background: v === "dark" ? "#111111" : "#ffffff", surface: v === "dark" ? "#1c1c1c" : "#f5f5f5", text: v === "dark" ? "#ffffff" : "#111111" },
-                  }))
-                }
-                options={[["light", g.light], ["dark", g.dark]]}
-              />
-            </div>
-          </Card>
-
-          <Card title={g.header} description={g.headerHint}>
-            <div className="flex flex-col gap-4">
-              <Segmented label={g.headerStyle} value={theme.header.style} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, style: v } }))} options={[["bar", g.headerBar], ["integrated", g.headerIntegrated]]} />
-              <Segmented label={g.headerFill} value={theme.header.fill} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, fill: v } }))} options={[["none", g.fillNone], ["color", g.fillColor], ["gradient", g.fillGradient]]} />
-              {theme.header.fill !== "none" ? (
-                <ColorFieldGroup>
-                  <ColorField label={theme.header.fill === "gradient" ? g.gradientFrom : g.fillColor} value={theme.header.from} onChange={(hex) => update((th) => ({ ...th, header: { ...th.header, from: hex } }))} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
-                  {theme.header.fill === "gradient" ? (
-                    <ColorField label={g.gradientTo} value={theme.header.to} onChange={(hex) => update((th) => ({ ...th, header: { ...th.header, to: hex } }))} presets={Object.values(theme.colors)} doneLabel={t.common.close} />
-                  ) : null}
-                </ColorFieldGroup>
-              ) : null}
-              {theme.header.fill === "gradient" ? (
-                <Segmented label={g.direction} value={theme.header.direction} onChange={(v) => update((th) => ({ ...th, header: { ...th.header, direction: v } }))} options={[["down", g.dirDown], ["right", g.dirRight], ["diagonal", g.dirDiagonal]]} />
-              ) : null}
-            </div>
-          </Card>
-
-          <Card title={g.hero}>
-            <div className="flex flex-col gap-4">
-              <label className="flex items-center gap-3 text-sm">
-                <input type="checkbox" checked={theme.hero.enabled} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, enabled: e.target.checked } }))} className="h-4 w-4 accent-[var(--coral)]" />
-                {g.heroEnabled}
-              </label>
-              <Field label={g.heroTitle}>
-                <Input value={theme.hero.title} maxLength={120} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, title: e.target.value } }))} placeholder={props.shop.name} />
-              </Field>
-              <Field label={g.heroSubtitle}>
-                <Input value={theme.hero.subtitle} maxLength={240} onChange={(e) => update((th) => ({ ...th, hero: { ...th.hero, subtitle: e.target.value } }))} />
-              </Field>
-              <HeroBackdropField title={g.heroDesktop} value={theme.hero.desktop} presets={Object.values(theme.colors)} onChange={(desktop) => update((th) => ({ ...th, hero: { ...th.hero, desktop } }))}>
-                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.image} label={g.heroImage} hint={g.hintHero} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, image: url, focusX: 50, focusY: 50 } }))} />
-                {theme.hero.image ? (
-                  <HeroFocus label={g.heroFocus} devices={theme.hero.mobile.kind === "image" && !theme.hero.imageMobile ? ["desktop", "mobile"] : ["desktop"]} image={theme.hero.image} x={theme.hero.focusX} y={theme.hero.focusY} onChange={(focusX, focusY) => update((th) => ({ ...th, hero: { ...th.hero, focusX, focusY } }))} />
-                ) : null}
-              </HeroBackdropField>
-              <HeroBackdropField title={g.heroMobile} value={theme.hero.mobile} presets={Object.values(theme.colors)} onChange={(mobile) => update((th) => ({ ...th, hero: { ...th.hero, mobile } }))}>
-                <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.hero.imageMobile} label={g.heroImageMobile} hint={g.hintHeroMobile} height="h-44" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, hero: { ...th.hero, imageMobile: url, focusMobileX: 50, focusMobileY: 50 } }))} />
-                {theme.hero.imageMobile ? (
-                  <HeroFocus label={g.heroFocus} devices={["mobile"]} image={theme.hero.imageMobile} x={theme.hero.focusMobileX} y={theme.hero.focusMobileY} onChange={(focusMobileX, focusMobileY) => update((th) => ({ ...th, hero: { ...th.hero, focusMobileX, focusMobileY } }))} />
-                ) : null}
-              </HeroBackdropField>
-              {heroLook(theme, "desktop").kind === "image" || heroLook(theme, "mobile").kind === "image" ? (
-                <>
-                  <div className="border-t border-line pt-4">
-                    <Segmented label={g.heroEdge} value={theme.hero.edge} onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, edge: v } }))} options={[["line", g.heroEdgeLine], ["fade", g.heroEdgeFade]]} />
-                    <p className="mt-1.5 text-xs text-muted">{g.heroEdgeHint}</p>
-                  </div>
-                  <HeroGuide />
-                </>
-              ) : null}
-            </div>
-          </Card>
-
-          <Card title={g.images}>
-            <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoLight} label={g.logoLight} hint={g.hintLogo} height="h-32" tone="light" onChange={(url) => update((th) => ({ ...th, logoLight: url }))} />
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.logoDark} label={g.logoDark} hint={g.hintLogo} height="h-32" tone="dark" onChange={(url) => update((th) => ({ ...th, logoDark: url }))} />
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.favicon} label={g.favicon} hint={g.hintFavicon} height="h-32" accept="image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" onChange={(url) => update((th) => ({ ...th, favicon: url }))} />
-              <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.socialImage} label={g.socialImage} hint={g.hintSocial} height="h-32" cover accept="image/png,image/jpeg,image/webp" onChange={(url) => update((th) => ({ ...th, socialImage: url }))} />
-            </div>
-          </Card>
-
-          <Card title={g.footer}>
-            <div className="flex flex-col gap-2">
-              <div className="mb-3">
-                <p className="text-sm font-semibold">{g.footerLogo}</p>
-                <p className="mb-3 text-xs text-muted">{g.footerLogoHint}</p>
-                <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
-                  <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.footerLogoLight} label={g.footerLogoLight} height="h-28" tone="light" onChange={(url) => update((th) => ({ ...th, footerLogoLight: url }))} />
-                  <ImageUpload tenantId={props.tenantId} folder="theme" value={theme.footerLogoDark} label={g.footerLogoDark} height="h-28" tone="dark" onChange={(url) => update((th) => ({ ...th, footerLogoDark: url }))} />
-                </div>
               </div>
-              <p className="border-t border-line pt-4 text-sm font-semibold">{g.footerLinksTitle}</p>
-              {theme.footerLinks.map((l, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input value={l.label} placeholder={g.linkLabel} onChange={(e) => update((th) => ({ ...th, footerLinks: th.footerLinks.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) }))} />
-                  <Input value={l.url} placeholder="https://…" onChange={(e) => update((th) => ({ ...th, footerLinks: th.footerLinks.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) }))} />
-                  <button type="button" className="p-2 text-danger" aria-label={g.remove} onClick={() => update((th) => ({ ...th, footerLinks: th.footerLinks.filter((_, j) => j !== i) }))}>
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => update((th) => ({ ...th, footerLinks: [...th.footerLinks, { label: "", url: "" }] }))}>
-                <Plus className="h-4 w-4" /> {g.addLink}
-              </button>
-              <SocialLinksField value={theme.socialLinks} onChange={(socialLinks) => update((th) => ({ ...th, socialLinks }))} />
+            </Section>
             </div>
-          </Card>
+          </div>
         </div>
 
         <div className="min-w-0 xl:sticky xl:top-20 xl:self-start">
@@ -310,257 +386,6 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
             </PreviewFrame>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function FontField({ label, value, onChange, tenantId }: { label: string; value: ThemeFont; onChange: (f: ThemeFont) => void; tenantId: string }) {
-  const { t } = useI18n();
-  const g = t.design;
-  const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null);
-  const fileName = value.url ? decodeURIComponent(value.url.split("/").pop() ?? "") : "";
-  const upload = async (file: File) => {
-    setStatus(null);
-    const check = checkFontFile(file.name, file.size, new Uint8Array(await file.slice(0, 4).arrayBuffer()));
-    if (!check.ok) {
-      setStatus({ tone: "error", text: check.error === "size" ? g.fontTooBig : g.fontWrongType });
-      return;
-    }
-    setUploading(true);
-    try {
-      // Stored under its real format, whatever the file name says.
-      const typed = new File([file], `${file.name.replace(/\.[a-z0-9]+$/i, "")}.${check.ext}`, { type: check.mime });
-      const url = await uploadMedia(tenantId, "fonts", typed);
-      onChange({ ...value, family: value.family.trim() || familyFromFile(file.name), url });
-      setStatus({ tone: "success", text: fmt(g.fontUploaded, { file: file.name }) });
-    } catch {
-      setStatus({ tone: "error", text: g.fontUploadFailed });
-    } finally {
-      setUploading(false);
-    }
-  };
-  return (
-    <div className="flex flex-col gap-2 text-sm">
-      <span className="font-semibold">{label}</span>
-      <Select value={value.source} onChange={(e) => onChange({ source: e.target.value as ThemeFont["source"], family: e.target.value === "system" ? "" : value.family, url: "" })}>
-        <option value="system">{g.fontSystem}</option>
-        <option value="google">{g.fontGoogle}</option>
-        <option value="custom">{g.fontCustom}</option>
-      </Select>
-      {value.source === "google" ? (
-        <FontPicker value={value.family} placeholder={g.fontSearch} onChange={(family) => onChange({ ...value, family })} />
-      ) : null}
-      {value.source === "custom" ? (
-        <div className="flex flex-col gap-2">
-          <Field label={g.fontName} hint={g.fontNameHint}>
-            <Input value={value.family} placeholder="Brand Sans" maxLength={80} onChange={(e) => onChange({ ...value, family: e.target.value })} />
-          </Field>
-          <div className="flex flex-wrap items-center gap-3">
-            <label className={`${buttonClass.secondary} cursor-pointer ${uploading ? "pointer-events-none opacity-60" : ""}`}>
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
-              {uploading ? g.uploading : value.url ? g.replaceFont : g.uploadFont}
-              <input
-                type="file"
-                accept={FONT_ACCEPT}
-                className="sr-only"
-                data-testid="font-upload"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) void upload(file);
-                }}
-              />
-            </label>
-            {value.url && !status ? (
-              <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-success">
-                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> <span className="truncate">{fmt(g.fontActive, { file: fileName })}</span>
-              </span>
-            ) : null}
-          </div>
-          <p className="text-xs text-muted">{g.fontFormats}</p>
-          {status ? (
-            <p role="status" className={`flex items-start gap-1.5 text-xs font-semibold ${status.tone === "success" ? "text-success" : "text-danger"}`}>
-              {status.tone === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> : <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
-              {status.text}
-            </p>
-          ) : null}
-          {value.url && value.family ? (
-            <div className="rounded-input border border-line bg-surface p-3" style={{ fontFamily: `"${value.family.replace(/"/g, "")}", system-ui` }} data-testid="custom-font-sample">
-              <style>{`@font-face{font-family:"${value.family.replace(/"/g, "")}";src:url("${value.url.replace(/"/g, "")}") format("${fontCssFormat(value.url)}");font-display:swap;}`}</style>
-              <p className="text-xl font-bold leading-tight">{g.fontSampleTitle}</p>
-              <p className="mt-1 text-sm">{g.fontSampleText}</p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/** Social media profiles for the footer: network + link or @handle, at most one per network. */
-function SocialLinksField({ value, onChange }: { value: ShopTheme["socialLinks"]; onChange: (v: ShopTheme["socialLinks"]) => void }) {
-  const { t } = useI18n();
-  const g = t.design;
-  const free = SOCIAL_NETWORKS.filter((n) => !value.some((v) => v.network === n));
-  const set = (i: number, patch: Partial<ShopTheme["socialLinks"][number]>) => onChange(value.map((v, j) => (j === i ? { ...v, ...patch } : v)));
-  return (
-    <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4 text-sm">
-      <div>
-        <p className="font-semibold">{g.socialTitle}</p>
-        <p className="text-xs text-muted">{g.socialHint}</p>
-      </div>
-      {value.map((l, i) => {
-        const Icon = SOCIAL_ICON[l.network];
-        const bad = l.url.trim() !== "" && !socialUrl(l.network, l.url);
-        return (
-          <div key={l.network} className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line" aria-hidden>
-                <Icon className="h-5 w-5" />
-              </span>
-              <div className="w-36 shrink-0">
-                <Select value={l.network} onChange={(e) => set(i, { network: e.target.value as SocialNetwork })} aria-label={g.socialNetwork}>
-                  {SOCIAL_NETWORKS.filter((n) => n === l.network || free.includes(n)).map((n) => (
-                    <option key={n} value={n}>{SOCIAL_LABEL[n]}</option>
-                  ))}
-                </Select>
-              </div>
-              <Input value={l.url} placeholder={g.socialPlaceholder} maxLength={300} onChange={(e) => set(i, { url: e.target.value })} aria-label={fmt(g.socialLink, { network: SOCIAL_LABEL[l.network] })} autoCapitalize="none" spellCheck={false} />
-              <button type="button" className="p-2 text-danger" aria-label={g.remove} onClick={() => onChange(value.filter((_, j) => j !== i))}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-            {bad ? <p className="pl-12 text-xs text-danger">{g.socialInvalid}</p> : null}
-          </div>
-        );
-      })}
-      {free.length ? (
-        <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => onChange([...value, { network: free[0]!, url: "" }])} data-testid="social-add">
-          <Plus className="h-4 w-4" /> {g.socialAdd}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-/** Background of the hero on one device; `children` are the picture controls. */
-function HeroBackdropField({ title, value, presets, onChange, children }: { title: string; value: HeroBackdrop; presets: string[]; onChange: (v: HeroBackdrop) => void; children: ReactNode }) {
-  const { t } = useI18n();
-  const g = t.design;
-  return (
-    <div className="flex flex-col gap-4 border-t border-line pt-4">
-      <Segmented label={title} value={value.kind} onChange={(kind) => onChange({ ...value, kind })} options={[["image", g.heroBgImage], ["color", g.fillColor], ["gradient", g.fillGradient], ["none", g.heroBgNone]]} />
-      {value.kind === "image" ? children : null}
-      {value.kind === "color" || value.kind === "gradient" ? (
-        <ColorFieldGroup>
-          <ColorField label={value.kind === "gradient" ? g.gradientFrom : g.fillColor} value={value.from} onChange={(from) => onChange({ ...value, from })} presets={presets} doneLabel={t.common.close} />
-          {value.kind === "gradient" ? <ColorField label={g.gradientTo} value={value.to} onChange={(to) => onChange({ ...value, to })} presets={presets} doneLabel={t.common.close} /> : null}
-        </ColorFieldGroup>
-      ) : null}
-      {value.kind === "gradient" ? <Segmented label={g.direction} value={value.direction} onChange={(direction) => onChange({ ...value, direction })} options={[["down", g.dirDown], ["right", g.dirRight], ["diagonal", g.dirDiagonal]]} /> : null}
-      {value.kind === "none" ? <p className="text-xs text-muted">{g.heroBgNoneHint}</p> : null}
-    </div>
-  );
-}
-
-/** What the header picture should look like (size, format, what gets cropped). */
-function HeroGuide() {
-  const { t } = useI18n();
-  const g = t.design;
-  return (
-    <div className="rounded-input bg-surface p-3 text-xs">
-      <p className="mb-1.5 font-semibold text-ink">{g.heroGuideTitle}</p>
-      <ul className="flex list-disc flex-col gap-1 pl-4 text-muted">
-        {g.heroGuide.map((line, i) => (
-          <li key={i}>{line}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/**
- * Focus point of the header picture: a click on the whole picture sets the point that stays
- * visible; next to it the crops the shop shows on a wide screen and on a phone.
- */
-function HeroFocus({ label, devices, image, x, y, onChange }: { label: string; devices: PreviewDevice[]; image: string; x: number; y: number; onChange: (x: number, y: number) => void }) {
-  const { t } = useI18n();
-  const g = t.design;
-  const position = `${x}% ${y}%`;
-  const set = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    const clamp = (v: number) => Math.round(Math.min(100, Math.max(0, v)));
-    onChange(clamp(((e.clientX - box.left) / box.width) * 100), clamp(((e.clientY - box.top) / box.height) * 100));
-  };
-  return (
-    <div className="flex flex-col gap-3 text-sm">
-      <div>
-        <p className="font-semibold">{label}</p>
-        <p className="text-xs text-muted">{g.heroFocusHint}</p>
-      </div>
-      {/* The whole picture (at most 18rem high); the dot marks the focus point. */}
-      <div className="flex justify-center rounded-input border border-line bg-surface">
-      <div
-        role="slider"
-        tabIndex={0}
-        aria-label={label}
-        aria-valuetext={`${x} % / ${y} %`}
-        aria-valuenow={x}
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          set(e);
-        }}
-        onPointerMove={(e) => {
-          if (e.buttons) set(e);
-        }}
-        onKeyDown={(e) => {
-          const step = e.shiftKey ? 10 : 2;
-          const keys: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
-          const d = keys[e.key];
-          if (!d) return;
-          e.preventDefault();
-          onChange(Math.min(100, Math.max(0, x + d[0])), Math.min(100, Math.max(0, y + d[1])));
-        }}
-        className="relative cursor-crosshair touch-none select-none overflow-hidden"
-        data-testid="hero-focus"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt="" draggable={false} className="block max-h-72 w-auto max-w-full" />
-        <span className="pointer-events-none absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-coral/70 shadow-[0_0_0_2px_rgba(0,0,0,0.45)]" style={{ left: `${x}%`, top: `${y}%` }} aria-hidden />
-      </div>
-      </div>
-      <div className={`grid items-end gap-3 ${devices.length === 2 ? "grid-cols-[minmax(0,3fr)_minmax(0,1fr)]" : devices[0] === "mobile" ? "max-w-40" : ""}`}>
-        {devices.includes("desktop") ? (
-        <figure className="flex flex-col gap-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="" className="aspect-[18/5] w-full rounded-input border border-line object-cover" style={{ objectPosition: position }} />
-          <figcaption className="flex items-center gap-1 text-xs text-muted"><Monitor className="h-3.5 w-3.5" aria-hidden /> {g.previewDesktop}</figcaption>
-        </figure>
-        ) : null}
-        {devices.includes("mobile") ? (
-        <figure className="flex flex-col gap-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="" className="aspect-[6/5] w-full rounded-input border border-line object-cover" style={{ objectPosition: position }} />
-          <figcaption className="flex items-center gap-1 text-xs text-muted"><Smartphone className="h-3.5 w-3.5" aria-hidden /> {g.previewMobile}</figcaption>
-        </figure>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: Array<[T, string]>; onChange: (v: T) => void }) {
-  return (
-    <div className="flex flex-col gap-1.5 text-sm">
-      <span className="font-semibold">{label}</span>
-      <div className="inline-flex flex-wrap gap-1 rounded-button border border-line bg-surface p-1" role="radiogroup" aria-label={label}>
-        {options.map(([v, text]) => (
-          <button key={v} type="button" role="radio" aria-checked={value === v} onClick={() => onChange(v)} className={`rounded-input px-3 py-1.5 font-semibold ${value === v ? "bg-ink text-surface-2" : "text-muted hover:text-ink"}`}>
-            {text}
-          </button>
-        ))}
       </div>
     </div>
   );
