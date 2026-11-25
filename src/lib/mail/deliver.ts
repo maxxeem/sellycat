@@ -5,6 +5,7 @@ import { getShopProfile, type ShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { walletAvailable } from "@/lib/wallet/passes";
 import { lightLogo, loadVouchers, pdfInput, pdfName, type VoucherBundle } from "@/lib/vouchers/data";
+import { mailLogoUrl } from "./logo";
 import { renderVoucherPdf } from "@/lib/vouchers/pdf";
 import { mailConfigured, sendMail, type Attachment, type MailResult } from "./mailgun";
 import { loadSender } from "./sender-load";
@@ -29,7 +30,7 @@ export function shopBase(shop: Pick<ShopProfile, "primaryHost" | "slug">): strin
 
 /** `sender`: whom the mail comes from (loadSender), decides whether Sellycat is named in it. */
 export function brandOf(shop: ShopProfile, sender: { own: boolean }): MailBrand {
-  return { shopName: shop.name, locale: shop.locale, primary: shop.theme.colors.primary, logoUrl: lightLogo(shop), shopUrl: shopBase(shop), ownSender: sender.own };
+  return { shopName: shop.name, locale: shop.locale, primary: shop.theme.colors.primary, logoUrl: mailLogoUrl(shopBase(shop), shop.id, lightLogo(shop), "light"), shopUrl: shopBase(shop), ownSender: sender.own };
 }
 
 const mailVouchers = (b: VoucherBundle): MailVoucher[] => {

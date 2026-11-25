@@ -6,7 +6,7 @@ import { formatMoney, savingsPercent } from "@/lib/shop/deal-status";
  * Buyer-facing mails in the shop's language and colours. Pure (data in, subject/HTML/text out),
  * table layout with inline styles for mail clients.
  */
-export type MailBrand = { shopName: string; locale: "de" | "en"; primary: string; logoUrl: string | null; shopUrl: string; /** Sent from the shop's own domain: no mention of Sellycat. */ ownSender?: boolean };
+export type MailBrand = { shopName: string; locale: "de" | "en"; primary: string; logoUrl: string | null; /** Only for a logo that is not a MAIL_LOGO picture. */ logoSize?: { width: number; height: number }; shopUrl: string; /** Sent from the shop's own domain: no mention of Sellycat. */ ownSender?: boolean };
 export type MailVoucher = { title: string; partner: string | null; code: string; valueCents: number | null; currency: string; validUntil: string | null; link: string | null; wallet?: { apple?: string; google?: string } };
 export type Mail = { subject: string; html: string; text: string };
 
@@ -16,6 +16,12 @@ const subjectLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim().slice(0, 18
 
 const dateText = (iso: string, locale: "de" | "en") =>
   new Date(iso).toLocaleDateString(locale === "de" ? "de-CH" : "en-CH", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Zurich" });
+
+/** Shop logos in mails come as a picture of exactly this size with the whole logo inside (see logo.ts). */
+export const MAIL_LOGO = { width: 220, height: 40 };
+/** Fixed width and height, no max-width: clients would squash a wide logo. `size` must have the picture's proportions. */
+const logoImg = (url: string, alt: string, size: { width: number; height: number }, extra = "") =>
+  `<img src="${esc(url)}" alt="${esc(alt)}" width="${size.width}" height="${size.height}" style="display:block;width:${size.width}px;height:${size.height}px;border:0;${extra}">`;
 
 /** Mail clients render PNG/JPEG reliably; SVG logos are left out. */
 const mailImage = (url: string | null) => (url && /^https:\/\//.test(url) && !/\.svg(\?|$)/i.test(url) ? url : null);
@@ -30,7 +36,7 @@ function layout(brand: MailBrand, body: string, footer: string) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;">
 <tr><td style="height:6px;background:${brand.primary};font-size:0;line-height:0;">&nbsp;</td></tr>
-<tr><td style="padding:28px 28px 8px;">${logo ? `<img src="${esc(logo)}" alt="${esc(brand.shopName)}" height="40" style="display:block;height:40px;max-width:200px;border:0;">` : `<p style="margin:0;font-size:18px;font-weight:700;">${esc(brand.shopName)}</p>`}</td></tr>
+<tr><td style="padding:28px 28px 8px;">${logo ? logoImg(logo, brand.shopName, brand.logoSize ?? MAIL_LOGO) : `<p style="margin:0;font-size:18px;font-weight:700;">${esc(brand.shopName)}</p>`}</td></tr>
 <tr><td style="padding:8px 28px 28px;font-size:16px;line-height:1.5;">${body}</td></tr>
 </table>
 ${footer ? `<p style="max-width:560px;margin:16px auto 0;font-size:12px;line-height:1.5;color:#71717a;">${footer}</p>` : ""}
@@ -248,7 +254,7 @@ ${button(i.brand, i.url, m.button)}
 
 /** Sellycat itself as the sender (support mails, not shop mails). */
 export function platformBrand(locale: "de" | "en", siteUrl: string): MailBrand {
-  return { shopName: "Sellycat", locale, primary: "#FF4B23", logoUrl: `${siteUrl}/brand/sellycat-on-light-1024.png`, shopUrl: siteUrl };
+  return { shopName: "Sellycat", locale, primary: "#FF4B23", logoUrl: `${siteUrl}/brand/sellycat-on-light-1024.png`, logoSize: { width: 155, height: 40 }, shopUrl: siteUrl };
 }
 
 const paragraphs = (text: string) =>
@@ -467,7 +473,7 @@ function bandLayout(brand: MailBrand, band: MailBand, top: string, body: string,
 <div style="display:none;max-height:0;overflow:hidden;">${esc(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;">
-<tr><td style="padding:22px 28px;background:${band.background};">${band.logoUrl ? `<img src="${esc(band.logoUrl)}" alt="${esc(brand.shopName)}" height="40" style="display:block;height:40px;width:auto;max-width:220px;border:0;color:${band.text};font-size:18px;font-weight:700;">` : `<p style="margin:0;font-size:20px;font-weight:700;color:${band.text};">${esc(brand.shopName)}</p>`}</td></tr>
+<tr><td style="padding:22px 28px;background:${band.background};">${band.logoUrl ? logoImg(band.logoUrl, brand.shopName, MAIL_LOGO, `color:${band.text};font-size:18px;font-weight:700;`) : `<p style="margin:0;font-size:20px;font-weight:700;color:${band.text};">${esc(brand.shopName)}</p>`}</td></tr>
 ${top}<tr><td style="padding:28px;font-size:16px;line-height:1.5;">${body}</td></tr>
 </table>
 ${footer ? `<p style="max-width:540px;margin:16px auto 0;font-size:12px;line-height:1.6;color:#71717a;">${footer}</p>` : ""}

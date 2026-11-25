@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { after } from "next/server";
 import { clientIp, networkOf, rateLimit } from "@/lib/access/server";
 import { brandOf, shopBase } from "@/lib/mail/deliver";
+import { mailLogoUrl } from "@/lib/mail/logo";
 import { sendMail } from "@/lib/mail/mailgun";
 import { loadSender } from "@/lib/mail/sender-load";
 import { dealAlertActiveMail, dealAlertConfirmMail, dealAlertMail, type AlertDeal, type Mail, type MailBand, type MailBrand } from "@/lib/mail/templates";
@@ -26,11 +27,11 @@ export const CONFIRM_DAYS = 7;
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 const newToken = () => randomBytes(32).toString("base64url");
 
-/** Header colours and logo for the mail. SVG logos are not shown by mail clients, so it comes as PNG from our route. */
+/** Header colours and logo for the mail. The logo comes as PNG from our route. */
 export function bandOf(shop: ShopProfile): MailBand {
   const background = headerBase(shop.theme);
   const logo = headerLogo(shop.theme);
-  return { background, text: readableOn(background), logoUrl: logo ? `${shopBase(shop)}/api/deal-alert/logo/${shop.id}?v=${sha(logo).slice(0, 12)}` : null };
+  return { background, text: readableOn(background), logoUrl: mailLogoUrl(shopBase(shop), shop.id, logo, "band") };
 }
 
 export const alertOffered = (shop: ShopProfile) => shop.settings.deal_alert === true && shop.state === "online";
