@@ -6,7 +6,7 @@ import { formatMoney, savingsPercent } from "@/lib/shop/deal-status";
  * Buyer-facing mails in the shop's language and colours. Pure (data in, subject/HTML/text out),
  * table layout with inline styles for mail clients.
  */
-export type MailBrand = { shopName: string; locale: "de" | "en"; primary: string; logoUrl: string | null; shopUrl: string };
+export type MailBrand = { shopName: string; locale: "de" | "en"; primary: string; logoUrl: string | null; shopUrl: string; /** Sent from the shop's own domain: no mention of Sellycat. */ ownSender?: boolean };
 export type MailVoucher = { title: string; partner: string | null; code: string; valueCents: number | null; currency: string; validUntil: string | null; link: string | null; wallet?: { apple?: string; google?: string } };
 export type Mail = { subject: string; html: string; text: string };
 
@@ -20,6 +20,9 @@ const dateText = (iso: string, locale: "de" | "en") =>
 /** Mail clients render PNG/JPEG reliably; SVG logos are left out. */
 const mailImage = (url: string | null) => (url && /^https:\/\//.test(url) && !/\.svg(\?|$)/i.test(url) ? url : null);
 
+/** "Sent on behalf of … via Sellycat": only when the sender address is Sellycat's. */
+const viaSellycat = (brand: MailBrand) => (brand.ownSender ? "" : fmt(getDictionary(brand.locale).mail.footer, { shop: brand.shopName }));
+
 function layout(brand: MailBrand, body: string, footer: string) {
   const logo = mailImage(brand.logoUrl);
   return `<!doctype html><html lang="${brand.locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(brand.shopName)}</title></head>
@@ -30,7 +33,7 @@ function layout(brand: MailBrand, body: string, footer: string) {
 <tr><td style="padding:28px 28px 8px;">${logo ? `<img src="${esc(logo)}" alt="${esc(brand.shopName)}" height="40" style="display:block;height:40px;max-width:200px;border:0;">` : `<p style="margin:0;font-size:18px;font-weight:700;">${esc(brand.shopName)}</p>`}</td></tr>
 <tr><td style="padding:8px 28px 28px;font-size:16px;line-height:1.5;">${body}</td></tr>
 </table>
-<p style="max-width:560px;margin:16px auto 0;font-size:12px;line-height:1.5;color:#71717a;">${footer}</p>
+${footer ? `<p style="max-width:560px;margin:16px auto 0;font-size:12px;line-height:1.5;color:#71717a;">${footer}</p>` : ""}
 </td></tr></table></body></html>`;
 }
 
@@ -94,7 +97,7 @@ export function orderMail(i: {
       : fmt(t.shop.giftScheduled, { email: i.gift.email, date: dateText(`${i.gift.sendOn}T12:00:00Z`, i.brand.locale) })
     : null;
   const subject = subjectLine(i.gift ? fmt(m.orderGiftSubject, { number: i.number, shop: i.brand.shopName }) : fmt(m.orderSubject, { shop: i.brand.shopName }));
-  const footer = `${esc(fmt(t.shop.orderNumber, { number: i.number }))} · ${esc(fmt(m.footer, { shop: i.brand.shopName }))}`;
+  const footer = [fmt(t.shop.orderNumber, { number: i.number }), viaSellycat(i.brand)].filter(Boolean).map(esc).join(" · ");
   const html = layout(
     i.brand,
     `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(m.orderHeading)}</h1>
@@ -105,9 +108,10 @@ ${button(i.brand, i.orderUrl, m.viewOrder)}
 <p style="margin:0;font-size:14px;color:#52525b;">${esc(m.myHint)} <a href="${esc(i.myUrl)}" style="color:#111111;">${esc(t.shop.myVouchers)}</a></p>`,
     footer,
   );
-  const text = [m.orderHeading, "", i.gift ? m.orderGiftIntro : m.orderIntro, giftLine ?? "", "", voucherText(i.brand, i.vouchers), "", `${m.viewOrder}: ${i.orderUrl}`, `${t.shop.myVouchers}: ${i.myUrl}`, "", fmt(t.shop.orderNumber, { number: i.number }), fmt(m.footer, { shop: i.brand.shopName })]
+  const text = [m.orderHeading, "", i.gift ? m.orderGiftIntro : m.orderIntro, giftLine ?? "", "", voucherText(i.brand, i.vouchers), "", `${m.viewOrder}: ${i.orderUrl}`, `${t.shop.myVouchers}: ${i.myUrl}`, "", fmt(t.shop.orderNumber, { number: i.number }), viaSellycat(i.brand)]
     .filter((l, n, a) => !(l === "" && a[n - 1] === ""))
-    .join("\n");
+    .join("\n")
+    .trim();
   return { subject, html, text };
 }
 
@@ -128,11 +132,12 @@ ${hello ? `<p style="margin:0 0 8px;">${esc(hello)}</p>` : ""}
 ${message ? `<blockquote style="margin:16px 0 0;padding:14px 16px;border-left:4px solid ${i.brand.primary};background:#fafafa;border-radius:0 10px 10px 0;font-style:italic;white-space:pre-line;">${esc(message)}</blockquote>` : ""}
 ${voucherRows(i.brand, i.vouchers, true)}
 <p style="margin:16px 0 0;font-size:14px;color:#52525b;">${esc(m.pdfAttached)} ${esc(m.myHint)} <a href="${esc(i.myUrl)}" style="color:#111111;">${esc(t.shop.myVouchers)}</a></p>`,
-    esc(fmt(m.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
-  const text = [m.giftHeading, "", hello ?? "", intro, message ? `\n"${message}"\n` : "", voucherText(i.brand, i.vouchers), "", m.pdfAttached, `${t.shop.myVouchers}: ${i.myUrl}`, "", fmt(m.footer, { shop: i.brand.shopName })]
+  const text = [m.giftHeading, "", hello ?? "", intro, message ? `\n"${message}"\n` : "", voucherText(i.brand, i.vouchers), "", m.pdfAttached, `${t.shop.myVouchers}: ${i.myUrl}`, "", viaSellycat(i.brand)]
     .filter((l, n, a) => !(l === "" && a[n - 1] === ""))
-    .join("\n");
+    .join("\n")
+    .trim();
   return { subject, html, text };
 }
 
@@ -146,7 +151,7 @@ export function myLinkMail(i: { brand: MailBrand; url: string }): Mail {
 <p style="margin:0;">${esc(m.myLinkIntro)}</p>
 ${button(i.brand, i.url, m.myLinkButton)}
 <p style="margin:0;font-size:14px;color:#52525b;">${esc(m.myLinkIgnore)}</p>`,
-    esc(fmt(m.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
   return {
     subject: subjectLine(fmt(m.myLinkSubject, { shop: i.brand.shopName })),
@@ -165,7 +170,7 @@ export function redeemCodeMail(i: { brand: MailBrand; code: string; minutes: num
 <p style="margin:0;">${esc(fmt(r.mailIntro, { shop: i.brand.shopName }))}</p>
 <p style="margin:20px 0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:.3em;">${esc(i.code)}</p>
 <p style="margin:0;font-size:14px;color:#52525b;">${esc(fmt(r.mailValid, { minutes: String(i.minutes) }))} ${esc(r.mailIgnore)}</p>`,
-    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
   return {
     subject: subjectLine(fmt(r.mailSubject, { code: i.code, shop: i.brand.shopName })),
@@ -186,12 +191,12 @@ export function expiryMail(i: { brand: MailBrand; vouchers: MailVoucher[]; valid
 <p style="margin:0;">${esc(intro)}</p>
 ${voucherRows(i.brand, i.vouchers, false)}
 ${button(i.brand, i.url, w.reminderButton)}`,
-    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
   return {
     subject: subjectLine(fmt(w.reminderSubject, { shop: i.brand.shopName })),
     html,
-    text: [w.reminderHeading, "", intro, "", voucherText(i.brand, i.vouchers), "", `${w.reminderButton}: ${i.url}`, "", fmt(t.mail.footer, { shop: i.brand.shopName })].join("\n"),
+    text: [w.reminderHeading, "", intro, "", voucherText(i.brand, i.vouchers), "", `${w.reminderButton}: ${i.url}`, "", viaSellycat(i.brand)].join("\n").trim(),
   };
 }
 
@@ -208,7 +213,7 @@ export function scannerInviteMail(i: { brand: MailBrand; name: string; partner: 
 <p style="margin:0;">${esc(intro)}</p>
 ${button(i.brand, i.url, s.mailButton)}
 <p style="margin:0;font-size:14px;color:#52525b;">${esc(s.mailHow)}</p>`,
-    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
   return {
     subject: subjectLine(fmt(s.mailSubject, { shop: i.brand.shopName })),
@@ -232,7 +237,7 @@ export function teamInviteMail(i: { brand: MailBrand; name: string; inviter: str
 <p style="margin:0;">${esc(intro)}</p>
 ${button(i.brand, i.url, m.button)}
 <p style="margin:0;font-size:14px;color:#52525b;">${esc(valid)}</p>`,
-    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
   return {
     subject: subjectLine(fmt(m.subject, { shop: i.brand.shopName })),
@@ -379,14 +384,13 @@ export function waitlistInviteMail(i: { brand: MailBrand; name: string | null; c
 /** Code that unlocks "Show voucher" after a scan (sent to the buyer, or the recipient of a gift). */
 export function voucherAccessMail(i: { brand: MailBrand; code: string; minutes: number }): Mail {
   const r = getDictionary(i.brand.locale).voucherAccess;
-  const t = getDictionary(i.brand.locale);
   const html = layout(
     i.brand,
     `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(r.mailHeading)}</h1>
 <p style="margin:0;">${esc(fmt(r.mailIntro, { shop: i.brand.shopName }))}</p>
 <p style="margin:20px 0;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:.3em;">${esc(i.code)}</p>
 <p style="margin:0;font-size:14px;color:#52525b;">${esc(fmt(r.mailValid, { minutes: String(i.minutes) }))} ${esc(r.mailIgnore)}</p>`,
-    esc(fmt(t.mail.footer, { shop: i.brand.shopName })),
+    esc(viaSellycat(i.brand)),
   );
   return {
     subject: subjectLine(fmt(r.mailSubject, { code: i.code, shop: i.brand.shopName })),
@@ -466,7 +470,7 @@ function bandLayout(brand: MailBrand, band: MailBand, top: string, body: string,
 <tr><td style="padding:22px 28px;background:${band.background};">${band.logoUrl ? `<img src="${esc(band.logoUrl)}" alt="${esc(brand.shopName)}" height="40" style="display:block;height:40px;width:auto;max-width:220px;border:0;color:${band.text};font-size:18px;font-weight:700;">` : `<p style="margin:0;font-size:20px;font-weight:700;color:${band.text};">${esc(brand.shopName)}</p>`}</td></tr>
 ${top}<tr><td style="padding:28px;font-size:16px;line-height:1.5;">${body}</td></tr>
 </table>
-<p style="max-width:540px;margin:16px auto 0;font-size:12px;line-height:1.6;color:#71717a;">${footer}</p>
+${footer ? `<p style="max-width:540px;margin:16px auto 0;font-size:12px;line-height:1.6;color:#71717a;">${footer}</p>` : ""}
 </td></tr></table></body></html>`;
 }
 
@@ -481,7 +485,7 @@ export function dealAlertConfirmMail(i: { brand: MailBrand; band: MailBand; url:
       i.band,
       "",
       `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(m.confirmHeading)}</h1><p style="margin:0;">${esc(fmt(m.confirmText, v))}</p>${button(i.brand, i.url, m.confirmButton)}<p style="margin:0;font-size:13px;color:#71717a;">${esc(m.confirmIgnore)}</p>`,
-      esc(fmt(m.confirmFooter, v)),
+      esc(viaSellycat(i.brand)),
       fmt(m.confirmText, v),
     ),
     text: [m.confirmHeading, "", fmt(m.confirmText, v), "", `${m.confirmButton}: ${i.url}`, "", m.confirmIgnore].join("\n"),
@@ -499,7 +503,7 @@ export function dealAlertActiveMail(i: { brand: MailBrand; band: MailBand; unsub
       i.band,
       "",
       `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(m.activeHeading)}</h1><p style="margin:0;">${esc(fmt(m.activeText, v))}</p>${button(i.brand, i.brand.shopUrl, m.activeButton)}<p style="margin:0;font-size:13px;color:#71717a;"><a href="${esc(i.unsubscribeUrl)}" style="color:#71717a;text-decoration:underline;">${esc(m.unsubscribe)}</a></p>`,
-      esc(fmt(m.confirmFooter, v)),
+      esc(viaSellycat(i.brand)),
       fmt(m.activeText, v),
     ),
     text: [m.activeHeading, "", fmt(m.activeText, v), "", `${m.activeButton}: ${i.brand.shopUrl}`, "", `${m.unsubscribe}: ${i.unsubscribeUrl}`].join("\n"),

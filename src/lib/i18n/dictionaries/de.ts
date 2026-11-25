@@ -2017,7 +2017,6 @@ export const de: Dictionary = {
       activeHeading: "Du bist schon dabei",
       activeText: "Dein Deal-Alarm von {shop} ist bereits aktiv. Du musst nichts weiter tun, neue Deals kommen automatisch per E-Mail.",
       activeButton: "Zum Shop",
-      confirmFooter: "Diese E-Mail wurde im Auftrag von {shop} über Sellycat versendet.",
     },
     orderSubject: "Deine Gutscheine von {shop}",
     orderGiftSubject: "Deine Bestellung {number} bei {shop}",

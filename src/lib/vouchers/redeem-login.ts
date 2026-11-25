@@ -43,7 +43,7 @@ export async function sendRedeemCode(shop: ShopProfile, rawEmail: string): Promi
   });
   if (error) return;
   const sender = await loadSender(shop.id);
-  const mail = redeemCodeMail({ brand: brandOf(shop), code, minutes: CODE_MINUTES });
+  const mail = redeemCodeMail({ brand: brandOf(shop, sender), code, minutes: CODE_MINUTES });
   await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: email, ...mail, tag: "redeem-code" });
 }
 

@@ -80,3 +80,24 @@ describe("authMail", () => {
     }
   });
 });
+
+describe("mention of Sellycat", () => {
+  const order = (b: MailBrand) => orderMail({ brand: b, number: "8F3A", orderUrl: "https://x.ch/o", myUrl: "https://x.ch/my", vouchers: [v], gift: null });
+  const band = { background: "#180f26", text: "#ffffff", logoUrl: null };
+  const all = (b: MailBrand) => [
+    order(b),
+    giftMail({ brand: b, from: "Jan", name: "Anna", message: null, vouchers: [v], myUrl: "https://x.ch/my" }),
+    myLinkMail({ brand: b, url: "https://x.ch/my/t" }),
+    dealAlertConfirmMail({ brand: b, band, url: "https://x.ch/alert/confirm/t" }),
+    dealAlertActiveMail({ brand: b, band, unsubscribeUrl: "https://x.ch/alert/off/t" }),
+  ];
+  it("names it when the mail comes from Sellycat's address", () => {
+    for (const m of all(brand)) expect(m.html).toContain("über Sellycat versendet");
+  });
+  it("leaves it out with the shop's own sender", () => {
+    for (const m of all({ ...brand, ownSender: true })) expect(m.html + m.text).not.toContain("über Sellycat");
+    const o = order({ ...brand, ownSender: true });
+    expect(o.html).toContain("8F3A");
+    expect(o.html).not.toMatch(/8F3A\s*·/);
+  });
+});

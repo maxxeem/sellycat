@@ -27,8 +27,9 @@ export function shopBase(shop: Pick<ShopProfile, "primaryHost" | "slug">): strin
   return `${shop.primaryHost.startsWith("localhost") || shop.primaryHost.includes(".localhost") ? "http" : "https"}://${shop.primaryHost}`;
 }
 
-export function brandOf(shop: ShopProfile): MailBrand {
-  return { shopName: shop.name, locale: shop.locale, primary: shop.theme.colors.primary, logoUrl: lightLogo(shop), shopUrl: shopBase(shop) };
+/** `sender`: whom the mail comes from (loadSender), decides whether Sellycat is named in it. */
+export function brandOf(shop: ShopProfile, sender: { own: boolean }): MailBrand {
+  return { shopName: shop.name, locale: shop.locale, primary: shop.theme.colors.primary, logoUrl: lightLogo(shop), shopUrl: shopBase(shop), ownSender: sender.own };
 }
 
 const mailVouchers = (b: VoucherBundle): MailVoucher[] => {
@@ -102,7 +103,7 @@ export async function deliverOrder(orderId: string, { force = false } = {}): Pro
       const base = shopBase(bundle.shop);
       const sender = await loadSender(order.tenant_id);
       const mail = orderMail({
-        brand: brandOf(bundle.shop),
+        brand: brandOf(bundle.shop, sender),
         number: order.number,
         orderUrl: `${base}/order/${order.id}?session_id=${encodeURIComponent(order.stripe_session_id ?? "")}`,
         myUrl: `${base}/my`,
@@ -137,7 +138,7 @@ export async function deliverGift(orderId: string, { force = false } = {}): Prom
     const { bundle, attachment } = prepared;
     const sender = await loadSender(order.tenant_id);
     const mail = giftMail({
-      brand: brandOf(bundle.shop),
+      brand: brandOf(bundle.shop, sender),
       from: order.gift_from || order.name,
       name: order.gift_name,
       message: order.gift_message,
@@ -205,7 +206,7 @@ export async function sendMyLink(shop: ShopProfile, email: string): Promise<void
   const token = randomBytes(24).toString("base64url");
   await admin.from("buyer_links").insert({ tenant_id: shop.id, email, token_hash: hashToken(token), expires_at: new Date(Date.now() + MY_LINK_HOURS * 3_600_000).toISOString() });
   const sender = await loadSender(shop.id);
-  const mail = myLinkMail({ brand: brandOf(shop), url: `${shopBase(shop)}/my/${token}` });
+  const mail = myLinkMail({ brand: brandOf(shop, sender), url: `${shopBase(shop)}/my/${token}` });
   const result = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: email, ...mail, tag: "my-link" });
   await log({ tenant_id: shop.id, order_id: null, kind: "my_link", recipient: email, sender: sender.address, result });
 }
@@ -249,7 +250,7 @@ export async function sendExpiryReminders(limit = 200): Promise<{ sent: number; 
     if (!bundle || !o) continue;
     const to = o.gift && o.gift_sent_at && o.gift_email ? o.gift_email : o.email;
     const sender = await loadSender(v.tenant_id);
-    const mail = expiryMail({ brand: brandOf(bundle.shop), vouchers: mailVouchers(bundle), validUntil: v.valid_until, url: bundle.vouchers[0].link });
+    const mail = expiryMail({ brand: brandOf(bundle.shop, sender), vouchers: mailVouchers(bundle), validUntil: v.valid_until, url: bundle.vouchers[0].link });
     const result = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to, ...mail, tag: "reminder" });
     await log({ tenant_id: v.tenant_id, order_id: v.order_id, kind: "reminder", recipient: to, sender: sender.address, result });
     if (result.ok) sent += 1;

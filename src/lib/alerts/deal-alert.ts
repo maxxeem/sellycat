@@ -55,7 +55,7 @@ export async function subscribe(shop: ShopProfile, email: string): Promise<"ok" 
     .select("id");
   if (!claimed?.length) return "ok";
   const sender = await loadSender(shop.id);
-  const look = { brand: brandOf(shop), band: bandOf(shop) };
+  const look = { brand: brandOf(shop, sender), band: bandOf(shop) };
   const mail = pending ? dealAlertConfirmMail({ ...look, url: `${shopBase(shop)}/alert/confirm/${token}` }) : dealAlertActiveMail({ ...look, unsubscribeUrl: `${shopBase(shop)}/alert/off/${row.token}` });
   const r = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: email, ...mail, tag: "deal-alert-confirm" });
   if (r.ok) return "ok";
@@ -105,11 +105,12 @@ async function loadContext(w: Work): Promise<Context | null> {
   ]);
   if (!shop || !d) return null;
   const base = shopBase(shop);
+  const sender = await loadSender(shop.id);
   const image = [...d.deal_images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null;
   return {
-    brand: brandOf(shop),
+    brand: brandOf(shop, sender),
     band: bandOf(shop),
-    sender: await loadSender(shop.id),
+    sender,
     deal: {
       title: d.title,
       subtitle: d.subtitle,

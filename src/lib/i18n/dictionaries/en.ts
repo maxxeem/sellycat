@@ -2015,7 +2015,6 @@ export const en = {
       activeHeading: "You are already in",
       activeText: "Your deal alert from {shop} is already active. Nothing else to do, new deals arrive by email automatically.",
       activeButton: "To the shop",
-      confirmFooter: "This email was sent on behalf of {shop} via Sellycat.",
     },
     orderSubject: "Your vouchers from {shop}",
     orderGiftSubject: "Your order {number} at {shop}",

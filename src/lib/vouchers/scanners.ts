@@ -56,7 +56,7 @@ export async function inviteScanner(tenantId: string, partnerId: string, rawName
   const shop = await getShopProfile(tenantId);
   if (!shop) return { ok: true, mailed: false };
   const sender = await loadSender(tenantId);
-  const mail = scannerInviteMail({ brand: brandOf(shop), name, partner: partner.name, url: `${shopBase(shop)}/scan` });
+  const mail = scannerInviteMail({ brand: brandOf(shop, sender), name, partner: partner.name, url: `${shopBase(shop)}/scan` });
   const sent = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: email, ...mail, tag: "scanner-invite" });
   return { ok: true, mailed: sent.ok };
 }

@@ -48,7 +48,7 @@ async function sendInvite(tenantId: string, invite: { email: string; name: strin
   const shop = await getShopProfile(tenantId);
   if (!shop) return false;
   const sender = await loadSender(tenantId);
-  const mail = teamInviteMail({ brand: brandOf(shop), name: invite.name ?? "", inviter, role: invite.role, url: `${apexUrl()}/invite/${token}`, days: INVITE_DAYS });
+  const mail = teamInviteMail({ brand: brandOf(shop, sender), name: invite.name ?? "", inviter, role: invite.role, url: `${apexUrl()}/invite/${token}`, days: INVITE_DAYS });
   const sent = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: invite.email, ...mail, tag: "team-invite" });
   return sent.ok;
 }

@@ -54,7 +54,7 @@ export async function sendAccessCode(shop: ShopProfile, token: string): Promise<
   if (error) return { ok: false, error: "failed" };
   try {
     const sender = await loadSender(shop.id);
-    const mail = voucherAccessMail({ brand: brandOf(shop), code, minutes: CODE_MINUTES });
+    const mail = voucherAccessMail({ brand: brandOf(shop, sender), code, minutes: CODE_MINUTES });
     await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: o.email, ...mail, tag: "voucher-access" });
   } catch (e) {
     console.error("[voucher-access] mail", e instanceof Error ? e.message : e);
