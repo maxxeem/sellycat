@@ -7,6 +7,7 @@ import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { dealRow, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { EMPTY_DOC } from "@/lib/shop/rich-text";
 import { POOL_MAX_CODE, POOL_MAX_IMPORT } from "@/lib/vouchers/pool";
+import { symbolVector, type BarcodeType } from "@/lib/vouchers/symbol";
 import { randomUUID } from "node:crypto";
 import type { JSONContent } from "@tiptap/core";
 import sharp from "sharp";
@@ -16,7 +17,7 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "hasSales" | "planLimit" | "error" };
+export type SaveResult = { ok: boolean; errors?: DealErrors; message?: "legalMissing" | "hasSales" | "planLimit" | "codesMissing" | "poolImport" | "error"; pool?: { added: number; skipped: number } };
 
 export async function createDeal(title: string) {
   const { tenant, supabase } = await requireTenant("editor");
@@ -30,12 +31,28 @@ export async function createDeal(title: string) {
   redirect(`/dashboard/deals/${data.id}`);
 }
 
-export async function saveDeal(id: string, form: DealForm): Promise<SaveResult> {
+/** `poolCodes`: codes typed into the pool field but not imported yet; saved along with the deal. */
+export async function saveDeal(id: string, form: DealForm, poolCodes: string[] = []): Promise<SaveResult> {
   const { tenant, supabase } = await requireTenant("editor");
   const errors = validateDeal(form);
   if (Object.keys(errors).length) return { ok: false, errors };
+  // A shared barcode must be drawable in the chosen type.
+  if (form.codeSource === "shared" && form.codeFormat === "barcode" && !symbolVector({ codeFormat: "barcode", barcodeType: form.barcodeType as BarcodeType, code: form.sharedCode.trim(), link: "" }))
+    return { ok: false, errors: { sharedCode: "sharedCodeBarcode" } };
+  // Codes first: a live deal may only switch to a source that has one (trigger deals_require_codes).
+  if (form.codeSource === "shared") {
+    const { error: codeError } = await supabase.from("deal_shared_codes").upsert({ deal_id: id, tenant_id: tenant.id, code: form.sharedCode.trim() }, { onConflict: "deal_id" });
+    if (codeError) return { ok: false, message: "error" };
+  }
+  let pool: SaveResult["pool"];
+  if (form.codeSource === "pool" && Array.isArray(poolCodes) && poolCodes.length) {
+    const r = await importPoolCodes(id, poolCodes);
+    if (!r.ok) return { ok: false, message: "poolImport" };
+    pool = { added: r.added ?? 0, skipped: r.skipped ?? 0 };
+  }
   const { error } = await supabase.from("deals").update(dealRow(form)).eq("id", id).eq("tenant_id", tenant.id);
   if (error) {
+    if (error.message.includes("codes missing")) return { ok: false, message: "codesMissing", pool };
     if (error.code === "23505") return { ok: false, errors: { slug: "slugTaken" } };
     return { ok: false, message: "error" };
   }
@@ -50,21 +67,23 @@ export async function saveDeal(id: string, form: DealForm): Promise<SaveResult> 
   }
   refreshShop(tenant.id);
   revalidatePath("/p/[locale]/dashboard/deals", "layout");
-  return { ok: true };
+  return { ok: true, pool };
 }
 
-export async function setDealState(id: string, state: "draft" | "published" | "ended", form?: DealForm): Promise<SaveResult> {
+export async function setDealState(id: string, state: "draft" | "published" | "ended", form?: DealForm, poolCodes: string[] = []): Promise<SaveResult> {
   const { tenant, supabase } = await requireTenant("editor");
+  let pool: SaveResult["pool"];
   if (form) {
-    const saved = await saveDeal(id, form);
+    const saved = await saveDeal(id, form, poolCodes);
+    pool = saved.pool;
     if (!saved.ok) return saved;
   }
   const { error } = await supabase.from("deals").update({ state }).eq("id", id).eq("tenant_id", tenant.id);
-  if (error) return { ok: false, message: error.message.includes("legal pages missing") ? "legalMissing" : error.message.includes("plan limit deals_live") ? "planLimit" : "error" };
+  if (error) return { ok: false, pool, message: error.message.includes("codes missing") ? "codesMissing" : error.message.includes("legal pages missing") ? "legalMissing" : error.message.includes("plan limit deals_live") ? "planLimit" : "error" };
   refreshShop(tenant.id);
   if (state === "published") kickDealAlerts();
   revalidatePath("/p/[locale]/dashboard/deals", "layout");
-  return { ok: true };
+  return { ok: true, pool };
 }
 
 /**

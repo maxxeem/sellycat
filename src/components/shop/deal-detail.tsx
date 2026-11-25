@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, Clock, ExternalLink, MapPin } from "lucide-react";
-import { describeWindows, dealStatus, formatMoney, isTeaser, remaining, savingsPercent } from "@/lib/shop/deal-status";
+import { describeWindows, dealStatus, formatMoney, isTeaser, remaining, savingsPercent, stockTotal } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { Countdown } from "./countdown";
 import { formatHours, parseHours } from "@/lib/shop/hours";
@@ -45,7 +45,7 @@ export function DealDetail({
         : null;
   const windows = describeWindows(deal.redeem_windows, shop.locale);
   const countdown = teaser && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
-  const stockBar = Boolean(deal.show_stock_bar && deal.total_qty && (status === "live" || status === "sold_out"));
+  const stockBar = Boolean(deal.show_stock_bar && stockTotal(deal) && (status === "live" || status === "sold_out"));
 
   return (
     // Mobile: pictures, then title/price/buy, then the details. Desktop: buy box in a sticky
@@ -75,7 +75,7 @@ export function DealDetail({
           {!teaser && deal.deal_type === "value" && deal.value_cents ? <p className="text-sm font-semibold">{fmt(t.worth, { value: formatMoney(deal.value_cents, shop.currency, shop.locale) })}</p> : null}
 
           {countdown ? <Countdown until={countdown.until} mode={countdown.mode} t={t} variant="boxes" /> : null}
-          {stockBar && !teaser ? <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} /> : null}
+          {stockBar && !teaser ? <StockBar total={stockTotal(deal)!} taken={deal.sold_qty + deal.reserved_qty} t={t} /> : null}
 
           {status === "live" && buyHref !== null ? (
             <Link href={buyHref ?? "#"} className="shop-btn w-full" data-testid="buy">

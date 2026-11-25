@@ -3,6 +3,7 @@
 import { generateHTML } from "@tiptap/html";
 import Link from "next/link";
 import { Archive, ArchiveRestore, Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { acceptedFiles, uploadMedia } from "@/components/image-upload";
 import { avifToJpeg, isAvif } from "@/lib/shop/avif";
@@ -29,6 +30,7 @@ import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib
 import { archiveDeal, deleteDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 import { AiImport } from "./ai-import";
 import { SeoPanel } from "./seo-panel";
+import { POOL_MAX_IMPORT, parsePoolCodes, poolShortage } from "@/lib/vouchers/pool";
 import { PoolPanel } from "./pool-panel";
 import { FaqPicker, ReuseButton, TermsPicker } from "./reuse-picker";
 
@@ -61,6 +63,9 @@ export function DealEditor(props: {
 }) {
   const { t, locale } = useI18n();
   const d = t.deals;
+  const router = useRouter();
+  // Codes typed into the pool field; saving imports them too.
+  const [poolText, setPoolText] = useState("");
   const [form, setForm] = useState<DealForm>(props.initial);
   // Rebuilds the rich-text editor when a draft replaces the description from outside.
   const [descriptionKey, setDescriptionKey] = useState(0);
@@ -137,21 +142,29 @@ export function DealEditor(props: {
     };
   }, [form, partner, props.categories, props.id, props.stock, state]);
 
+  const typedCodes = useMemo(() => (form.codeSource === "pool" && poolText.trim() ? parsePoolCodes(poolText).codes : []), [form.codeSource, poolText]);
+  const shortage = form.codeSource === "pool" ? poolShortage(form.totalQty ? Number(form.totalQty) : null, props.stock.sold_qty, props.stock.pool_free, typedCodes.length) : null;
+  const shortageText = shortage === null ? null : fmt(d.poolShortage, { total: form.totalQty, n: shortage });
   const status = dealStatus({ ...view, state });
   const result = (r: SaveResult, okText: string) => {
     setErrors(r.errors ?? {});
-    if (r.ok) setMessage({ tone: "success", text: okText });
-    else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.message === "hasSales" ? d.deleteHasSales : r.message === "planLimit" ? d.planLimit : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
+    if (r.pool) {
+      setPoolText("");
+      router.refresh();
+    }
+    const imported = r.pool ? ` ${fmt(d.pool.imported, { added: r.pool.added })}${r.pool.skipped ? ` ${fmt(d.pool.skipped, { n: r.pool.skipped })}` : ""}` : "";
+    if (r.ok) setMessage({ tone: "success", text: okText + imported });
+    else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.message === "hasSales" ? d.deleteHasSales : r.message === "planLimit" ? d.planLimit : r.message === "codesMissing" ? d.codesMissing : r.message === "poolImport" ? (typedCodes.length > POOL_MAX_IMPORT ? d.pool.tooMany : d.pool.failed) : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
   };
   const save = () =>
     start(async () => {
       const local = validateDeal(form);
       if (Object.keys(local).length) return result({ ok: false, errors: local }, "");
-      result(await saveDeal(props.id, form), d.saved);
+      result(await saveDeal(props.id, form, typedCodes), d.saved);
     });
   const changeState = (next: "draft" | "published" | "ended") =>
     start(async () => {
-      const r = await setDealState(props.id, next, form);
+      const r = await setDealState(props.id, next, form, typedCodes);
       if (r.ok) setState(next);
       result(r, d.saved);
     });
@@ -245,7 +258,7 @@ export function DealEditor(props: {
           {state === "ended" && !archived ? <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => changeState("draft")}>{d.unpublish}</button> : null}
           <button type="button" className={buttonClass.secondary} disabled={pending || uploading} onClick={save} data-testid="deal-save">{d.save}</button>
           {state === "draft" && !archived ? (
-            <button type="button" className={buttonClass.primary} disabled={pending || uploading} onClick={() => changeState("published")} data-testid="deal-publish">{d.publish}</button>
+            <button type="button" className={buttonClass.primary} disabled={pending || uploading} onClick={() => (!shortage || confirm(`${shortageText} ${d.publishAnyway}`)) && changeState("published")} data-testid="deal-publish">{d.publish}</button>
           ) : null}
         </div>
       </div>
@@ -437,6 +450,7 @@ export function DealEditor(props: {
                   <Input value={form.maxPerBuyer} inputMode="numeric" onChange={(e) => set("maxPerBuyer", e.target.value.replace(/\D/g, ""))} />
                 </Field>
               </div>
+              {shortageText ? <Notice tone="warning">{shortageText}</Notice> : null}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={d.salesStart} error={err("salesStart")}>
                   <DateTimePicker value={form.salesStart} onChange={(v) => set("salesStart", v)} aria-label={d.salesStart} />
@@ -517,11 +531,22 @@ export function DealEditor(props: {
                   </Select>
                 </Field>
               ) : null}
-              <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
-                <Choice checked={form.codeSource === "generated"} onSelect={() => set("codeSource", "generated")} title={d.sourceGenerated} />
-                <Choice checked={form.codeSource === "pool"} onSelect={() => set("codeSource", "pool")} title={d.sourcePool} />
+              <div className="grid gap-3 sm:grid-cols-3" role="radiogroup">
+                <Choice checked={form.codeSource === "generated"} onSelect={() => set("codeSource", "generated")} title={d.sourceGenerated} hint={d.sourceGeneratedHint} />
+                <Choice checked={form.codeSource === "pool"} onSelect={() => set("codeSource", "pool")} title={d.sourcePool} hint={d.sourcePoolHint} />
+                <Choice checked={form.codeSource === "shared"} onSelect={() => set("codeSource", "shared")} title={d.sourceShared} hint={d.sourceSharedHint} />
               </div>
-              {form.codeSource === "pool" ? <PoolPanel dealId={props.id} free={props.stock.pool_free} used={props.stock.pool_used} saved={props.initial.codeSource === "pool"} /> : null}
+              {form.codeSource === "pool" ? <PoolPanel dealId={props.id} text={poolText} onText={setPoolText} shortage={shortageText} free={props.stock.pool_free} used={props.stock.pool_used} saved={props.initial.codeSource === "pool"} /> : null}
+              {form.codeSource === "shared" ? (
+                <div className="flex flex-col gap-3 rounded-input border border-line p-4" data-testid="shared-code">
+                  <Field label={d.sharedCode} error={err("sharedCode")} hint={d.sharedCodeHint}>
+                    <Input value={form.sharedCode} maxLength={120} onChange={(e) => set("sharedCode", e.target.value)} className="max-w-sm font-mono" autoCapitalize="none" spellCheck={false} data-testid="shared-code-input" />
+                  </Field>
+                  <p className="text-sm text-muted">{form.codeFormat === "qr" ? d.sharedQr : d.sharedPartner}</p>
+                  {!form.totalQty ? <Notice>{d.sharedUnlimited}</Notice> : null}
+                  {state === "published" && props.initial.codeSource === "shared" && form.sharedCode !== props.initial.sharedCode ? <Notice tone="warning">{d.sharedChanged}</Notice> : null}
+                </div>
+              ) : null}
             </div>
           </Card>
 

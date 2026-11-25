@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { walletUpdate } from "@/lib/wallet/passes";
 import { kickWebhooks } from "@/lib/developers/webhooks";
 import { requireTenant } from "@/lib/dashboard/context";
-import { asVoucherError as asError, findVoucher, redeem, type VoucherError, type VoucherInfo } from "@/lib/vouchers/redeem";
+import { asVoucherError as asError, findVoucher, redeem, sharedCodeError, type VoucherError, type VoucherInfo } from "@/lib/vouchers/redeem";
 
 export type { VoucherError, VoucherInfo };
 
@@ -14,7 +14,7 @@ export async function lookupVoucher(code: string): Promise<{ ok: true; voucher: 
   const { tenant, supabase } = await requireTenant("redeemer");
   if (!code.trim()) return { ok: false, error: "not_found" };
   const voucher = await findVoucher(supabase, tenant.id, { code });
-  return voucher ? { ok: true, voucher } : { ok: false, error: "not_found" };
+  return voucher ? { ok: true, voucher } : { ok: false, error: (await sharedCodeError(supabase, tenant.id, code)) ?? "not_found" };
 }
 
 /** Redeems (fully, or `amount` francs of a partly usable value voucher). The database decides. */

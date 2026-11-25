@@ -28,7 +28,7 @@ export function RedeemBox() {
       setAmount("");
       const r = await lookupVoucher(code);
       if (r.ok) setVoucher(r.voucher);
-      else fail(r.error === "not_found" ? "not_found" : r.error);
+      else fail(r.error);
     });
 
   const redeem = () =>

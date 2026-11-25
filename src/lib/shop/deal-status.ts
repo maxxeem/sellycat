@@ -14,7 +14,7 @@ export type DealStock = {
   sold_qty: number;
   reserved_qty: number;
   /** Pool deals sell at most as many units as there are free codes (auto-stop). */
-  code_source?: "generated" | "pool";
+  code_source?: "generated" | "pool" | "shared";
   pool_free?: number;
   /** Announced without price until the sales start. */
   teaser?: boolean;
@@ -26,6 +26,12 @@ export function remaining(d: Pick<DealStock, "total_qty" | "sold_qty" | "reserve
   if (d.code_source !== "pool") return byQty;
   const byPool = Math.max(0, (d.pool_free ?? 0) - d.reserved_qty);
   return byQty === null ? byPool : Math.min(byQty, byPool);
+}
+
+/** Total of the stock barometer: never more than can really be sold (codes of a pool). */
+export function stockTotal(d: Pick<DealStock, "total_qty" | "sold_qty" | "reserved_qty" | "code_source" | "pool_free">): number | null {
+  const left = remaining(d);
+  return d.total_qty === null || left === null ? d.total_qty : Math.min(d.total_qty, d.sold_qty + d.reserved_qty + left);
 }
 
 export function dealStatus(d: DealStock, now: Date = new Date()): DealStatus {

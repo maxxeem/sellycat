@@ -10,12 +10,11 @@ import { POOL_MAX_IMPORT, parsePoolCodes, poolLevel } from "@/lib/vouchers/pool"
 import { clearPoolCodes, importPoolCodes } from "../actions";
 
 /** Code pool of a deal: counts, warning, import from a file or pasted text, delete free codes. */
-export function PoolPanel({ dealId, free, used, saved }: { dealId: string; free: number; used: number; saved: boolean }) {
+export function PoolPanel({ dealId, text, onText: setText, shortage, free, used, saved }: { dealId: string; text: string; onText: (text: string) => void; shortage: string | null; free: number; used: number; saved: boolean }) {
   const { t, locale } = useI18n();
   const p = t.deals.pool;
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [text, setText] = useState("");
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
   const parsed = useMemo(() => (text.trim() ? parsePoolCodes(text) : null), [text]);
@@ -57,6 +56,8 @@ export function PoolPanel({ dealId, free, used, saved }: { dealId: string; free:
       {!saved ? <Notice>{p.notSaved}</Notice> : null}
       {level === "empty" ? <Notice tone="error">{p.empty}</Notice> : level === "low" ? <Notice tone="warning">{fmt(p.low, { n: n(free) })}</Notice> : null}
 
+      {shortage ? <Notice tone="warning">{shortage}</Notice> : null}
+
       <label className={`${buttonClass.secondary} cursor-pointer self-start`}>
         <FileUp className="h-4 w-4" aria-hidden /> {p.file}
         <input
@@ -80,6 +81,7 @@ export function PoolPanel({ dealId, free, used, saved }: { dealId: string; free:
             .join("")}
         </p>
       ) : null}
+      {parsed?.codes.length ? <p className="text-xs text-muted">{p.importHint}</p> : null}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={onImport} disabled={pending || !parsed?.codes.length || parsed.codes.length > POOL_MAX_IMPORT} className={buttonClass.primary} data-testid="pool-import">
           {pending ? "…" : p.import}

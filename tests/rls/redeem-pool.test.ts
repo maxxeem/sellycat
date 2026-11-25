@@ -67,6 +67,76 @@ describe.skipIf(!rlsEnabled)("RLS code pool, redemption app, voucher designs", (
     expect((await checkout(1, `buyer4@${run}.test`)).error?.message).toContain("checkout:sold_out");
   });
 
+  it("a code in one deal's pool is refused in another, and leaves no phantom stock", async () => {
+    const other = (await db.from("deals").insert({ tenant_id: a.tenantId, slug: "pool2", title: "Pool 2", price_cents: 1000, code_source: "pool" }).select("id").single()).data!.id;
+    await a.client.rpc("import_pool_codes", { p_deal: dealId, p_codes: ["Q-1"] });
+    expect((await a.client.rpc("import_pool_codes", { p_deal: other, p_codes: ["Q-1", "Q-2"] })).data).toMatchObject({ added: 1, skipped: 1 });
+    // Old data may hold the same code twice: once handed out it is no stock elsewhere.
+    await db.from("code_pool").insert({ tenant_id: a.tenantId, deal_id: other, code: "Q-1" });
+    const o = (await checkout(1, `dup@${run}.test`)).data![0].order_id;
+    await db.from("orders").update({ stripe_session_id: `cs_${run}d` }).eq("id", o);
+    await db.rpc("fulfil_order", { p_session: `cs_${run}d`, p_payment_intent: "" });
+    expect((await db.from("vouchers").select("code").eq("order_id", o)).data).toEqual([{ code: "Q-1" }]);
+    expect((await db.from("deals").select("pool_free").eq("id", other).single()).data!.pool_free).toBe(1);
+  });
+
+  it("publishing needs codes", async () => {
+    const draft = async (slug: string, source: "pool" | "shared") => (await db.from("deals").insert({ tenant_id: a.tenantId, slug, title: slug, price_cents: 1000, code_source: source }).select("id").single()).data!.id;
+    const pool = await draft("pub-pool", "pool");
+    expect((await a.client.from("deals").update({ state: "published" }).eq("id", pool)).error?.message).toContain("codes missing");
+    await a.client.rpc("import_pool_codes", { p_deal: pool, p_codes: ["PUB-1"] });
+    expect((await a.client.from("deals").update({ state: "published" }).eq("id", pool)).error).toBeNull();
+    const shared = await draft("pub-shared", "shared");
+    expect((await a.client.from("deals").update({ state: "published" }).eq("id", shared)).error?.message).toContain("codes missing");
+  });
+
+  it("shared code: hidden from others, the same for every buyer, single vouchers stay apart", async () => {
+    const id = (await db.from("deals").insert({ tenant_id: a.tenantId, slug: "shared", title: "Shared", price_cents: 1000, code_source: "shared", code_format: "qr", total_qty: 3 }).select("id").single()).data!.id;
+    expect((await b.client.from("deal_shared_codes").insert({ deal_id: id, tenant_id: b.tenantId, code: "EVIL" })).error).not.toBeNull();
+    expect((await b.client.from("deal_shared_codes").insert({ deal_id: id, tenant_id: a.tenantId, code: "EVIL" })).error).not.toBeNull();
+    expect((await a.client.from("deal_shared_codes").upsert({ deal_id: id, tenant_id: a.tenantId, code: "SOMMER 50" }, { onConflict: "deal_id" })).error).toBeNull();
+    expect((await a.client.from("deals").update({ state: "published" }).eq("id", id)).error).toBeNull();
+    expect((await b.client.from("deal_shared_codes").select("code").eq("deal_id", id)).data).toEqual([]);
+    expect((await anon().from("deal_shared_codes").select("code").eq("deal_id", id)).data ?? []).toEqual([]);
+    const buy = async (n: number, qty: number) => {
+      const r = await db.rpc("start_checkout", { p_deal: id, p_qty: qty, p_email: `s${n}@${run}.test`, p_name: "T", p_newsletter: false, p_locale: "de", p_minutes: 35 });
+      if (r.error) return r.error.message;
+      await db.from("orders").update({ stripe_session_id: `cs_${run}s${n}` }).eq("id", r.data![0].order_id);
+      await db.rpc("fulfil_order", { p_session: `cs_${run}s${n}`, p_payment_intent: "" });
+      return r.data![0].order_id;
+    };
+    const first = await buy(1, 2);
+    await buy(2, 1);
+    expect(await buy(3, 1)).toContain("checkout:sold_out");
+    const { data: vs } = await db.from("vouchers").select("id, code, token, shared_code").eq("deal_id", id);
+    expect(vs!.map((v) => v.code)).toEqual(["SOMMER 50", "SOMMER 50", "SOMMER 50"]);
+    expect(new Set(vs!.map((v) => v.token)).size).toBe(3);
+    expect((await db.from("orders").select("oversold").eq("id", first).single()).data!.oversold).toBe(false);
+    // The code names no single voucher; the QR token does.
+    expect((await a.client.rpc("find_voucher", { p_tenant: a.tenantId, p_code: "sommer50" })).data).toBeNull();
+    expect((await a.client.rpc("shared_code_hint", { p_tenant: a.tenantId, p_code: "sommer50" })).data).toBe("qr");
+    expect((await b.client.rpc("shared_code_hint", { p_tenant: a.tenantId, p_code: "sommer50" })).data).toBeNull();
+    expect((await anon().rpc("shared_code_hint", { p_tenant: a.tenantId, p_code: "sommer50" })).error).not.toBeNull();
+    expect((await db.rpc("api_redeem_voucher", { p_tenant: a.tenantId, p_key: null as never, p_code: "SOMMER50" })).data).toMatchObject({ ok: false, error: "shared_code" });
+    const one = (await a.client.rpc("find_voucher_by_token", { p_tenant: a.tenantId, p_token: vs![0].token })).data as string;
+    expect((await a.client.rpc("redeem_voucher", { p_voucher: one })).data).toMatchObject({ ok: true });
+    expect((await db.from("vouchers").select("id").eq("deal_id", id).eq("status", "valid")).data).toHaveLength(2);
+    // Individual codes stay unique.
+    const { data: ref } = await db.from("vouchers").select("order_id").eq("id", one).single();
+    const ins = () => db.from("vouchers").insert({ tenant_id: a.tenantId, order_id: ref!.order_id, title: "x", code_format: "qr", code: `UNI-${run}`, token: `tok-${Math.random().toString(36).slice(2)}-${run}-000000` });
+    expect((await ins()).error).toBeNull();
+    expect((await ins()).error?.code).toBe("23505");
+  }, 60_000);
+
+  it("an order without own codes left is flagged instead of silently getting a generated code", async () => {
+    const id = (await db.from("deals").insert({ tenant_id: a.tenantId, slug: "flag", title: "Flag", price_cents: 1000, code_source: "pool" }).select("id").single()).data!.id;
+    const buyer = (await db.from("buyers").select("id").eq("tenant_id", a.tenantId).limit(1).single()).data!.id;
+    const order = (await db.from("orders").insert({ tenant_id: a.tenantId, buyer_id: buyer, number: `F-${run}`, status: "paid", email: `f@${run}.test`, currency: "CHF", amount_cents: 1000 }).select("id").single()).data!.id;
+    await db.from("order_items").insert({ tenant_id: a.tenantId, order_id: order, deal_id: id, title: "Flag", qty: 1, unit_cents: 1000, total_cents: 1000 });
+    expect((await db.rpc("issue_vouchers", { p_order: order })).data).toBe(1);
+    expect((await db.from("orders").select("oversold").eq("id", order).single()).data!.oversold).toBe(true);
+  });
+
   it("redemption app: access per shop, token lookup only for the shop's team, sign-in codes never readable", async () => {
     expect((await a.client.rpc("can_use_redeem", { p_tenant: a.tenantId })).data).toBe(true);
     expect((await b.client.rpc("can_use_redeem", { p_tenant: a.tenantId })).data).toBe(false);

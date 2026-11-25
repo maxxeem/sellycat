@@ -589,6 +589,42 @@ export type Database = {
           },
         ]
       }
+      deal_shared_codes: {
+        Row: {
+          code: string
+          deal_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          deal_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          deal_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_shared_codes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_shared_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           alert_skip: boolean
@@ -2633,6 +2669,7 @@ export type Database = {
           redeemed_at: string | null
           remaining_cents: number | null
           reminder_sent_at: string | null
+          shared_code: boolean
           status: Database["public"]["Enums"]["voucher_status"]
           tenant_id: string
           title: string
@@ -2654,6 +2691,7 @@ export type Database = {
           redeemed_at?: string | null
           remaining_cents?: number | null
           reminder_sent_at?: string | null
+          shared_code?: boolean
           status?: Database["public"]["Enums"]["voucher_status"]
           tenant_id: string
           title: string
@@ -2675,6 +2713,7 @@ export type Database = {
           redeemed_at?: string | null
           remaining_cents?: number | null
           reminder_sent_at?: string | null
+          shared_code?: boolean
           status?: Database["public"]["Enums"]["voucher_status"]
           tenant_id?: string
           title?: string
@@ -3412,6 +3451,10 @@ export type Database = {
         Args: { p_settlement: string; p_status: string }
         Returns: undefined
       }
+      shared_code_hint: {
+        Args: { p_code: string; p_tenant: string }
+        Returns: string
+      }
       shop_legal_complete: { Args: { p_tenant: string }; Returns: boolean }
       shop_profile: {
         Args: { p_tenant: string }
@@ -3554,7 +3597,7 @@ export type Database = {
         | "datamatrix"
         | "pdf417"
       code_format: "qr" | "numeric" | "barcode"
-      code_source: "generated" | "pool"
+      code_source: "generated" | "pool" | "shared"
       deal_state: "draft" | "published" | "ended"
       deal_type: "fixed" | "value"
       domain_kind: "subdomain" | "custom"
@@ -3721,7 +3764,7 @@ export const Constants = {
         "pdf417",
       ],
       code_format: ["qr", "numeric", "barcode"],
-      code_source: ["generated", "pool"],
+      code_source: ["generated", "pool", "shared"],
       deal_state: ["draft", "published", "ended"],
       deal_type: ["fixed", "value"],
       domain_kind: ["subdomain", "custom"],

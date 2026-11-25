@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { remaining } from "@/lib/shop/deal-status";
-import { parsePoolCodes, poolLevel } from "./pool";
+import { remaining, stockTotal } from "@/lib/shop/deal-status";
+import { parsePoolCodes, poolLevel, poolShortage } from "./pool";
 
 describe("parsePoolCodes", () => {
   it("reads one code per line and skips blanks and duplicates", () => {
@@ -15,6 +15,17 @@ describe("parsePoolCodes", () => {
 
   it("drops codes that are too long", () => {
     expect(parsePoolCodes(`${"a".repeat(121)}\nok`)).toMatchObject({ codes: ["ok"], tooLong: 1 });
+  });
+});
+
+describe("poolShortage", () => {
+  it("compares the quantity with the codes", () => {
+    expect(poolShortage(50, 0, 1)).toBe(1);
+    expect(poolShortage(50, 10, 20, 20)).toBeNull();
+    expect(poolShortage(null, 0, 0)).toBeNull();
+    expect(stockTotal({ total_qty: 50, sold_qty: 2, reserved_qty: 1, code_source: "pool", pool_free: 4 })).toBe(6);
+    expect(stockTotal({ total_qty: 50, sold_qty: 2, reserved_qty: 0, code_source: "shared", pool_free: 0 })).toBe(50);
+    expect(stockTotal({ total_qty: null, sold_qty: 2, reserved_qty: 0, code_source: "pool", pool_free: 3 })).toBeNull();
   });
 });
 

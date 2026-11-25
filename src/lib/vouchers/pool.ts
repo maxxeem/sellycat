@@ -33,6 +33,15 @@ export function parsePoolCodes(text: string): ParsedPool {
   return { codes: [...seen], duplicates, tooLong, header };
 }
 
+/** How many units a pool deal can sell in total (sold, plus free codes, plus codes about to be imported). */
+export const poolSellable = (sold: number, free: number, pending = 0) => sold + free + pending;
+
+/** The sellable total when the entered quantity is higher than that, else null. */
+export function poolShortage(totalQty: number | null, sold: number, free: number, pending = 0): number | null {
+  const can = poolSellable(sold, free, pending);
+  return totalQty !== null && totalQty > can ? can : null;
+}
+
 export type PoolLevel = "empty" | "low" | "ok";
 
 /** Low: fewer than 10 codes, or under 10 % of all codes, are still free. */

@@ -21,7 +21,7 @@ export type DealView = {
   total_qty: number | null;
   sold_qty: number;
   reserved_qty: number;
-  code_source?: "generated" | "pool";
+  code_source?: "generated" | "pool" | "shared";
   pool_free?: number;
   teaser?: boolean;
   max_per_order: number | null;

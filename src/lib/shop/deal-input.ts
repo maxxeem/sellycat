@@ -35,7 +35,9 @@ export type DealForm = {
   windows: RedeemWindow[];
   codeFormat: "qr" | "numeric" | "barcode";
   barcodeType: string;
-  codeSource: "generated" | "pool";
+  codeSource: "generated" | "pool" | "shared";
+  /** The one code all buyers get (codeSource "shared"). */
+  sharedCode: string;
   showRemaining: boolean;
   showCountdown: boolean;
   showStockBar: boolean;
@@ -57,7 +59,7 @@ export type DealForm = {
   settlePayout: string;
 };
 
-export type DealErrorKey = "title" | "slug" | "slugTaken" | "price" | "compareAt" | "value" | "window" | "redeemUntil" | "redeemDays" | "barcode" | "teaserStart" | "settlePartner" | "settleCommission" | "settlePayout";
+export type DealErrorKey = "title" | "slug" | "slugTaken" | "price" | "compareAt" | "value" | "window" | "redeemUntil" | "redeemDays" | "barcode" | "teaserStart" | "settlePartner" | "settleShared" | "sharedCode" | "sharedCodeBarcode" | "settleCommission" | "settlePayout";
 export type DealErrors = Partial<Record<keyof DealForm, DealErrorKey>>;
 
 const cents = (v: string) => (v.trim() === "" ? null : parseMoney(v));
@@ -104,12 +106,15 @@ export function validateDeal(f: DealForm): DealErrors {
   if (f.redeemValidity === "days_after_purchase" && !(Number(f.redeemDays) >= 1)) e.redeemDays = "redeemDays";
   if (f.settleMode !== "off") {
     if (!f.partnerId) e.settleMode = "settlePartner";
+    // Without an own QR code the vouchers cannot be told apart: redemption happens at the partner.
+    if (f.settleMode === "redemption" && f.codeSource === "shared" && f.codeFormat !== "qr") e.settleMode = "settleShared";
     if (f.settleKind === "percent" && commissionBps(f.settleCommission) === null) e.settleCommission = "settleCommission";
     if (f.settleKind === "fixed") {
       const payout = cents(f.settlePayout);
       if (payout === null || Number.isNaN(payout) || payout < 0) e.settlePayout = "settlePayout";
     }
   }
+  if (f.codeSource === "shared" && (!f.sharedCode.trim() || f.sharedCode.trim().length > 120)) e.sharedCode = "sharedCode";
   if (f.codeFormat === "barcode" && !BARCODE_TYPES.includes(f.barcodeType as (typeof BARCODE_TYPES)[number])) e.barcodeType = "barcode";
   return e;
 }
@@ -168,14 +173,14 @@ type DealRowIn = {
   compare_at_cents: number | null; value_cents: number | null; partial_redemption: boolean; total_qty: number | null;
   max_per_order: number | null; max_per_buyer: number | null; sales_start: string | null; sales_end: string | null;
   redeem_validity: "none" | "until_date" | "days_after_purchase"; redeem_until: string | null; redeem_days: number | null;
-  redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool";
+  redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool" | "shared";
   show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean; teaser?: boolean; alert_skip?: boolean;
   seo_title?: string | null; seo_description?: string | null; seo_noindex?: boolean;
   settle_mode?: string; settle_kind?: string; settle_commission_bps?: number; settle_payout_cents?: number | null;
 };
 
 /** Deal row → form state. */
-export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: string | null }>, locationIds: string[]): DealForm {
+export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: string | null }>, locationIds: string[], sharedCode = ""): DealForm {
   return {
     title: d.title,
     subtitle: d.subtitle ?? "",
@@ -204,6 +209,7 @@ export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: strin
     codeFormat: d.code_format,
     barcodeType: d.barcode_type ?? "",
     codeSource: d.code_source,
+    sharedCode,
     showRemaining: d.show_remaining,
     showCountdown: d.show_countdown,
     showStockBar: d.show_stock_bar ?? false,

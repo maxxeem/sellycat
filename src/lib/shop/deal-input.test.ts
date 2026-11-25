@@ -5,7 +5,7 @@ const form: DealForm = {
   title: "2 Pizzas", subtitle: "", slug: "2-pizzas", description: null, terms: "", faq: [], partnerId: "", categoryId: "", locationIds: [], images: [],
   dealType: "fixed", price: "20", compareAt: "40", value: "", partial: false, totalQty: "100", maxPerOrder: "4", maxPerBuyer: "", salesStart: "2026-12-01T09:00",
   salesEnd: "2026-12-31T23:59", redeemValidity: "days_after_purchase", redeemUntil: "", redeemDays: "90", windows: [{ days: [1, 2, 3, 4, 5], from: "11:00", to: "14:00" }],
-  codeFormat: "qr", barcodeType: "", codeSource: "generated", showRemaining: true, showCountdown: true, showStockBar: false, featured: false, teaser: false, alert: true, seoTitle: "", seoDescription: "", seoNoindex: false, settleMode: "off", settleKind: "percent", settleCommission: "", settlePayout: "",
+  codeFormat: "qr", barcodeType: "", codeSource: "generated", sharedCode: "", showRemaining: true, showCountdown: true, showStockBar: false, featured: false, teaser: false, alert: true, seoTitle: "", seoDescription: "", seoNoindex: false, settleMode: "off", settleKind: "percent", settleCommission: "", settlePayout: "",
 };
 
 describe("deal form", () => {
@@ -50,6 +50,11 @@ describe("partner settlement fields", () => {
     const base = { ...form, settleMode: "redemption" as const, settleKind: "percent" as const, settleCommission: "20" };
     expect(validateDeal({ ...base, partnerId: "" }).settleMode).toBe("settlePartner");
     expect(validateDeal({ ...base, partnerId: "p" }).settleMode).toBeUndefined();
+    // A shared code without QR cannot be redeemed one by one.
+    const shared = { ...base, partnerId: "p", codeSource: "shared" as const, sharedCode: "SOMMER50" };
+    expect(validateDeal(shared).settleMode).toBeUndefined();
+    expect(validateDeal({ ...shared, codeFormat: "numeric" }).settleMode).toBe("settleShared");
+    expect(validateDeal({ ...shared, sharedCode: " " }).sharedCode).toBe("sharedCode");
     expect(validateDeal({ ...base, partnerId: "p", settleKind: "fixed", settlePayout: "" }).settlePayout).toBe("settlePayout");
     expect(dealRow({ ...base, partnerId: "p", settleKind: "fixed", settlePayout: "8" })).toMatchObject({ settle_mode: "redemption", settle_kind: "fixed", settle_payout_cents: 800, settle_commission_bps: 0 });
   });

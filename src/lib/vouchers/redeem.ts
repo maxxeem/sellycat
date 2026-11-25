@@ -10,7 +10,7 @@ import { kickWebhooks } from "@/lib/developers/webhooks";
  */
 type Client = Awaited<ReturnType<typeof createClient>>;
 
-export type VoucherError = "not_found" | "forbidden" | "redeemed" | "expired" | "refunded" | "void" | "outside_window" | "location" | "amount" | "already_undone" | "too_late" | "valid" | "failed";
+export type VoucherError = "not_found" | "forbidden" | "redeemed" | "expired" | "refunded" | "void" | "outside_window" | "location" | "amount" | "already_undone" | "too_late" | "valid" | "shared_qr" | "shared_partner" | "failed";
 
 export type VoucherInfo = {
   id: string;
@@ -55,6 +55,12 @@ export async function findVoucher(supabase: Client, tenantId: string, by: { code
   const { data: id } =
     "token" in by ? await supabase.rpc("find_voucher_by_token", { p_tenant: tenantId, p_token: by.token }) : await supabase.rpc("find_voucher", { p_tenant: tenantId, p_code: by.code.trim().slice(0, 120) });
   return id ? voucherInfo(supabase, id) : null;
+}
+
+/** Why a typed code finds nothing: it may be a code that many vouchers share. */
+export async function sharedCodeError(supabase: Client, tenantId: string, code: string): Promise<"shared_qr" | "shared_partner" | null> {
+  const { data } = await supabase.rpc("shared_code_hint", { p_tenant: tenantId, p_code: code.trim().slice(0, 120) });
+  return data === "qr" ? "shared_qr" : data === "partner" ? "shared_partner" : null;
 }
 
 /** Francs as typed ("12.50", "12,5") → cents; undefined = the whole remaining value. */

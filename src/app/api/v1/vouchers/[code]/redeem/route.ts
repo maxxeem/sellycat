@@ -5,6 +5,7 @@ import { walletUpdate } from "@/lib/wallet/passes";
 
 const ERRORS: Record<string, [number, string]> = {
   not_found: [404, "No such voucher in this shop."],
+  shared_code: [409, "This code is shared by several vouchers and cannot identify a single one."],
   location: [400, "location_id does not belong to this voucher's partner."],
   redeemed: [409, "The voucher has already been redeemed."],
   expired: [409, "The voucher has expired."],

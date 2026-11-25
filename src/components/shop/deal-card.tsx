@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { dealStatus, formatMoney, isTeaser, remaining, savingsPercent } from "@/lib/shop/deal-status";
+import { dealStatus, formatMoney, isTeaser, remaining, savingsPercent, stockTotal } from "@/lib/shop/deal-status";
 import { fmt } from "@/lib/i18n";
 import { shopImage } from "@/lib/shop/image";
 import { Countdown } from "./countdown";
@@ -20,7 +20,7 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
   const isHero = variant === "hero";
   // A teaser always counts down to its start.
   const countdown = teaser && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : deal.show_countdown ? (status === "live" && deal.sales_end ? { until: deal.sales_end, mode: "end" as const } : status === "scheduled" && deal.sales_start ? { until: deal.sales_start, mode: "start" as const } : null) : null;
-  const stockBar = deal.show_stock_bar && deal.total_qty && (status === "live" || status === "sold_out");
+  const stockBar = deal.show_stock_bar && stockTotal(deal) && (status === "live" || status === "sold_out");
   return (
     <CardRoot
       href={href}
@@ -64,7 +64,7 @@ export function DealCard({ deal, shop, t, variant = "grid", href, now, priority 
         )}
         {stockBar ? (
           <div className="pt-1">
-            <StockBar total={deal.total_qty!} taken={deal.sold_qty + deal.reserved_qty} t={t} slim />
+            <StockBar total={stockTotal(deal)!} taken={deal.sold_qty + deal.reserved_qty} t={t} slim />
           </div>
         ) : null}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--shop-muted)]">

@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createClient } from "@/lib/supabase/server";
-import { findVoucher, redeem, type VoucherError, type VoucherInfo } from "@/lib/vouchers/redeem";
+import { findVoucher, redeem, sharedCodeError, type VoucherError, type VoucherInfo } from "@/lib/vouchers/redeem";
 import { sendRedeemCode, verifyRedeemCode } from "@/lib/vouchers/redeem-login";
 import { parseScan } from "@/lib/vouchers/scan";
 import { resolveShop } from "@/lib/site/resolve-shop";
@@ -74,6 +74,8 @@ export async function lookup(input: string): Promise<ScanResult> {
       ? ((await findVoucher(supabase, shop.id, { token: scan.token })) ?? (await findVoucher(supabase, shop.id, { code: scan.token })))
       : await findVoucher(supabase, shop.id, { code: scan.code });
   if (voucher) return { ok: true, voucher };
+  const shared = await sharedCodeError(supabase, shop.id, scan.kind === "token" ? scan.token : scan.code);
+  if (shared) return { ok: false, error: shared };
   // A voucher of this shop that belongs to another partner: say so instead of "not found".
   const { data: partner } = await supabase.rpc("voucher_partner_hint", {
     p_tenant: shop.id,
@@ -107,7 +109,7 @@ export async function lookupPhoto(jpegBase64: string): Promise<PhotoResult> {
   for (const code of codes) {
     const r = await lookup(code);
     if (r.ok) return r;
-    if (!best || (best.error === "not_found" && r.error === "other_partner")) best = r;
+    if (!best || (best.error === "not_found" && r.error !== "not_found")) best = r;
   }
   return best ?? { ok: false, error: "not_found" };
 }
