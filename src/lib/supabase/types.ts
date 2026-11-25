@@ -2571,6 +2571,8 @@ export type Database = {
       voucher_designs: {
         Row: {
           accent: string | null
+          ad_enabled: boolean
+          ad_image: string | null
           layout: string
           note: string | null
           show_image: boolean
@@ -2582,6 +2584,8 @@ export type Database = {
         }
         Insert: {
           accent?: string | null
+          ad_enabled?: boolean
+          ad_image?: string | null
           layout?: string
           note?: string | null
           show_image?: boolean
@@ -2593,6 +2597,8 @@ export type Database = {
         }
         Update: {
           accent?: string | null
+          ad_enabled?: boolean
+          ad_image?: string | null
           layout?: string
           note?: string | null
           show_image?: boolean

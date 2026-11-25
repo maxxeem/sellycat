@@ -79,7 +79,7 @@ export async function loadVouchers(tenantId: string, by: { orderId: string } | {
 
 /** The shop's voucher design (defaults when none is saved). */
 export async function loadDesign(tenantId: string): Promise<VoucherDesign> {
-  const { data } = await createAdminClient().from("voucher_designs").select("layout, size, accent, show_image, show_locations, show_terms, note").eq("tenant_id", tenantId).maybeSingle();
+  const { data } = await createAdminClient().from("voucher_designs").select("layout, size, accent, show_image, show_locations, show_terms, note, ad_enabled, ad_image").eq("tenant_id", tenantId).maybeSingle();
   return designFromRow(data);
 }
 

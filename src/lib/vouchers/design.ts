@@ -16,10 +16,26 @@ export type VoucherDesign = {
   showLocations: boolean;
   showTerms: boolean;
   note: string | null;
+  /** Half of the page shows an advertising visual (only with an image). */
+  adEnabled: boolean;
+  adImage: string | null;
 };
 
-export const DEFAULT_DESIGN: VoucherDesign = { layout: "classic", size: "a4", accent: null, showImage: true, showLocations: true, showTerms: true, note: null };
+export const DEFAULT_DESIGN: VoucherDesign = { layout: "classic", size: "a4", accent: null, showImage: true, showLocations: true, showTerms: true, note: null, adEnabled: false, adImage: null };
 export const NOTE_MAX = 400;
+
+/** Size of the advertising half in millimetres and the recommended pixels (300 dpi, 1.41:1 on both papers). */
+export const AD_FORMAT = { a4: { mm: "210 × 148.5 mm", width: 2480, height: 1754 }, a6: { mm: "105 × 74 mm", width: 1240, height: 877 } } as const;
+
+/** What an uploaded visual would suffer from: too few pixels (below ~150 dpi) or visible cropping. */
+export function adIssues(width: number, height: number, size: VoucherSize): { small: boolean; cropped: boolean } {
+  const f = AD_FORMAT[size];
+  const ratio = width / height / (f.width / f.height);
+  return { small: width < f.width / 2 || height < f.height / 2, cropped: ratio < 0.95 || ratio > 1.05 };
+}
+
+/** The visual that is really printed, or null for a full-page voucher. */
+export const activeAd = (d: VoucherDesign) => (d.adEnabled ? d.adImage : null);
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -36,22 +52,28 @@ export function parseDesign(input: Partial<Record<keyof VoucherDesign, unknown>>
     showLocations: bool(i.showLocations, true),
     showTerms: bool(i.showTerms, true),
     note: note || null,
+    adEnabled: bool(i.adEnabled, false),
+    adImage: typeof i.adImage === "string" && i.adImage.length <= 500 && /^https?:\/\//.test(i.adImage) ? i.adImage : null,
   };
 }
 
-export function designFromRow(row: { layout: string; size: string; accent: string | null; show_image: boolean; show_locations: boolean; show_terms: boolean; note: string | null } | null): VoucherDesign {
+export function designFromRow(row: { layout: string; size: string; accent: string | null; show_image: boolean; show_locations: boolean; show_terms: boolean; note: string | null; ad_enabled: boolean; ad_image: string | null } | null): VoucherDesign {
   if (!row) return DEFAULT_DESIGN;
-  return parseDesign({ layout: row.layout, size: row.size, accent: row.accent, showImage: row.show_image, showLocations: row.show_locations, showTerms: row.show_terms, note: row.note });
+  return parseDesign({ layout: row.layout, size: row.size, accent: row.accent, showImage: row.show_image, showLocations: row.show_locations, showTerms: row.show_terms, note: row.note, adEnabled: row.ad_enabled, adImage: row.ad_image });
 }
 
 export function designToRow(d: VoucherDesign) {
-  return { layout: d.layout, size: d.size, accent: d.accent, show_image: d.showImage, show_locations: d.showLocations, show_terms: d.showTerms, note: d.note };
+  return { layout: d.layout, size: d.size, accent: d.accent, show_image: d.showImage, show_locations: d.showLocations, show_terms: d.showTerms, note: d.note, ad_enabled: d.adEnabled, ad_image: d.adImage };
 }
 
 /** Query string for the live preview. */
 export function designQuery(d: VoucherDesign): string {
   const q = new URLSearchParams({ layout: d.layout, size: d.size, showImage: d.showImage ? "1" : "0", showLocations: d.showLocations ? "1" : "0", showTerms: d.showTerms ? "1" : "0" });
   if (d.accent) q.set("accent", d.accent);
+  if (d.adEnabled && d.adImage) {
+    q.set("adEnabled", "1");
+    q.set("adImage", d.adImage);
+  }
   if (d.note) q.set("note", d.note);
   return q.toString();
 }

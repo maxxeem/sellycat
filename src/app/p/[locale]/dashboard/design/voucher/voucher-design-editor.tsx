@@ -3,8 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { ColorField } from "@/components/color-field";
 import { Card, Notice, buttonClass, inputClass } from "@/components/ui";
+import { ImageUpload } from "@/components/image-upload";
+import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
-import { NOTE_MAX, VOUCHER_LAYOUTS, VOUCHER_SIZES, designQuery, type VoucherDesign, type VoucherLayout } from "@/lib/vouchers/design";
+import { AD_FORMAT, NOTE_MAX, VOUCHER_LAYOUTS, VOUCHER_SIZES, adIssues, designQuery, type VoucherDesign, type VoucherLayout } from "@/lib/vouchers/design";
 import { saveVoucherDesign } from "../actions";
 
 /** Small sketch of each layout for the picker. */
@@ -52,7 +54,53 @@ function LayoutSketch({ layout, color }: { layout: VoucherLayout; color: string 
   );
 }
 
-export function VoucherDesignEditor({ initial, shopColor }: { initial: VoucherDesign; shopColor: string }) {
+/** Advertising half: switch, upload, the exact format, and a warning when the picture does not suit it. */
+function AdCard({ tenantId, design, set }: { tenantId: string; design: VoucherDesign; set: <K extends keyof VoucherDesign>(key: K, value: VoucherDesign[K]) => void }) {
+  const { t } = useI18n();
+  const g = t.voucherDesign;
+  const f = AD_FORMAT[design.size];
+  const [natural, setNatural] = useState<{ url: string; width: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!design.adImage) return;
+    const url = design.adImage;
+    const img = new window.Image();
+    img.onload = () => setNatural({ url, width: img.naturalWidth, height: img.naturalHeight });
+    img.src = url;
+    return () => {
+      img.onload = null;
+    };
+  }, [design.adImage]);
+  const px = natural && natural.url === design.adImage ? natural : null;
+  const issues = px ? adIssues(px.width, px.height, design.size) : null;
+  return (
+    <Card title={g.ad} description={g.adHint}>
+      <div className="flex flex-col gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={design.adEnabled} onChange={(e) => set("adEnabled", e.target.checked)} className="h-4 w-4 accent-[var(--coral)]" data-testid="ad-enabled" />
+          {g.adEnabled}
+        </label>
+        {design.adEnabled ? (
+          <>
+            <ImageUpload tenantId={tenantId} folder="vouchers" value={design.adImage ?? ""} label={g.adImage} hint={fmt(g.adImageHint, { width: f.width, height: f.height })} height="aspect-[1.414]" cover accept="image/jpeg,image/png,image/webp" onChange={(url) => set("adImage", url || null)} />
+            {issues?.small ? <Notice tone="warning">{fmt(g.adSmall, { width: px!.width, height: px!.height, min: `${f.width / 2} × ${Math.ceil(f.height / 2)}` })}</Notice> : null}
+            {issues?.cropped ? <Notice tone="warning">{g.adCropped}</Notice> : null}
+            <div className="rounded-input bg-surface p-3 text-xs" data-testid="ad-format">
+              <p className="mb-1.5 font-semibold">{g.adFormatTitle}</p>
+              <ul className="flex list-disc flex-col gap-1 pl-4 text-muted">
+                {g.adFormat.map((line) => (
+                  <li key={line}>{fmt(line, { paper: design.size.toUpperCase(), mm: f.mm, width: f.width, height: f.height })}</li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-xs text-muted">{design.adImage ? g.adFitHint : g.adMissing}</p>
+          </>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
+export function VoucherDesignEditor({ tenantId, initial, shopColor }: { tenantId: string; initial: VoucherDesign; shopColor: string }) {
   const { t } = useI18n();
   const g = t.voucherDesign;
   const [design, setDesign] = useState<VoucherDesign>(initial);
@@ -128,6 +176,8 @@ export function VoucherDesignEditor({ initial, shopColor }: { initial: VoucherDe
               ))}
             </div>
           </Card>
+
+          <AdCard tenantId={tenantId} design={design} set={set} />
 
           <Card title={g.accent}>
             <div className="flex flex-col gap-3">

@@ -8,13 +8,15 @@ import sharp from "sharp";
 import { mix, readableOn } from "@/lib/design/color";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
-import { DEFAULT_DESIGN, type VoucherDesign } from "./design";
+import { DEFAULT_DESIGN, activeAd, type VoucherDesign } from "./design";
 import { symbolVector, voucherSymbol, type BarcodeType, type CodeFormat, type SymbolVector } from "./symbol";
 
 /**
  * Voucher PDF, one page per voucher, in one of three layouts (classic, ticket, minimal) on A4 or
  * A6: shop logo, deal image, title, code with QR/barcode, value, validity, where to redeem, the
- * terms and an optional note, in the shop's colour or the design's own.
+ * terms and an optional note, in the shop's colour or the design's own. With an advertising visual
+ * the lower half of the page shows it; the voucher is then set smaller in the upper half and
+ * whatever does not fit there continues on a further page (nothing is cut off).
  */
 export type PdfVoucher = {
   title: string;
@@ -97,7 +99,13 @@ const dateText = (iso: string, locale: "de" | "en") =>
 const METRICS = {
   a4: { pad: 40, top: 36, bottom: 64, body: 10, small: 8.5, label: 8, title: 22, subtitle: 11, code: 21, cover: 220, qr: 128, linear: [190, 90], logo: [170, 40], gap: 18, terms: 2500, places: 6, radius: 12, footer: 8 },
   a6: { pad: 18, top: 16, bottom: 34, body: 7, small: 6, label: 5.6, title: 12.5, subtitle: 7.5, code: 12, cover: 84, qr: 62, linear: [110, 48], logo: [90, 20], gap: 7, terms: 420, places: 3, radius: 7, footer: 5.6 },
+  a4ad: { pad: 34, top: 24, bottom: 448, body: 9, small: 7.2, label: 7, title: 17, subtitle: 9.5, code: 17, cover: 62, qr: 96, linear: [160, 70], logo: [130, 28], gap: 10, terms: 2500, places: 4, radius: 9, footer: 7 },
+  a6ad: { pad: 14, top: 9, bottom: 222, body: 5.8, small: 5, label: 4.4, title: 8.5, subtitle: 5.6, code: 9, cover: 28, qr: 44, linear: [84, 34], logo: [64, 13], gap: 4.5, terms: 420, places: 2, radius: 5, footer: 4.4 },
 } as const;
+/** Conditions up to this length fit beside the note and the places. */
+const AD_TERMS_BESIDE = 600;
+/** Height of the advertising half (points). */
+const AD_HEIGHT = { a4: 420.94, a6: 209.76 } as const;
 type Metrics = (typeof METRICS)[keyof typeof METRICS];
 
 const MUTED = "#6b6b70";
@@ -110,6 +118,7 @@ type Ctx = {
   m: Metrics;
   accent: string;
   logo: Loaded | null;
+  ad: Loaded | null;
   t: ReturnType<typeof getDictionary>;
   money: (c: number, cur: string) => string;
 };
@@ -147,6 +156,25 @@ function Heading({ c, v, color = "#111111", muted = MUTED, align = "left" }: { c
   );
 }
 
+/** Title block; next to the advertising half the deal image is a small picture beside it. */
+function HeadingRow({ c, p, color, muted }: { c: Ctx; p: Prepared; color?: string; muted?: string }) {
+  if (!c.ad || !c.design.showImage || !p.cover) return <Heading c={c} v={p.v} color={color} muted={muted} />;
+  return (
+    <View style={{ flexDirection: "row", gap: c.m.gap, alignItems: "center" }}>
+      <View style={{ flex: 1 }}>
+        <Heading c={c} v={p.v} color={color} muted={muted} />
+      </View>
+      <Image src={{ data: p.cover.data, format: "jpg" }} style={{ width: c.m.cover * 1.5, height: c.m.cover, objectFit: "cover", borderRadius: c.m.radius * 0.7 }} />
+    </View>
+  );
+}
+
+/** The lower half of the page, edge to edge. */
+function Ad({ c }: { c: Ctx }) {
+  if (!c.ad) return null;
+  return <Image src={{ data: c.ad.data, format: "jpg" }} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: AD_HEIGHT[c.design.size], objectFit: "cover" }} fixed />;
+}
+
 function Cover({ c, p, height }: { c: Ctx; p: Prepared; height?: number }) {
   if (!c.design.showImage || !p.cover) return null;
   return <Image src={{ data: p.cover.data, format: "jpg" }} style={{ width: "100%", height: height ?? c.m.cover, objectFit: "cover", borderRadius: c.m.radius }} />;
@@ -155,6 +183,16 @@ function Cover({ c, p, height }: { c: Ctx; p: Prepared; height?: number }) {
 function Gift({ c }: { c: Ctx }) {
   const g = c.input.gift;
   if (!g || (!g.from && !g.message)) return null;
+  // On half a page in one running line.
+  if (c.ad)
+    return (
+      <View style={{ marginTop: c.m.gap * 0.75, paddingVertical: c.m.gap * 0.45, paddingHorizontal: c.m.gap * 0.65, borderRadius: c.m.radius * 0.8, backgroundColor: "#f4f4f5" }} wrap={false}>
+        <Text>
+          {g.from ? <Text style={{ fontWeight: 700 }}>{`${fmt(c.t.shop.giftFromLabel, { name: g.from })}  `}</Text> : null}
+          {g.message ? <Text style={{ color: SOFT }}>{`«${g.message}»`}</Text> : null}
+        </Text>
+      </View>
+    );
   return (
     <View style={{ marginTop: c.m.gap * 0.75, padding: c.m.gap * 0.65, borderRadius: c.m.radius * 0.8, backgroundColor: "#f4f4f5" }} wrap={false}>
       {g.from ? <Text style={{ fontWeight: 700 }}>{fmt(c.t.shop.giftFromLabel, { name: g.from })}</Text> : null}
@@ -205,30 +243,46 @@ function Details({ c, v }: { c: Ctx; v: PdfVoucher }) {
   const h = { fontSize: c.m.subtitle, fontWeight: 700, marginBottom: 4 } as const;
   const places = c.design.showLocations ? v.locations.slice(0, c.m.places) : [];
   const terms = c.design.showTerms ? v.terms?.trim().slice(0, c.m.terms) : "";
+  const note = c.design.note ? (
+    <View style={{ marginTop: c.m.gap, paddingLeft: c.m.gap * 0.5, borderLeftWidth: 2.5, borderLeftColor: c.accent }} wrap={false}>
+      <Text style={{ fontSize: c.m.body, lineHeight: 1.45, fontWeight: 600 }}>{c.design.note}</Text>
+    </View>
+  ) : null;
+  const where = places.length ? (
+    <View style={{ marginTop: c.m.gap }} wrap={false}>
+      <Text style={h}>{p.redeemAt}</Text>
+      {places.map((l, i) => {
+        const address = [l.street, [l.zip, l.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+        return (
+          <Text key={i} style={small}>
+            <Text style={{ fontWeight: 600 }}>{l.name}</Text>
+            {address ? ` · ${address}` : ""}
+          </Text>
+        );
+      })}
+    </View>
+  ) : null;
+  // On half a page: short conditions stand beside the note and the places.
+  if (c.ad && terms && terms.length <= AD_TERMS_BESIDE && (note || where))
+    return (
+      <View style={{ flexDirection: "row", gap: c.m.gap * 1.6 }} wrap={false}>
+        <View style={{ flex: 2 }}>
+          {note}
+          {where}
+        </View>
+        <View style={{ flex: 3, marginTop: c.m.gap }}>
+          <Text style={h}>{p.terms}</Text>
+          <Text style={small}>{terms}</Text>
+        </View>
+      </View>
+    );
   return (
     <>
-      {c.design.note ? (
-        <View style={{ marginTop: c.m.gap, paddingLeft: c.m.gap * 0.5, borderLeftWidth: 2.5, borderLeftColor: c.accent }} wrap={false}>
-          <Text style={{ fontSize: c.m.body, lineHeight: 1.45, fontWeight: 600 }}>{c.design.note}</Text>
-        </View>
-      ) : null}
-      {places.length ? (
-        <View style={{ marginTop: c.m.gap }} wrap={false}>
-          <Text style={h}>{p.redeemAt}</Text>
-          {places.map((l, i) => {
-            const address = [l.street, [l.zip, l.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-            return (
-              <Text key={i} style={small}>
-                <Text style={{ fontWeight: 600 }}>{l.name}</Text>
-                {address ? ` · ${address}` : ""}
-              </Text>
-            );
-          })}
-        </View>
-      ) : null}
+      {note}
+      {where}
       {terms ? (
         <View style={{ marginTop: c.m.gap }}>
-          <Text style={h}>{p.terms}</Text>
+          <Text style={h} minPresenceAhead={c.m.small * 3}>{p.terms}</Text>
           <Text style={small}>{terms}</Text>
         </View>
       ) : null}
@@ -239,7 +293,7 @@ function Details({ c, v }: { c: Ctx; v: PdfVoucher }) {
 function Footer({ c }: { c: Ctx }) {
   return (
     <View
-      style={{ position: "absolute", left: c.m.pad, right: c.m.pad, bottom: c.m.bottom * 0.4, flexDirection: "row", justifyContent: "space-between", fontSize: c.m.footer, color: MUTED, borderTopWidth: 0.5, borderTopColor: "#d4d4d8", paddingTop: c.m.gap * 0.4 }}
+      style={{ position: "absolute", left: c.m.pad, right: c.m.pad, bottom: c.ad ? AD_HEIGHT[c.design.size] + c.m.gap * 0.7 : c.m.bottom * 0.4, flexDirection: "row", justifyContent: "space-between", fontSize: c.m.footer, color: MUTED, borderTopWidth: 0.5, borderTopColor: "#d4d4d8", paddingTop: c.m.gap * 0.4 }}
       fixed
     >
       <Text>{c.input.shopName}</Text>
@@ -272,14 +326,14 @@ function Classic({ c, p }: { c: Ctx; p: Prepared }) {
         <Logo c={c} />
         {c.input.orderNumber ? <Text style={{ color: MUTED }}>{fmt(c.t.mail.pdf.order, { number: c.input.orderNumber })}</Text> : null}
       </View>
-      {c.design.showImage && p.cover ? (
+      {!c.ad && c.design.showImage && p.cover ? (
         <View style={{ marginBottom: c.m.gap }}>
           <Cover c={c} p={p} />
         </View>
       ) : null}
-      <Heading c={c} v={v} />
+      <HeadingRow c={c} p={p} />
       <Gift c={c} />
-      <View style={{ marginTop: c.m.gap, borderRadius: c.m.radius * 1.15, borderWidth: 1.5, borderColor: c.accent, padding: c.m.gap, flexDirection: "row", gap: c.m.gap, alignItems: "center" }} wrap={false}>
+      <View style={{ marginTop: c.m.gap, borderRadius: c.m.radius * 1.15, borderWidth: 1.5, borderColor: c.accent, paddingHorizontal: c.m.gap, paddingVertical: c.m.gap * (c.ad ? 0.5 : 1), flexDirection: "row", gap: c.m.gap, alignItems: "center" }} wrap={false}>
         <View style={{ flex: 1 }}>
           <CodeFacts c={c} v={v} />
         </View>
@@ -287,6 +341,7 @@ function Classic({ c, p }: { c: Ctx; p: Prepared }) {
       </View>
       <Details c={c} v={v} />
       <Footer c={c} />
+      <Ad c={c} />
     </Page>
   );
 }
@@ -298,8 +353,9 @@ function Ticket({ c, p }: { c: Ctx; p: Prepared }) {
   const onMuted = mix(on, c.accent, 0.3);
   const notch = c.m.gap * 0.9;
   return (
-    <Page size={size(c)} style={pageStyle(c, { paddingTop: 0, paddingHorizontal: 0 })}>
-      <View style={{ backgroundColor: c.accent, paddingHorizontal: c.m.pad, paddingTop: c.m.top, paddingBottom: c.m.gap * 1.3 }}>
+    <Page size={size(c)} style={pageStyle(c, { paddingHorizontal: 0 })}>
+      {/* The head reaches the paper edge; further pages keep the top margin. */}
+      <View style={{ marginTop: -c.m.top, backgroundColor: c.accent, paddingHorizontal: c.m.pad, paddingTop: c.m.top, paddingBottom: c.m.gap * 1.3 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: c.m.gap }}>
           {c.logo ? (
             <View style={{ backgroundColor: "#ffffff", borderRadius: c.m.radius * 0.6, paddingVertical: c.m.gap * 0.3, paddingHorizontal: c.m.gap * 0.5 }}>
@@ -310,25 +366,35 @@ function Ticket({ c, p }: { c: Ctx; p: Prepared }) {
           )}
           {c.input.orderNumber ? <Text style={{ color: onMuted }}>{fmt(c.t.mail.pdf.order, { number: c.input.orderNumber })}</Text> : null}
         </View>
-        <Heading c={c} v={v} color={on} muted={onMuted} />
+        <HeadingRow c={c} p={p} color={on} muted={onMuted} />
       </View>
-      {c.design.showImage && p.cover ? <Image src={{ data: p.cover.data, format: "jpg" }} style={{ width: "100%", height: c.m.cover * 0.7, objectFit: "cover" }} /> : null}
+      {!c.ad && c.design.showImage && p.cover ? <Image src={{ data: p.cover.data, format: "jpg" }} style={{ width: "100%", height: c.m.cover * 0.7, objectFit: "cover" }} /> : null}
       <View style={{ position: "relative", height: notch, justifyContent: "center", marginVertical: c.m.gap * 0.3 }}>
         <View style={{ marginHorizontal: c.m.pad * 0.7, borderTopWidth: 1.2, borderTopColor: "#c4c4c8", borderStyle: "dashed" }} />
         <View style={{ position: "absolute", left: -notch / 2, top: 0, width: notch, height: notch, borderRadius: notch / 2, backgroundColor: "#ececee" }} />
         <View style={{ position: "absolute", right: -notch / 2, top: 0, width: notch, height: notch, borderRadius: notch / 2, backgroundColor: "#ececee" }} />
       </View>
-      <View style={{ paddingHorizontal: c.m.pad, alignItems: "center" }} wrap={false}>
-        <Symbol c={c} p={p} />
-        <View style={{ marginTop: c.m.gap * 0.5, width: "100%" }}>
-          <CodeFacts c={c} v={v} align="center" />
+      {c.ad ? (
+        <View style={{ paddingHorizontal: c.m.pad, flexDirection: "row", gap: c.m.gap, alignItems: "center" }} wrap={false}>
+          <View style={{ flex: 1 }}>
+            <CodeFacts c={c} v={v} />
+          </View>
+          <Symbol c={c} p={p} />
         </View>
-      </View>
+      ) : (
+        <View style={{ paddingHorizontal: c.m.pad, alignItems: "center" }} wrap={false}>
+          <Symbol c={c} p={p} />
+          <View style={{ marginTop: c.m.gap * 0.5, width: "100%" }}>
+            <CodeFacts c={c} v={v} align="center" />
+          </View>
+        </View>
+      )}
       <View style={{ paddingHorizontal: c.m.pad }}>
         <Gift c={c} />
         <Details c={c} v={v} />
       </View>
       <Footer c={c} />
+      <Ad c={c} />
     </Page>
   );
 }
@@ -338,20 +404,20 @@ function Minimal({ c, p }: { c: Ctx; p: Prepared }) {
   const { v } = p;
   const line = { borderTopWidth: 0.6, borderTopColor: "#d4d4d8" };
   return (
-    <Page size={size(c)} style={pageStyle(c, { paddingTop: c.m.top * 1.3 })}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: c.m.gap * 1.4 }}>
+    <Page size={size(c)} style={pageStyle(c, { paddingTop: c.ad ? c.m.top : c.m.top * 1.3 })}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: c.ad ? c.m.gap * 0.8 : c.m.gap * 1.4 }}>
         <Logo c={c} />
         <Text style={{ color: MUTED, fontSize: c.m.small }}>{c.input.orderNumber ? fmt(c.t.mail.pdf.order, { number: c.input.orderNumber }) : c.input.host}</Text>
       </View>
       <View style={{ width: c.m.gap * 1.6, height: 2.5, backgroundColor: c.accent, marginBottom: c.m.gap * 0.7 }} />
-      <Heading c={c} v={v} />
-      {c.design.showImage && p.cover ? (
+      <HeadingRow c={c} p={p} />
+      {!c.ad && c.design.showImage && p.cover ? (
         <View style={{ marginTop: c.m.gap }}>
           <Cover c={c} p={p} height={c.m.cover * 0.8} />
         </View>
       ) : null}
       <Gift c={c} />
-      <View style={[line, { marginTop: c.m.gap * 1.2, paddingTop: c.m.gap, paddingBottom: c.m.gap, borderBottomWidth: 0.6, borderBottomColor: "#d4d4d8", flexDirection: "row", gap: c.m.gap, alignItems: "center" }]} wrap={false}>
+      <View style={[line, { marginTop: c.m.gap * (c.ad ? 0.7 : 1.2), paddingVertical: c.m.gap * (c.ad ? 0.5 : 1), borderBottomWidth: 0.6, borderBottomColor: "#d4d4d8", flexDirection: "row", gap: c.m.gap, alignItems: "center" }]} wrap={false}>
         <View style={{ flex: 1 }}>
           <CodeFacts c={c} v={v} />
         </View>
@@ -359,6 +425,7 @@ function Minimal({ c, p }: { c: Ctx; p: Prepared }) {
       </View>
       <Details c={c} v={v} />
       <Footer c={c} />
+      <Ad c={c} />
     </Page>
   );
 }
@@ -368,11 +435,13 @@ const LAYOUTS = { classic: Classic, ticket: Ticket, minimal: Minimal } as const;
 export async function renderVoucherPdf(input: PdfInput): Promise<Buffer> {
   await registerFonts();
   const design = input.design ?? DEFAULT_DESIGN;
-  const m = METRICS[design.size];
-  const [logo, ...prepared] = await Promise.all([
+  const [ad, logo, ...prepared] = await Promise.all([
+    loadImage(activeAd(design), design.size === "a6" ? 1240 : 1860, "jpeg"),
     loadImage(input.logoUrl, 600, "png"),
     ...input.vouchers.map(async (v) => ({ v, cover: design.showImage ? await loadImage(v.image, design.size === "a6" ? 800 : 1400, "jpeg") : null, symbol: symbolOf(v) })),
   ]);
+  // A visual that cannot be loaded leaves the normal full-page voucher.
+  const m = METRICS[ad ? `${design.size}ad` as const : design.size];
   const accentRaw = design.accent ?? input.primary;
   const ctx: Ctx = {
     input,
@@ -380,6 +449,7 @@ export async function renderVoucherPdf(input: PdfInput): Promise<Buffer> {
     m,
     accent: /^#[0-9a-f]{6}$/i.test(accentRaw) ? accentRaw : "#ff4b23",
     logo: logo as Loaded | null,
+    ad: ad as Loaded | null,
     t: getDictionary(input.locale),
     money: (c, cur) => formatMoney(c, cur, input.locale),
   };
