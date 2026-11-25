@@ -42,3 +42,20 @@ export async function readSession(request: NextRequest): Promise<ProxySession> {
     },
   };
 }
+
+/** Cookies of the Supabase session (`sb-<ref>-auth-token`, possibly in numbered parts). */
+const AUTH_COOKIE = /^sb-.+-auth-token/;
+
+/** Revokes an account session found on a host that must not have one, and removes its cookies. */
+export async function endForeignSession(request: NextRequest, res: NextResponse): Promise<NextResponse> {
+  const names = request.cookies.getAll().filter((c) => c.value && AUTH_COOKIE.test(c.name)).map((c) => c.name);
+  if (!names.length || !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return res;
+  const supabase = createServerClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    global: { fetch: resilientFetch },
+    cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} },
+  });
+  // Only this one session ("local"); a failure must not keep the page from loading.
+  await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+  for (const name of names) res.cookies.set(name, "", { path: "/", maxAge: 0 });
+  return res;
+}

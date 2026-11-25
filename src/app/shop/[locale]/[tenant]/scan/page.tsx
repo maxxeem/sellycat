@@ -3,11 +3,10 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
 import { getDictionary } from "@/lib/i18n";
-import { getSessionUser } from "@/lib/auth/session";
 import { getShopProfile } from "@/lib/shop/queries";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { lightLogo } from "@/lib/vouchers/data";
-import { findVoucher } from "@/lib/vouchers/redeem";
+import { scanActor } from "@/lib/vouchers/scan-session";
 import { RedeemApp, type RecentRedemption } from "./redeem-app";
 import { RedeemLogin } from "./redeem-login";
 import { SignOutButton } from "./sign-out-button";
@@ -34,22 +33,22 @@ async function Redeem({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[
   const shop = await getShopProfile(tenant);
   if (!shop) return null;
   const t = getDictionary(shop.locale);
-  const user = await getSessionUser();
-  const supabase = await createClient();
-  const access = user ? (await supabase.rpc("can_use_redeem", { p_tenant: shop.id })).data === true : false;
+  const actor = await scanActor(shop.id);
   // Signed in from a check page ("Partner? Zum Einlösen anmelden"): back to that voucher.
   const next = typeof query.next === "string" && /^\/v\/[A-Za-z0-9_-]{16,64}$/.test(query.next) ? query.next : null;
-  if (user && access && next) redirect(next);
+  if (actor && next) redirect(next);
   const token = typeof query.t === "string" && /^[A-Za-z0-9_-]{20,64}$/.test(query.t) ? query.t : null;
-  const initial = user && access && token ? await findVoucher(supabase, shop.id, { token }) : null;
+  const found = actor && token ? await actor.find({ token }) : null;
+  const initial = found?.ok ? found.voucher : null;
 
   let recent: RecentRedemption[] = [];
-  if (user && access) {
-    const { data } = await supabase
+  if (actor) {
+    // Service role: this person's own redemptions in this shop only.
+    const { data } = await createAdminClient()
       .from("redemptions")
       .select("id, amount_cents, created_at, undone_at, vouchers(code, title, orders(currency))")
       .eq("tenant_id", shop.id)
-      .eq("user_id", user.id)
+      .eq("user_id", actor.userId)
       .order("created_at", { ascending: false })
       .limit(10);
     recent = (data ?? []).map((r) => ({
@@ -81,19 +80,13 @@ async function Redeem({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[
             {logo ? <img src={logo} alt={shop.name} className="h-8 max-w-[9rem] object-contain" /> : <span className="truncate font-bold">{shop.name}</span>}
             <span className="rounded-full bg-[var(--shop-surface)] px-2.5 py-0.5 text-xs font-semibold">{t.redeem.title}</span>
           </span>
-          {user ? <SignOutButton label={t.redeem.signOut} /> : null}
+          {actor ? <SignOutButton label={t.redeem.signOut} /> : null}
         </header>
 
-        {!user ? (
+        {!actor ? (
           <RedeemLogin shopName={shop.name} texts={{ redeem: getDictionary(shop.locale).redeem }} />
-        ) : !access ? (
-          <div className="shop-card flex flex-col gap-3 p-6 text-center" data-testid="redeem-no-access">
-            <p className="text-lg font-bold">{t.redeem.noAccessTitle}</p>
-            <p>{t.redeem.errors.noAccess}</p>
-            <p className="text-sm text-[var(--shop-muted)]">{user.email}</p>
-          </div>
         ) : (
-          <RedeemApp texts={scanTexts(getDictionary(shop.locale))} locale={shop.locale} email={user.email} initial={initial} recent={recent} />
+          <RedeemApp texts={scanTexts(getDictionary(shop.locale))} locale={shop.locale} email={actor.email} initial={initial} recent={recent} />
         )}
       </div>
     </div>

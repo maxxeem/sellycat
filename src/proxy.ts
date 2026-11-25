@@ -4,7 +4,8 @@ import { classifyHost, siteHost, DEFAULT_ROOT } from "@/lib/site/hosts";
 import { resolveShop } from "@/lib/site/resolve-shop";
 import { NOT_FOUND_PATH, apexRoute, safeNext, shopRoute, type Route } from "@/lib/site/routing";
 import { STAGING_COOKIE, STAGING_GATE_PATH, stagingCookieValid, stagingExempt, stagingGateEnabled } from "@/lib/site/staging-gate";
-import { readSession } from "@/lib/supabase/proxy";
+import { ownsAccountSession } from "@/lib/supabase/cookie-domain";
+import { endForeignSession, readSession } from "@/lib/supabase/proxy";
 
 /** Request header carrying the original pathname to pages (e.g. for "next" after login). */
 export const PATH_HEADER = "x-sc-path";
@@ -48,6 +49,9 @@ export async function proxy(request: NextRequest) {
 
   // Shops are public: no session work, so they stay fast and cacheable. Only the redemption
   // app and the check page (which shows a redeem button to the shop's team) need the session.
+  // A customer's own domain never holds an account session (older versions created one for the
+  // redemption app): such cookies are ended and removed, and never read.
+  if (route.area === "shop" && !ownsAccountSession(rawHost)) return endForeignSession(request, rewrite(request, route.path));
   if (route.area === "shop" && shopNeedsSession(pathname)) return (await readSession(request)).apply(rewrite(request, route.path));
   if (route.area === "shop" || route.area === "public") return rewrite(request, route.path);
 

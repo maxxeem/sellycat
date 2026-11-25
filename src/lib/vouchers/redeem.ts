@@ -28,12 +28,14 @@ export type VoucherInfo = {
 const ERRORS = new Set<VoucherError>(["not_found", "forbidden", "redeemed", "expired", "refunded", "void", "outside_window", "location", "amount", "already_undone", "too_late", "valid"]);
 export const asVoucherError = (e: unknown): VoucherError => (ERRORS.has(e as VoucherError) ? (e as VoucherError) : "failed");
 
-export async function voucherInfo(supabase: Client, id: string): Promise<VoucherInfo | null> {
-  const { data: v } = await supabase
+/** `tenantId` for the service role, which sees every shop. */
+export async function voucherInfo(supabase: Client, id: string, tenantId?: string): Promise<VoucherInfo | null> {
+  let query = supabase
     .from("vouchers")
     .select("id, code, title, status, partial, value_cents, remaining_cents, valid_until, orders(currency), partners(name)")
-    .eq("id", id)
-    .maybeSingle();
+    .eq("id", id);
+  if (tenantId) query = query.eq("tenant_id", tenantId);
+  const { data: v } = await query.maybeSingle();
   if (!v) return null;
   const expired = v.status === "valid" && v.valid_until !== null && new Date(v.valid_until) <= new Date();
   return {
@@ -79,7 +81,12 @@ export async function redeem(
   const cents = amountCents(amount);
   if (cents === "invalid") return { ok: false, error: "amount" };
   const { data, error } = await supabase.rpc("redeem_voucher", { p_voucher: id, p_amount: cents, p_source: source });
-  if (error || !data) return { ok: false, error: "failed" };
+  return redeemResult(id, error ? null : data);
+}
+
+/** The database's answer to a redemption; on success wallets and webhooks are told. */
+export function redeemResult(id: string, data: unknown): { ok: true; remaining: number | null } | { ok: false; error: VoucherError } {
+  if (!data) return { ok: false, error: "failed" };
   const r = data as { ok: boolean; error?: string; remaining?: number | null };
   if (r.ok) {
     after(() => walletUpdate([id]));

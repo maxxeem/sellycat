@@ -8,11 +8,9 @@ import { VoucherCard } from "@/components/shop/voucher-card";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkUrl } from "@/lib/vouchers/symbol";
-import { getSessionUser } from "@/lib/auth/session";
 import { getDictionary } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/server";
 import { VoucherActions } from "@/components/shop/wallet-buttons";
-import { findVoucher } from "@/lib/vouchers/redeem";
+import { scanActor } from "@/lib/vouchers/scan-session";
 import { ScannerRedeem } from "./scanner-redeem";
 import { walletAvailable } from "@/lib/wallet/passes";
 import { accessTarget, hasAccess } from "@/lib/vouchers/access";
@@ -48,10 +46,9 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
   const v = data?.[0];
   const found = v && v.tenant_id === tenant;
   // A signed-in partner or team member of this shop sees "slide to redeem" instead of the buyer view.
-  const user = found ? await getSessionUser() : null;
-  const supabase = user ? await createClient() : null;
-  const scanner = user && supabase ? (await supabase.rpc("can_use_redeem", { p_tenant: tenant })).data === true : false;
-  const forScanner = scanner && supabase ? await findVoucher(supabase, tenant, { token }) : null;
+  const actor = found ? await scanActor(tenant) : null;
+  const hit = actor ? await actor.find({ token }) : null;
+  const forScanner = hit?.ok ? hit.voucher : null;
   const d = getDictionary(shop.locale);
   const unlocked = found && !forScanner ? await hasAccess(tenant, token) : false;
   const ownerEmail = found && !forScanner && !unlocked ? await accessTarget(tenant, token) : null;
@@ -61,10 +58,10 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
       <title>{`${t.voucherCheckTitle} · ${shop.name}`}</title>
       <meta name="robots" content="noindex, nofollow" />
       <meta name="referrer" content="no-referrer" />
-      {found && forScanner && user ? (
-        <ScannerRedeem texts={{ redeem: d.redeem, vouchers: d.vouchers, shop: d.shop }} voucher={forScanner} locale={shop.locale} email={user.email} />
+      {found && forScanner && actor ? (
+        <ScannerRedeem texts={{ redeem: d.redeem, vouchers: d.vouchers, shop: d.shop }} voucher={forScanner} locale={shop.locale} email={actor.email} />
       ) : found && !unlocked ? (
-        <VoucherGate token={token} title={v.title} shopName={shop.name} texts={{ redeem: d.redeem, voucherAccess: d.voucherAccess }} ownerEmail={ownerEmail ?? "•••"} notYours={scanner ? d.redeem.notYours : null} />
+        <VoucherGate token={token} title={v.title} shopName={shop.name} texts={{ redeem: d.redeem, voucherAccess: d.voucherAccess }} ownerEmail={ownerEmail ?? "•••"} notYours={actor ? d.redeem.notYours : null} />
       ) : found ? (
         <div className="flex flex-col gap-4">
           <VoucherCard

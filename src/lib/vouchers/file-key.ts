@@ -1,8 +1,8 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { serverEnv } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
 import { hasAccess } from "./access";
+import { scanActor } from "./scan-session";
 
 /**
  * The PDF and wallet files of a voucher contain its code. The QR code (token) alone must not open
@@ -24,10 +24,7 @@ export function fileKeyValid(token: string, given: string | null): boolean {
 export async function fileAccess(tenantId: string, token: string, request: Request): Promise<Response | null> {
   if (fileKeyValid(token, new URL(request.url).searchParams.get("k"))) return null;
   if (await hasAccess(tenantId, token)) return null;
-  const supabase = await createClient();
-  if ((await supabase.auth.getClaims()).data?.claims?.sub) {
-    const { data } = await supabase.rpc("find_voucher_by_token", { p_tenant: tenantId, p_token: token });
-    if (data) return null;
-  }
+  const actor = await scanActor(tenantId);
+  if (actor && (await actor.find({ token })).ok) return null;
   return new Response(null, { status: 303, headers: { Location: `/v/${token}`, "Cache-Control": "private, no-store" } });
 }

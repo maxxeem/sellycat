@@ -2204,6 +2204,47 @@ export type Database = {
           },
         ]
       }
+      scan_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          host: string
+          id: string
+          last_used_at: string
+          tenant_id: string
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          host: string
+          id?: string
+          last_used_at?: string
+          tenant_id: string
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          host?: string
+          id?: string
+          last_used_at?: string
+          tenant_id?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_themes: {
         Row: {
           draft: Json
@@ -3645,6 +3686,36 @@ export type Database = {
         }[]
       }
       restock_order: { Args: { p_order: string }; Returns: boolean }
+      scan_become: { Args: { p_user: string }; Returns: undefined }
+      scan_find: {
+        Args: {
+          p_code: string
+          p_tenant: string
+          p_token: string
+          p_user: string
+        }
+        Returns: Json
+      }
+      scan_member: {
+        Args: { p_tenant: string; p_user: string }
+        Returns: boolean
+      }
+      scan_redeem: {
+        Args: {
+          p_amount?: number
+          p_tenant: string
+          p_user: string
+          p_voucher: string
+        }
+        Returns: Json
+      }
+      scan_session_use: {
+        Args: { p_hash: string; p_host: string; p_tenant: string }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       set_primary_domain: {
         Args: { p_hostname: string; p_tenant: string }
         Returns: boolean

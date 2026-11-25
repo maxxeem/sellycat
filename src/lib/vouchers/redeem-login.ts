@@ -6,11 +6,11 @@ import { loadSender } from "@/lib/mail/sender-load";
 import { redeemCodeMail } from "@/lib/mail/templates";
 import type { ShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { startScanSession } from "./scan-session";
 
 /**
- * Sign-in with a six-digit code for the redemption app on the shop domain. The session is
- * created on the host the person is on, so it also works on a shop's own domain.
+ * Sign-in with a six-digit code for the redemption app on the shop domain. It gives a
+ * session of the app itself (scan-session.ts), never an account session.
  */
 export const CODE_MINUTES = 10;
 const MAX_ATTEMPTS = 5;
@@ -49,7 +49,7 @@ export async function sendRedeemCode(shop: ShopProfile, rawEmail: string): Promi
 
 export type CodeResult = { ok: true } | { ok: false; error: "code" | "tooMany" | "failed" };
 
-/** Checks the newest open code; on success the session cookies are set for this host. */
+/** Checks the newest open code; on success the app's session starts on this host. */
 export async function verifyRedeemCode(shopId: string, rawEmail: string, rawCode: string): Promise<CodeResult> {
   const email = normEmail(rawEmail);
   const code = rawCode.replace(/\D/g, "");
@@ -72,13 +72,8 @@ export async function verifyRedeemCode(shopId: string, rawEmail: string, rawCode
   // Claim the code once (a second request with the same code finds it used).
   const { data: claimed } = await admin.from("redeem_logins").update({ used_at: new Date().toISOString() }).eq("id", row.id).is("used_at", null).select("id");
   if (!claimed?.length) return { ok: false, error: "code" };
-  // Still allowed? Then a one-time link token, exchanged right here for a session on this host.
+  // Still allowed? Then a session of this app, for this shop and host only.
   const { data: userId } = await admin.rpc("redeem_user_id", { p_tenant: shopId, p_email: email });
   if (!userId) return { ok: false, error: "code" };
-  const { data: link, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
-  const tokenHash = link?.properties?.hashed_token;
-  if (error || !tokenHash) return { ok: false, error: "failed" };
-  const supabase = await createClient();
-  const { error: verifyError } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
-  return verifyError ? { ok: false, error: "failed" } : { ok: true };
+  return (await startScanSession(shopId, userId)) ? { ok: true } : { ok: false, error: "failed" };
 }
