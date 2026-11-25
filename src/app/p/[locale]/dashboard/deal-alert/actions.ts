@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { kickDealAlerts, manualAlertMail, registerWakeUrl } from "@/lib/alerts/deal-alert";
+import { parseSchedule, scheduleToRow, type AlertSchedule } from "@/lib/alerts/schedule";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { sendMail } from "@/lib/mail/mailgun";
 import { createRateLimiter } from "@/lib/rate-limit";
@@ -76,4 +77,21 @@ export async function sendManualAlert(input: ManualInput): Promise<{ ok: true; r
   kickDealAlerts();
   revalidatePath("/p/[locale]/dashboard/deal-alert", "page");
   return { ok: true, recipients: r.recipients ?? 0 };
+}
+
+/** How the automatic alert works. Coming back from "by hand", deals already live stay unsent. */
+export async function saveSchedule(input: AlertSchedule): Promise<{ ok: true } | { ok: false; error: "mode" | "window" | "weekdays" | "time" | "failed" }> {
+  const { tenant, user } = await requireTenant("admin");
+  const parsed = parseSchedule(input);
+  if (!parsed.ok) return parsed;
+  const admin = createAdminClient();
+  const { data: before } = await admin.from("deal_alert_settings").select("mode").eq("tenant_id", tenant.id).maybeSingle();
+  const back = before?.mode === "manual" && parsed.value.mode !== "manual";
+  const { error } = await admin
+    .from("deal_alert_settings")
+    .upsert({ tenant_id: tenant.id, ...scheduleToRow(parsed.value), slots_from: new Date().toISOString(), ...(back ? { auto_since: new Date().toISOString() } : {}) }, { onConflict: "tenant_id" });
+  if (error) return { ok: false, error: "failed" };
+  await admin.from("platform_audit_log").insert({ actor_id: user.id, action: "deal_alert.schedule", tenant_id: tenant.id, target_type: "tenant", target_id: tenant.id, meta: scheduleToRow(parsed.value) });
+  revalidatePath("/p/[locale]/dashboard/deal-alert", "page");
+  return { ok: true };
 }

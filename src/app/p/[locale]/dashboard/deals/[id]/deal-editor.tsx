@@ -30,6 +30,7 @@ import { faqChoices, mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms }
 import { archiveDeal, deleteDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 import { AiImport } from "./ai-import";
 import { VoucherAdUpload } from "@/components/voucher-ad-upload";
+import type { AlertMode } from "@/lib/alerts/schedule";
 import type { VoucherSize } from "@/lib/vouchers/design";
 import { SeoPanel } from "./seo-panel";
 import { POOL_MAX_IMPORT, parsePoolCodes, poolShortage } from "@/lib/vouchers/pool";
@@ -54,7 +55,7 @@ export function DealEditor(props: {
   seoTexts: SeoTexts;
   shopUrl: string;
   /** Deal alert of the shop: in the plan, switched on, when this deal last went out. */
-  alert: { allowed: boolean; on: boolean; sentAt: string | null };
+  alert: { allowed: boolean; on: boolean; sentAt: string | null; mode: AlertMode };
   legalComplete: boolean;
   canArchive: boolean;
   archived: boolean;
@@ -655,7 +656,7 @@ export function DealEditor(props: {
           <Card title={d.alertCard.title} description={d.alertCard.intro}>
             <div className="flex flex-col gap-4" data-testid="deal-alert-choice">
               <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={d.alertCard.title}>
-                <Choice checked={form.alert} onSelect={() => set("alert", true)} title={d.alertCard.include} hint={d.alertCard.includeHint} />
+                <Choice checked={form.alert} onSelect={() => set("alert", true)} title={d.alertCard.include} hint={d.alertCard.includeHints[props.alert.mode]} />
                 <Choice checked={!form.alert} onSelect={() => set("alert", false)} title={d.alertCard.exclude} hint={d.alertCard.excludeHint} />
               </div>
               {!props.alert.allowed ? <p className="text-sm text-muted">{d.alertCard.notOnPlan}</p> : !props.alert.on ? <p className="text-sm text-muted">{d.alertCard.off}</p> : null}

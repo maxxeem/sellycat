@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Loader2, MailCheck, Send } from "lucide-react";
+import { Eye, Loader2, MailCheck, Search, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, Field, Input, Notice, buttonClass, inputClass } from "@/components/ui";
@@ -8,7 +8,7 @@ import { fmt } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { previewManualAlert, sendManualAlert, testManualAlert, type ManualError } from "./actions";
 
-export type ComposerDeal = { id: string; title: string; price: string; image: string | null; sentAt: string | null; skipped: boolean };
+export type ComposerDeal = { id: string; title: string; partner: string; price: string; image: string | null; sentAt: string | null; skipped: boolean };
 const MAX = 10;
 
 /** Deal alert by hand: pick live deals, own subject and message, preview, test mail, send to everyone. */
@@ -17,6 +17,7 @@ export function ManualComposer({ deals, recipients, preselect }: { deals: Compos
   const m = t.dealAlertAdmin.manual;
   const router = useRouter();
   const [picked, setPicked] = useState<string[]>(() => (preselect && deals.some((d) => d.id === preselect) ? [preselect] : []));
+  const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<{ subject: string; html: string } | null>(null);
@@ -32,6 +33,7 @@ export function ManualComposer({ deals, recipients, preselect }: { deals: Compos
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length < MAX ? [...p, id] : p));
     changed();
   };
+  const shown = deals.filter((d) => !query.trim() || `${d.title} ${d.partner}`.toLowerCase().includes(query.trim().toLowerCase()));
   const again = deals.filter((d) => picked.includes(d.id) && d.sentAt);
 
   if (!deals.length) return <p className="text-sm text-muted">{m.noDeals}</p>;
@@ -39,8 +41,14 @@ export function ManualComposer({ deals, recipients, preselect }: { deals: Compos
     <div className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1.5 text-sm font-semibold">{fmt(m.pick, { max: MAX })}</legend>
-        <div className="max-h-80 divide-y divide-line overflow-y-auto rounded-input border border-line">
-          {deals.map((d) => {
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
+          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={m.search} aria-label={m.search} className={`${inputClass} pl-9`} data-testid="manual-search" />
+        </label>
+        {picked.length ? <p className="text-xs text-muted">{fmt(m.picked, { n: picked.length, deals: picked.map((id) => deals.find((d) => d.id === id)?.title).join(", ") })}</p> : null}
+        {!shown.length ? <p className="py-4 text-center text-sm text-muted">{t.deals.reuseNoMatch}</p> : null}
+        <div className={`${shown.length ? "" : "hidden"} max-h-80 divide-y divide-line overflow-y-auto rounded-input border border-line`}>
+          {shown.map((d) => {
             const at = picked.indexOf(d.id);
             return (
               <label key={d.id} className={`flex cursor-pointer items-center gap-3 p-3 text-sm transition hover:bg-surface ${at >= 0 ? "bg-surface" : ""}`} data-testid="manual-deal">
@@ -53,7 +61,7 @@ export function ManualComposer({ deals, recipients, preselect }: { deals: Compos
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{d.title}</span>
-                  <span className="block text-xs text-muted">{[d.price, d.sentAt ? fmt(m.sentAt, { date: d.sentAt }) : d.skipped ? m.skipped : ""].filter(Boolean).join(" · ")}</span>
+                  <span className="block text-xs text-muted">{[d.partner, d.price, d.sentAt ? fmt(m.sentAt, { date: d.sentAt }) : d.skipped ? m.skipped : ""].filter(Boolean).join(" · ")}</span>
                 </span>
                 {at >= 0 && picked.length > 1 ? <Badge>{at + 1}</Badge> : null}
               </label>
@@ -68,7 +76,7 @@ export function ManualComposer({ deals, recipients, preselect }: { deals: Compos
         <textarea value={message} maxLength={600} rows={3} onChange={(e) => { setMessage(e.target.value); changed(); }} className={inputClass} data-testid="manual-message" />
       </Field>
       {again.length ? <Notice tone="warning">{fmt(m.again, { deals: again.map((d) => d.title).join(", ") })}</Notice> : null}
-      {note ? <div role="status"><Notice tone={note.tone}>{note.text}</Notice></div> : null}
+      {note ? <Notice tone={note.tone}>{note.text}</Notice> : null}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"

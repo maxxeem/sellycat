@@ -565,7 +565,7 @@ ${button(i.brand, d.url, m.button)}`;
   const body = single
     ? `${messageHtml}${card(first)}\n${after}`
     : `${messageHtml}${i.deals.map((d, n) => `<div style="${n ? "margin-top:28px;padding-top:28px;border-top:1px solid #e4e4e7;" : ""}">${d.image ? `${image(d, "border-radius:12px;")}<div style="height:16px;line-height:16px;">&nbsp;</div>` : ""}${card(d)}</div>`).join("\n")}${after}`;
-  const subject = i.manual?.subject?.trim() || (single ? fmt(i.manual ? m.manualSubject : m.subject, { title: first.title, price: firstFacts.price }) : fmt(m.manySubject, { ...v, count: i.deals.length }));
+  const subject = i.manual?.subject?.trim() || (single ? fmt(i.manual ? m.manualSubject : m.subject, { title: first.title, price: firstFacts.price }) : fmt(i.manual ? m.manySubject : m.newManySubject, { ...v, count: i.deals.length }));
   const preheader = message || (single ? firstFacts.facts || first.subtitle || first.title : i.deals.map((d) => d.title).join(", "));
   return {
     subject: subjectLine(subject),

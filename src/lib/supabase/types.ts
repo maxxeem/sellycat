@@ -437,6 +437,50 @@ export type Database = {
           },
         ]
       }
+      deal_alert_settings: {
+        Row: {
+          auto_since: string
+          mode: string
+          send_at: string
+          slots_from: string
+          tenant_id: string
+          updated_at: string
+          weekdays: number[]
+          window_from: string
+          window_to: string
+        }
+        Insert: {
+          auto_since?: string
+          mode?: string
+          send_at?: string
+          slots_from?: string
+          tenant_id: string
+          updated_at?: string
+          weekdays?: number[]
+          window_from?: string
+          window_to?: string
+        }
+        Update: {
+          auto_since?: string
+          mode?: string
+          send_at?: string
+          slots_from?: string
+          tenant_id?: string
+          updated_at?: string
+          weekdays?: number[]
+          window_from?: string
+          window_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_alert_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_alert_subscribers: {
         Row: {
           confirm_count: number
@@ -3310,6 +3354,13 @@ export type Database = {
           token: string
         }[]
       }
+      deal_alert_digest_due: {
+        Args: never
+        Returns: {
+          deal_ids: string[]
+          tenant_id: string
+        }[]
+      }
       deal_alert_done: {
         Args: {
           p_alert: string
@@ -3348,9 +3399,76 @@ export type Database = {
         }
         Returns: Json
       }
+      deal_alert_open: {
+        Args: { p_hours: number }
+        Returns: {
+          ad_image: string | null
+          ad_mode: string
+          alert_skip: boolean
+          archived_at: string | null
+          barcode_type: Database["public"]["Enums"]["barcode_type"] | null
+          category_id: string | null
+          code_format: Database["public"]["Enums"]["code_format"]
+          code_source: Database["public"]["Enums"]["code_source"]
+          compare_at_cents: number | null
+          created_at: string
+          deal_type: Database["public"]["Enums"]["deal_type"]
+          description: Json
+          faq: Json
+          featured: boolean
+          id: string
+          max_per_buyer: number | null
+          max_per_order: number | null
+          partial_redemption: boolean
+          partner_id: string | null
+          pool_free: number
+          price_cents: number
+          published_at: string | null
+          redeem_days: number | null
+          redeem_until: string | null
+          redeem_validity: Database["public"]["Enums"]["redeem_validity"]
+          redeem_windows: Json
+          reserved_qty: number
+          sales_end: string | null
+          sales_start: string | null
+          seo_description: string | null
+          seo_noindex: boolean
+          seo_title: string | null
+          settle_commission_bps: number
+          settle_kind: string
+          settle_mode: string
+          settle_payout_cents: number | null
+          show_countdown: boolean
+          show_remaining: boolean
+          show_stock_bar: boolean
+          slug: string
+          sold_qty: number
+          sort_order: number
+          state: Database["public"]["Enums"]["deal_state"]
+          subtitle: string | null
+          teaser: boolean
+          tenant_id: string
+          terms: string | null
+          title: string
+          total_qty: number | null
+          updated_at: string
+          value_cents: number | null
+          view_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "deals"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       deal_alert_sellable: {
         Args: { d: Database["public"]["Tables"]["deals"]["Row"] }
         Returns: boolean
+      }
+      deal_alert_slot: {
+        Args: { p_at: string; p_weekdays: number[] }
+        Returns: string
       }
       deal_alert_start: { Args: never; Returns: number }
       deal_alert_tick_claim: { Args: { p_token: string }; Returns: boolean }

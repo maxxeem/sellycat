@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { Card, PageHeader, Skeleton } from "@/components/ui";
+import Link from "next/link";
+import { Card, PageHeader, Skeleton, buttonClass } from "@/components/ui";
 import type { Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { requireTenant } from "@/lib/dashboard/context";
@@ -71,6 +72,9 @@ async function Settings({ t }: { t: Dictionary }) {
         />
       </Card>
       <div className="flex flex-col gap-6">
+        <Card title={t.dealAlertAdmin.auto.title} description={t.dealAlertAdmin.auto.settingsHint}>
+          <Link href="/dashboard/deal-alert#automatic" className={buttonClass.secondary}>{t.dealAlertAdmin.auto.settingsLink}</Link>
+        </Card>
         <Card title={t.settings.categories}>
           <CategoryManager categories={categories ?? []} />
         </Card>

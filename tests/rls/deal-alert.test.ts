@@ -135,6 +135,56 @@ describe.skipIf(!rlsEnabled)("RLS deal alert", () => {
     expect(await due()).toEqual([]);
   }, 30_000);
 
+  it("automation settings: own shop only, hours, collected mail once per slot, by hand only", async () => {
+    // Zurich wall time `min` minutes ago; weekday of that moment.
+    const wall = (min: number) => {
+      const d = new Date(Date.now() - min * 60_000);
+      const day = d.toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" });
+      return { time: d.toLocaleTimeString("sv-SE", { timeZone: "Europe/Zurich" }).slice(0, 8), weekday: new Date(`${day}T12:00:00Z`).getUTCDay() || 7 };
+    };
+    expect((await a.client.from("deal_alert_settings").insert({ tenant_id: a.tenantId, mode: "manual" })).error).not.toBeNull();
+    const set = async (row: Record<string, unknown>) => expect((await db.from("deal_alert_settings").upsert({ tenant_id: a.tenantId, ...row } as never, { onConflict: "tenant_id" })).error).toBeNull();
+    const make = async (key: string, min: number) => {
+      const { data } = await db.from("deals").insert({ tenant_id: a.tenantId, slug: key, title: key, price_cents: 1000, state: "published", published_at: ago(min) }).select("id").single();
+      deals[key] = data!.id;
+    };
+    const digest = async () => ((await db.rpc("deal_alert_digest_due")).data as Array<{ tenant_id: string; deal_ids: string[] }>).find((x) => x.tenant_id === a.tenantId)?.deal_ids ?? null;
+    await db.from("tenants").update({ deal_alert_at: ago(600) }).eq("id", a.tenantId);
+    await make("early", 120);
+    await make("fresh", 1);
+    expect(await due()).toEqual(["early", "fresh"]);
+    await set({ mode: "manual" });
+    expect(await due()).toEqual([]);
+    expect(await digest()).toBeNull();
+    expect((await a.client.from("deal_alert_settings").select("mode")).data).toEqual([{ mode: "manual" }]);
+    expect((await b.client.from("deal_alert_settings").select("mode")).data).toEqual([]);
+    // Back to automatic: what was live before stays unsent.
+    await set({ mode: "instant", auto_since: ago(60) });
+    expect(await due()).toEqual(["fresh"]);
+    await set({ mode: "instant", auto_since: "-infinity", window_from: "00:00", window_to: "00:01" });
+    if (wall(0).time > "00:02") expect(await due()).toEqual([]);
+    // Collected: only what was live at the slot; the second run finds nothing more.
+    const slot = wall(10);
+    await set({ mode: "scheduled", window_to: "24:00", weekdays: [slot.weekday], send_at: slot.time });
+    expect(await due()).toEqual([]);
+    expect(await digest()).toEqual([deals.early]);
+    // Saved after that time: the slot that has passed does not count.
+    await set({ slots_from: ago(1) });
+    expect(await digest()).toBeNull();
+    await set({ slots_from: ago(30) });
+    await Promise.all([db.rpc("deal_alert_start"), db.rpc("deal_alert_start")]);
+    const { data: alerts } = await db.from("deal_alerts").select("id, recipients").eq("tenant_id", a.tenantId).eq("kind", "digest");
+    expect(alerts).toHaveLength(1);
+    expect(alerts![0].recipients).toBe(1);
+    await db.from("deal_alert_sends").update({ status: "sent" }).eq("alert_id", alerts![0].id);
+    expect(await digest()).toBeNull();
+    expect((await a.client.rpc("deal_alert_history", { p_tenant: a.tenantId })).data?.[0]).toMatchObject({ kind: "digest", title: "early" });
+    // A slot missed long ago or another weekday sends nothing.
+    await set({ weekdays: [(slot.weekday % 7) + 1] });
+    expect(await digest()).toBeNull();
+    expect((await a.client.rpc("deal_alert_digest_due")).error).not.toBeNull();
+  }, 30_000);
+
   it("the wake-up token works once", async () => {
     expect((await db.rpc("deal_alert_tick_claim", { p_token: "f".repeat(48) })).data).toBe(false);
   });

@@ -66,6 +66,7 @@ describe("waitlistTeamMail", () => {
     // Sent by hand: several deals, own words (escaped), way out still there.
     const many = dealAlertMail({ brand, band, deals: [deal, { ...deal, title: "Pizza", url: "https://velo.sellycat.com/d/pizza" }], unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok", manual: { subject: "", message: "Hallo <b>" } });
     expect(many.subject).toBe("2 Deals bei Velo <Deals>");
+    expect(dealAlertMail({ brand, band, deals: [deal, deal], unsubscribeUrl: "u" }).subject).toBe("2 neue Deals bei Velo <Deals>");
     expect(many.html).toContain("Hallo &lt;b&gt;");
     expect(many.html).toContain("/d/sonos");
     expect(many.html).toContain("/d/pizza");
