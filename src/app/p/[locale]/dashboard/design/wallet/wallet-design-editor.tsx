@@ -5,13 +5,13 @@ import { ColorField } from "@/components/color-field";
 import { Card, Notice, buttonClass } from "@/components/ui";
 import { contrastRatio } from "@/lib/design/color";
 import { useI18n } from "@/lib/i18n/context";
-import { appleBarcode, passRows, walletColors, type WalletDesign, type WalletShop, type WalletVoucher } from "@/lib/wallet/content";
+import { APPLE_STRIP, appleBarcode, googleLogoSource, googleOnDark, passRows, stripTitle, walletColors, type WalletDesign, type WalletShop, type WalletVoucher } from "@/lib/wallet/content";
 import { saveWalletDesign } from "../actions";
 
 type Props = {
   initial: WalletDesign;
   shop: WalletShop;
-  logos: { light: string | null; dark: string | null };
+  logos: { light: string | null; dark: string | null; favicon: string | null };
   voucher: WalletVoucher;
   available: { apple: boolean; google: boolean };
 };
@@ -36,7 +36,46 @@ function FakeCode({ linear }: { linear: boolean }) {
   );
 }
 
-function ApplePreview({ v, shop, design, logo }: { v: WalletVoucher; shop: WalletShop; design: WalletDesign; logo: string | null }) {
+/** Strip points as share of the pass width. */
+const cq = (points: number) => `${(points / APPLE_STRIP.width) * 100}cqw`;
+
+/** The deal image, or where it will be. Cut-out products (transparent) are shown whole. */
+function DealImage({ v, label, color, className }: { v: WalletVoucher; label: string; color: string; className: string }) {
+  const [cutOut, setCutOut] = useState(false);
+  if (!v.image)
+    return (
+      <div className={`flex items-center justify-center border border-dashed text-xs ${className}`} style={{ color, borderColor: color }}>
+        {label}
+      </div>
+    );
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={v.image}
+      alt=""
+      crossOrigin="anonymous"
+      className={`w-full ${cutOut ? "object-contain" : "object-cover"} ${className}`}
+      onLoad={(e) => setCutOut(hasTransparency(e.currentTarget))}
+      data-testid="wallet-preview-image"
+    />
+  );
+}
+
+function hasTransparency(img: HTMLImageElement): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 24;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return false;
+    ctx.drawImage(img, 0, 0, 24, 24);
+    return ctx.getImageData(0, 0, 24, 24).data.some((x, i) => i % 4 === 3 && x < 250);
+  } catch {
+    return false;
+  }
+}
+
+function ApplePreview({ v, shop, design, logo, imageLabel }: { v: WalletVoucher; shop: WalletShop; design: WalletDesign; logo: string | null; imageLabel: string }) {
+  const strip = stripTitle(v.title);
   const rows = passRows(v, shop);
   const c = walletColors(design, shop.primary);
   const barcode = appleBarcode(v);
@@ -55,14 +94,21 @@ function ApplePreview({ v, shop, design, logo }: { v: WalletVoucher; shop: Walle
           </span>
         ) : null}
       </div>
-      <div
-        className="relative mt-3 flex h-[110px] items-end bg-cover bg-center px-4 pb-2"
-        style={design.showImage && v.image ? { backgroundImage: `url(${v.image})` } : { background: c.background }}
-      >
-        <span className="text-2xl font-semibold leading-tight" style={design.showImage && v.image ? { color: "#fff", textShadow: "0 1px 6px rgba(0,0,0,.6)" } : undefined}>
-          {v.title}
-        </span>
-      </div>
+      {design.showImage ? (
+        // Like the real strip: title on top, the image below it, never over each other.
+        <div className="@container mt-3">
+          <div className="flex flex-col overflow-hidden" style={{ aspectRatio: `${APPLE_STRIP.width} / ${APPLE_STRIP.height}` }}>
+            <div className="shrink-0" style={{ height: cq(strip.height), paddingInline: cq(APPLE_STRIP.inset) }}>
+              <span className="overflow-hidden font-semibold" style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: strip.lines, fontSize: cq(strip.size), lineHeight: 1.2 }}>
+                {v.title}
+              </span>
+            </div>
+            <DealImage v={v} label={imageLabel} color={c.label} className="min-h-0 flex-1" />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-3 px-4 pb-2 text-2xl font-semibold leading-tight">{v.title}</p>
+      )}
       <div className="flex justify-between gap-3 px-4 py-3 text-sm">
         {v.partner ? (
           <span>
@@ -72,7 +118,7 @@ function ApplePreview({ v, shop, design, logo }: { v: WalletVoucher; shop: Walle
             {v.partner}
           </span>
         ) : null}
-        <span className="text-right">
+        <span className={v.partner ? "text-right" : undefined}>
           <span className="block text-[9px] font-semibold uppercase tracking-wide" style={{ color: c.label }}>
             {rows.validity.label}
           </span>
@@ -89,18 +135,28 @@ function ApplePreview({ v, shop, design, logo }: { v: WalletVoucher; shop: Walle
   );
 }
 
-function GooglePreview({ v, shop, design }: { v: WalletVoucher; shop: WalletShop; design: WalletDesign }) {
+function GooglePreview({ v, shop, design, logos, imageLabel }: { v: WalletVoucher; shop: WalletShop; design: WalletDesign; logos: Props["logos"]; imageLabel: string }) {
   const rows = passRows(v, shop);
   const c = walletColors(design, shop.primary);
-  const text = c.background && contrastRatio(c.background, "#ffffff") >= contrastRatio(c.background, "#111111") ? "#ffffff" : "#111111";
+  const onDark = googleOnDark(c.background);
+  const text = onDark ? "#ffffff" : "#111111";
+  // The wide logo takes the place of the round logo and the shop name.
+  const wide = googleLogoSource({ logoLight: logos.light, logoDark: logos.dark, favicon: logos.favicon }, "wide", onDark);
   return (
     <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[20px] shadow-lg" style={{ background: c.background, color: text }} data-testid="wallet-preview-google">
       <div className="flex items-center gap-2 px-4 pt-4 text-sm">
-        <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white text-[10px] font-bold text-[#111]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {shop.logo ? <img src={shop.logo} alt="" className="h-full w-full object-contain" /> : shop.name.slice(0, 2)}
-        </span>
-        <span className="truncate">{shop.name}</span>
+        {wide ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={wide} alt={shop.name} className="h-8 max-w-[8rem] object-contain object-left" data-testid="wallet-preview-google-logo" />
+        ) : (
+          <>
+            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white text-[10px] font-bold text-[#111]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {logos.favicon ? <img src={logos.favicon} alt="" className="h-5 w-5 object-contain" /> : shop.name.slice(0, 2)}
+            </span>
+            <span className="truncate">{shop.name}</span>
+          </>
+        )}
       </div>
       <div className="px-4 pb-3 pt-3">
         {v.partner ? <p className="text-xs opacity-80">{v.partner}</p> : null}
@@ -124,8 +180,7 @@ function GooglePreview({ v, shop, design }: { v: WalletVoucher; shop: WalletShop
           <span className={v.codeFormat !== "numeric" ? "font-mono text-xs" : "font-mono text-lg font-bold tracking-wider"}>{v.code}</span>
         </div>
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {design.showImage && v.image ? <img src={v.image} alt="" className="h-28 w-full object-cover" /> : null}
+      {design.showImage ? <DealImage v={v} label={imageLabel} color={text} className="h-28" /> : null}
     </div>
   );
 }
@@ -221,11 +276,11 @@ export function WalletDesignEditor({ initial, shop, logos, voucher, available }:
             <div className="grid gap-6 rounded-input bg-surface p-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <span className="text-center text-xs font-semibold text-muted">Apple Wallet</span>
-                <ApplePreview v={voucher} shop={shop} design={design} logo={logo} />
+                <ApplePreview v={voucher} shop={shop} design={design} logo={logo} imageLabel={t.voucherDesign.showImage} />
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-center text-xs font-semibold text-muted">Google Wallet</span>
-                <GooglePreview v={voucher} shop={shop} design={design} />
+                <GooglePreview v={voucher} shop={shop} design={design} logos={logos} imageLabel={t.voucherDesign.showImage} />
               </div>
             </div>
           </Card>

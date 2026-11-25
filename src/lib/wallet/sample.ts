@@ -5,20 +5,21 @@ import { checkUrl } from "@/lib/vouchers/symbol";
 import type { WalletVoucher } from "./content";
 
 /**
- * A sample voucher from the shop's newest deal, for the design preview and test passes (sample
+ * A sample voucher from the shop's newest deal with an image, for the design preview and test passes (sample
  * code, not redeemable: the check link leads to "voucher not found").
  */
 export async function sampleVoucher(tenantId: string): Promise<{ shop: ShopProfile; host: string; voucher: WalletVoucher } | null> {
   const shop = await getShopProfile(tenantId);
   if (!shop) return null;
-  const { data: deal } = await createAdminClient()
+  const { data: deals } = await createAdminClient()
     .from("deals")
     .select("title, terms, deal_type, value_cents, code_format, barcode_type, redeem_validity, redeem_until, redeem_days, partners(name), deal_images(url, sort_order), deal_locations(partner_locations(name, street, zip, city, lat, lng))")
     .eq("tenant_id", tenantId)
     .order("state", { ascending: false })
     .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(30);
+  // The preview should show the deal image: the first deal that has one, else simply the first.
+  const deal = deals?.find((d) => d.deal_images.length > 0) ?? deals?.[0] ?? null;
   const host = shop.primaryHost ?? "example.sellycat.com";
   const validUntil =
     deal?.redeem_validity === "until_date" && deal.redeem_until

@@ -2,7 +2,7 @@
  * What a voucher pass shows, for Apple Wallet (pass.json fields) and Google Wallet (generic
  * object). Pure and tested; signing, images and API calls live next door.
  */
-import { hexToRgb, mix, readableOn } from "@/lib/design/color";
+import { contrastRatio, hexToRgb, mix, readableOn } from "@/lib/design/color";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
 import type { BarcodeType, CodeFormat } from "@/lib/vouchers/symbol";
@@ -25,7 +25,7 @@ export type WalletVoucher = {
   image: string | null;
   locations: Array<{ name: string; street: string | null; zip: string | null; city: string | null; lat?: number | null; lng?: number | null }>;
 };
-export type WalletShop = { id: string; name: string; locale: "de" | "en"; host: string; primary: string; logo: string | null };
+export type WalletShop = { id: string; name: string; locale: "de" | "en"; host: string; primary: string; logo: string | null; /** PNGs for Google: the normal logo (not masked) and the round one. */ wideLogo?: string | null; roundLogo?: string | null };
 export type WalletDesign = { background: string | null; foreground: string | null; label: string | null; showImage: boolean; showLocations: boolean };
 
 export const DEFAULT_WALLET_DESIGN: WalletDesign = { background: null, foreground: null, label: null, showImage: true, showLocations: true };
@@ -49,6 +49,27 @@ export function walletColors(design: WalletDesign, shopPrimary: string) {
   const foreground = design.foreground ?? readableOn(background);
   const label = design.label ?? mix(foreground, background, 0.3);
   return { background, foreground, label };
+}
+
+/** Google picks the text colour itself from the background. */
+export const googleOnDark = (background: string) => contrastRatio(background, "#ffffff") >= contrastRatio(background, "#111111");
+
+type ThemeLogos = { logoLight?: string | null; logoDark?: string | null; favicon?: string | null };
+/** Wide: the logo made for that background. Round: the favicon; without one the logo for white. */
+export function googleLogoSource(theme: ThemeLogos, kind: "wide" | "round", onDark: boolean): string | null {
+  if (kind === "round") return theme.favicon || theme.logoLight || null;
+  return (onDark ? theme.logoDark || theme.logoLight : theme.logoLight || theme.logoDark) || null;
+}
+
+/** Strip of a coupon pass in points. */
+export const APPLE_STRIP = { width: 375, height: 144, inset: 14 };
+
+/** How the title is set above the deal image: one large line, or two smaller ones. */
+export function stripTitle(title: string): { text: string; size: number; lines: 1 | 2; height: number } {
+  const text = title.trim().slice(0, 120);
+  if (text.length <= 22) return { text, size: 26, lines: 1, height: 40 };
+  if (text.length <= 32) return { text, size: 19, lines: 1, height: 32 };
+  return { text, size: 17, lines: 2, height: 50 };
 }
 
 const rgb = (hex: string) => {
@@ -121,11 +142,14 @@ export function applePassJson(
   shop: WalletShop,
   design: WalletDesign,
   ids: { passTypeIdentifier: string; teamIdentifier: string; authenticationToken?: string; webServiceURL?: string },
+  /** The title is part of the strip image (never drawn over it); VoiceOver reads `description`. */
+  titleInStrip = false,
 ) {
   const rows = passRows(v, shop);
   const colors = walletColors(design, shop.primary);
   const barcode = appleBarcode(v);
   const back: Field[] = [
+    ...(titleInStrip ? [{ key: "title", label: getDictionary(shop.locale).wallet.offer, value: v.title }] : []),
     { key: "code", label: rows.code.label, value: v.code },
     ...(rows.terms ? [{ key: "terms", label: rows.terms.label, value: rows.terms.value }] : []),
     ...(rows.locations ? [{ key: "places", label: rows.locations.label, value: rows.locations.value }] : []),
@@ -156,7 +180,7 @@ export function applePassJson(
     ...(barcode ? { barcodes: [barcode], barcode } : {}),
     coupon: {
       headerFields: rows.header ? [{ key: "header", label: rows.header.label, value: rows.header.value, textAlignment: "PKTextAlignmentRight" }] : [],
-      primaryFields: [{ key: "offer", value: v.title }],
+      primaryFields: titleInStrip ? [] : [{ key: "offer", value: v.title }],
       secondaryFields: [
         ...(v.partner ? [{ key: "partner", label: getDictionary(shop.locale).wallet.partner, value: v.partner }] : []),
         { key: "validity", label: rows.validity.label, value: rows.validity.value, ...(v.partner ? { textAlignment: "PKTextAlignmentRight" } : {}) },
@@ -203,7 +227,8 @@ export function googleObject(v: WalletVoucher, shop: WalletShop, design: WalletD
     rows.locations ? { id: "places", header: rows.locations.label, body: rows.locations.value } : null,
     rows.terms ? { id: "terms", header: rows.terms.label, body: rows.terms.value } : null,
   ].filter(Boolean);
-  const logo = googleImage(shop.logo);
+  const wide = googleImage(shop.wideLogo ?? null);
+  const logo = googleImage(shop.roundLogo ?? null);
   const hero = design.showImage ? googleImage(v.image) : undefined;
   return {
     id: googleObjectId(issuer, v.id),
@@ -212,6 +237,7 @@ export function googleObject(v: WalletVoucher, shop: WalletShop, design: WalletD
     cardTitle: text(shop.name.slice(0, 60)),
     header: text(v.title.slice(0, 120)),
     ...(v.partner ? { subheader: text(v.partner.slice(0, 60)) } : {}),
+    ...(wide ? { wideLogo: wide } : {}),
     ...(logo ? { logo } : {}),
     ...(hero ? { heroImage: hero } : {}),
     hexBackgroundColor: colors.background,

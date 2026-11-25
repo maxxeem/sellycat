@@ -30,7 +30,7 @@ async function Editor() {
     <WalletDesignEditor
       initial={design}
       shop={{ id: shop.id, name: shop.name, locale: shop.locale, host: shop.host, primary: shop.primary, logo: shop.logo }}
-      logos={{ light: sample.shop.theme.logoLight || null, dark: sample.shop.theme.logoDark || null }}
+      logos={{ light: sample.shop.theme.logoLight || null, dark: sample.shop.theme.logoDark || null, favicon: sample.shop.theme.favicon || null }}
       voucher={sample.voucher}
       available={walletAvailable()}
     />

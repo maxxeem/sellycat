@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appleBarcode, applePassJson, googleBarcode, googleClassId, googleObject, googleObjectId, parseWalletDesign, walletColors, type WalletShop, type WalletVoucher } from "./content";
+import { googleLogoSource, googleOnDark, stripTitle, appleBarcode, applePassJson, googleBarcode, googleClassId, googleObject, googleObjectId, parseWalletDesign, walletColors, type WalletShop, type WalletVoucher } from "./content";
 
 const shop: WalletShop = { id: "11111111-2222-3333-4444-555555555555", name: "City Deals", locale: "de", host: "city-deals.sellycat.com", primary: "#ff4b23", logo: null };
 const v: WalletVoucher = {
@@ -75,5 +75,27 @@ describe("Google pass", () => {
     expect(o.barcode).toEqual({ type: "EAN_13", value: "2001234567893", alternateText: "2001234567893" });
     expect(o.heroImage).toEqual({ sourceUri: { uri: v.image } });
     expect("logo" in o).toBe(false);
+  });
+});
+
+describe("deal image and logos", () => {
+  it("never draws the Apple title over the image", () => {
+    const p = applePassJson(v, shop, parseWalletDesign(null), ids, true);
+    expect(p.coupon.primaryFields).toEqual([]);
+    expect(p.description).toBe("2 Pizzas");
+    expect(p.coupon.backFields[0]).toMatchObject({ key: "title", value: "2 Pizzas" });
+  });
+  it("sets long titles smaller and on two lines, leaving room for the image", () => {
+    expect(stripTitle("El Tony Mate")).toMatchObject({ lines: 1, size: 26 });
+    expect(stripTitle("x".repeat(80))).toMatchObject({ lines: 2 });
+    expect(stripTitle("x".repeat(300)).text).toHaveLength(120);
+  });
+  it("gives Google the wide logo, and the favicon for the round place", () => {
+    const o = googleObject(v, { ...shop, wideLogo: "https://a.ch/w", roundLogo: "https://a.ch/r" }, parseWalletDesign(null), "1");
+    expect(o).toMatchObject({ wideLogo: { sourceUri: { uri: "https://a.ch/w" } }, logo: { sourceUri: { uri: "https://a.ch/r" } } });
+    const theme = { logoLight: "l", logoDark: "d", favicon: "f" };
+    expect([googleLogoSource(theme, "wide", true), googleLogoSource(theme, "wide", false), googleLogoSource(theme, "round", true)]).toEqual(["d", "l", "f"]);
+    expect(googleLogoSource({ logoDark: "d" }, "round", false)).toBeNull(); // white on white
+    expect([googleOnDark("#e42313"), googleOnDark("#ffee00")]).toEqual([true, false]);
   });
 });

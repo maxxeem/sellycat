@@ -4,6 +4,7 @@ import path from "node:path";
 import { PKPass } from "passkit-generator";
 import sharp from "sharp";
 import { appleConfig, passkitServiceUrl } from "./config";
+import { appleStrip } from "./images";
 import { applePassJson, walletColors, type WalletDesign, type WalletShop, type WalletVoucher } from "./content";
 
 /**
@@ -47,17 +48,24 @@ export async function buildApplePass(v: WalletVoucher, shop: WalletShop & { icon
   const cfg = appleConfig();
   if (!cfg) return null;
   const service = passkitServiceUrl();
+  const colors = walletColors(design, shop.primary);
+  const [logoSrc, iconSrc, stripSrc] = await Promise.all([fetchImage(shop.logo), fetchImage(shop.iconUrl), design.showImage ? fetchImage(v.image) : Promise.resolve(null)]);
+  // A picture that cannot be processed leaves the pass without it, never without its title.
+  const strip = stripSrc
+    ? await appleStrip(stripSrc, v.title, colors).catch((e) => {
+        console.warn("[apple wallet] strip", e instanceof Error ? e.message : e);
+        return null;
+      })
+    : null;
   const json = applePassJson(v, shop, design, {
     passTypeIdentifier: cfg.passTypeIdentifier,
     teamIdentifier: cfg.teamIdentifier,
     ...(authToken && service ? { authenticationToken: authToken, webServiceURL: service } : {}),
-  });
-  const colors = walletColors(design, shop.primary);
-  const [logoSrc, iconSrc, stripSrc] = await Promise.all([fetchImage(shop.logo), fetchImage(shop.iconUrl), design.showImage ? fetchImage(v.image) : Promise.resolve(null)]);
+  }, strip !== null);
   const files: Record<string, Buffer> = { "pass.json": Buffer.from(JSON.stringify(json)) };
   Object.assign(files, await variants(iconSrc ?? logoSrc ?? (await sellycatIcon()), "icon", 29, 29, "contain", "#ffffff"));
   if (logoSrc) Object.assign(files, await variants(logoSrc, "logo", 160, 50, "contain"));
-  if (stripSrc) Object.assign(files, await variants(stripSrc, "strip", 375, 144, "cover", colors.background));
+  if (strip) Object.assign(files, strip);
   const pass = new PKPass(files, { wwdr: cfg.wwdr, signerCert: cfg.signerCert, signerKey: cfg.signerKey });
   return pass.getAsBuffer();
 }

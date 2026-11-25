@@ -1,12 +1,12 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ShopProfile } from "@/lib/shop/queries";
 import { loadVouchers, type LoadedVoucher } from "@/lib/vouchers/data";
 import { pushPassUpdates } from "./apns";
 import { buildApplePass } from "./apple";
 import { appleConfig, googleConfig } from "./config";
-import { parseWalletDesign, walletColors, type WalletDesign, type WalletShop, type WalletVoucher } from "./content";
+import { googleLogoSource, googleOnDark, parseWalletDesign, walletColors, type WalletDesign, type WalletShop, type WalletVoucher } from "./content";
 import { googleSaveUrl, updateGoogleObject } from "./google";
 
 /** Wallet passes of vouchers (service role; callers prove access with the voucher token). */
@@ -35,11 +35,23 @@ export const toWalletVoucher = (v: LoadedVoucher): WalletVoucher => ({
   locations: v.locations,
 });
 
+/** Google fetches logos itself and takes no SVG: as PNG from our own route (`v` changes with the logo). */
+export function googleLogos(shop: ShopProfile, host: string, design: WalletDesign) {
+  const onDark = googleOnDark(walletColors(design, shop.theme.colors.primary).background);
+  const url = (kind: "wide" | "round") => {
+    const source = googleLogoSource(shop.theme, kind, onDark);
+    if (!source) return null;
+    const v = createHash("sha256").update(source).digest("hex").slice(0, 12);
+    return `https://${host}/api/wallet/logo/${shop.id}?kind=${kind}${kind === "wide" ? `&on=${onDark ? "dark" : "light"}` : ""}&v=${v}`;
+  };
+  return { wideLogo: url("wide"), roundLogo: url("round") };
+}
+
 /** The pass shows the logo made for its background (light text → logo for dark backgrounds). */
 export function walletShop(shop: ShopProfile, host: string, design: WalletDesign): WalletShop & { iconUrl: string | null } {
   const darkBg = walletColors(design, shop.theme.colors.primary).foreground === "#ffffff";
   const logo = darkBg ? shop.theme.logoDark || shop.theme.logoLight || null : shop.theme.logoLight || shop.theme.logoDark || null;
-  return { id: shop.id, name: shop.name, locale: shop.locale, host, primary: shop.theme.colors.primary, logo, iconUrl: shop.theme.favicon || null };
+  return { id: shop.id, name: shop.name, locale: shop.locale, host, primary: shop.theme.colors.primary, logo, iconUrl: shop.theme.favicon || null, ...googleLogos(shop, host, design) };
 }
 
 /** Row with the secret Apple uses to fetch updates (created on first download). */
