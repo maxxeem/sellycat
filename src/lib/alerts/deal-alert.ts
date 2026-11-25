@@ -5,13 +5,14 @@ import { clientIp, networkOf, rateLimit } from "@/lib/access/server";
 import { brandOf, shopBase } from "@/lib/mail/deliver";
 import { sendMail } from "@/lib/mail/mailgun";
 import { loadSender } from "@/lib/mail/sender-load";
-import { dealAlertConfirmMail, dealAlertMail, type MailBand, type MailBrand } from "@/lib/mail/templates";
+import { dealAlertActiveMail, dealAlertConfirmMail, dealAlertMail, type MailBand, type MailBrand } from "@/lib/mail/templates";
 import { readableOn } from "@/lib/design/color";
 import { remaining } from "@/lib/shop/deal-status";
 import { getShopProfile, type ShopProfile } from "@/lib/shop/queries";
 import { headerBase, headerLogo } from "@/lib/shop/theme";
 import { apexUrl } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { nextConfirmMail } from "./confirm-limit";
 
 /**
  * Deal alert: subscribers of a shop get one mail per deal that goes live. What is due and who gets
@@ -21,7 +22,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 export const CONFIRM_DAYS = 7;
-const CONFIRM_MAX = 5;
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 const newToken = () => randomBytes(32).toString("base64url");
 
@@ -39,24 +39,30 @@ export async function subscribe(shop: ShopProfile, email: string): Promise<"ok" 
   if (!(await rateLimit("deal-alert", `${shop.id}|${networkOf(await clientIp())}`, 20, 3600))) return "limit";
   const admin = createAdminClient();
   await admin.from("deal_alert_subscribers").upsert({ tenant_id: shop.id, email, token: newToken() }, { onConflict: "tenant_id,email", ignoreDuplicates: true });
-  const { data: row } = await admin.from("deal_alert_subscribers").select("id, status, confirm_sent_at, confirm_count").eq("tenant_id", shop.id).eq("email", email).single();
+  const { data: row } = await admin.from("deal_alert_subscribers").select("id, status, token, confirm_sent_at, confirm_count").eq("tenant_id", shop.id).eq("email", email).single();
   if (!row) return "failed";
-  if (row.status === "confirmed") return "ok";
-  // One confirmation mail per minute and five in all, so nobody can be flooded through the form.
-  const recent = row.confirm_sent_at && Date.now() - new Date(row.confirm_sent_at).getTime() < 60_000;
-  if (recent || row.confirm_count >= CONFIRM_MAX) return "ok";
+  // "ok" means a mail is on its way, so every address gets one (an active one is told so): at most
+  // one per minute and five per day, so nobody can be flooded through the form.
+  const step = nextConfirmMail(row.confirm_sent_at, row.confirm_count, Date.now());
+  if (step.kind !== "send") return step.kind === "recent" ? "ok" : "limit";
   const token = newToken();
+  const pending = row.status !== "confirmed";
   const { data: claimed } = await admin
     .from("deal_alert_subscribers")
-    .update({ confirm_hash: sha(token), confirm_sent_at: new Date().toISOString(), confirm_count: row.confirm_count + 1 })
+    .update({ ...(pending ? { confirm_hash: sha(token) } : {}), confirm_sent_at: new Date().toISOString(), confirm_count: step.count })
     .eq("id", row.id)
     .eq("confirm_count", row.confirm_count)
     .select("id");
   if (!claimed?.length) return "ok";
   const sender = await loadSender(shop.id);
-  const mail = dealAlertConfirmMail({ brand: brandOf(shop), band: bandOf(shop), url: `${shopBase(shop)}/alert/confirm/${token}` });
+  const look = { brand: brandOf(shop), band: bandOf(shop) };
+  const mail = pending ? dealAlertConfirmMail({ ...look, url: `${shopBase(shop)}/alert/confirm/${token}` }) : dealAlertActiveMail({ ...look, unsubscribeUrl: `${shopBase(shop)}/alert/off/${row.token}` });
   const r = await sendMail({ domain: sender.domain, from: sender.from, replyTo: sender.replyTo, to: email, ...mail, tag: "deal-alert-confirm" });
-  return r.ok ? "ok" : "failed";
+  if (r.ok) return "ok";
+  console.error(`[deal-alert] confirm mail via ${sender.domain}:`, r.error);
+  // Nothing was sent: a retry must not run into the one-minute pause and look successful.
+  await admin.from("deal_alert_subscribers").update({ confirm_sent_at: row.confirm_sent_at, confirm_count: row.confirm_count }).eq("id", row.id);
+  return "failed";
 }
 
 /** Link from the confirmation mail; a second click on the same link still says yes. */

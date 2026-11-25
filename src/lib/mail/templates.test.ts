@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authMail, dealAlertConfirmMail, dealAlertMail, esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
+import { authMail, dealAlertActiveMail, dealAlertConfirmMail, dealAlertMail, esc, giftMail, myLinkMail, orderMail, waitlistTeamMail, type MailBrand } from "./templates";
 
 const brand: MailBrand = { shopName: "Velo <Deals>", locale: "de", primary: "#ff4b23", logoUrl: "https://x.supabase.co/logo.svg", shopUrl: "https://velo.sellycat.com" };
 const v = { title: "Service-Paket", partner: "Velo Huber", code: "ABCD-EFGH-JKMN", valueCents: 5000, currency: "CHF", validUntil: "2027-06-30T21:59:59Z", link: "https://velo.sellycat.com/v/tok" };
@@ -63,6 +63,9 @@ describe("waitlistTeamMail", () => {
     const plain = dealAlertMail({ brand, band, deal: { ...deal, compareAtCents: null, left: null }, unsubscribeUrl: "u" });
     expect(plain.html).not.toContain("<s ");
     expect(plain.html).not.toContain("verfügbar");
+    const active = dealAlertActiveMail({ brand, band, unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok" });
+    expect(active.html).toContain("/alert/off/tok");
+    expect(active.text).toContain("Velo <Deals>");
     expect(dealAlertConfirmMail({ brand, band, url: "https://velo.sellycat.com/alert/confirm/tok" }).html).toContain("/alert/confirm/tok");
   });
 });

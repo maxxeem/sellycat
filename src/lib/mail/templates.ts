@@ -488,6 +488,24 @@ export function dealAlertConfirmMail(i: { brand: MailBrand; band: MailBand; url:
   };
 }
 
+/** Signed up again although the alert is active already. */
+export function dealAlertActiveMail(i: { brand: MailBrand; band: MailBand; unsubscribeUrl: string }): Mail {
+  const m = getDictionary(i.brand.locale).mail.dealAlert;
+  const v = { shop: i.brand.shopName };
+  return {
+    subject: subjectLine(fmt(m.activeSubject, v)),
+    html: bandLayout(
+      i.brand,
+      i.band,
+      "",
+      `<h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">${esc(m.activeHeading)}</h1><p style="margin:0;">${esc(fmt(m.activeText, v))}</p>${button(i.brand, i.brand.shopUrl, m.activeButton)}<p style="margin:0;font-size:13px;color:#71717a;"><a href="${esc(i.unsubscribeUrl)}" style="color:#71717a;text-decoration:underline;">${esc(m.unsubscribe)}</a></p>`,
+      esc(fmt(m.confirmFooter, v)),
+      fmt(m.activeText, v),
+    ),
+    text: [m.activeHeading, "", fmt(m.activeText, v), "", `${m.activeButton}: ${i.brand.shopUrl}`, "", `${m.unsubscribe}: ${i.unsubscribeUrl}`].join("\n"),
+  };
+}
+
 /** A deal that just went live, to everyone with an active deal alert. */
 export function dealAlertMail(i: {
   brand: MailBrand;
