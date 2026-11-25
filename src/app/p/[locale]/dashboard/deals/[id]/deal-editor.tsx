@@ -18,7 +18,7 @@ import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles"
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Badge, Card, Field, Input, Notice, Select, buttonClass, inputClass } from "@/components/ui";
 import { STATUS_TONE } from "@/lib/dashboard/deal-ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { BARCODE_TYPES, commissionBps, slugifyTitle, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
 import { dealStatus, formatMoney, parseMoney } from "@/lib/shop/deal-status";

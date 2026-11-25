@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { SwipeConfirm } from "@/components/shop/swipe-confirm";
-import { fmt, getDictionary } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { formatMoney } from "@/lib/shop/deal-status";
 import type { VoucherInfo } from "@/lib/vouchers/redeem";
 import { redeemNow } from "../../scan/actions";
@@ -15,8 +16,8 @@ const field =
  * What a signed-in partner sees after scanning a voucher with the phone camera: the voucher and
  * "slide to redeem" (value vouchers with partial use: amount first). Large, clear outcome.
  */
-export function ScannerRedeem({ voucher, locale, email }: { voucher: VoucherInfo; locale: "de" | "en"; email: string }) {
-  const dict = getDictionary(locale);
+export function ScannerRedeem({ voucher, locale, email, texts }: { texts: Pick<Dictionary, "redeem" | "vouchers" | "shop">; voucher: VoucherInfo; locale: "de" | "en"; email: string }) {
+  const dict = texts;
   const r = dict.redeem;
   const v = dict.vouchers;
   const [state, setState] = useState(voucher);

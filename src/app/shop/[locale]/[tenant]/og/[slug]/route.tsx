@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { formatMoney, isTeaser, savingsPercent } from "@/lib/shop/deal-status";
 import { getDictionary } from "@/lib/i18n";
+import { loadImage } from "@/lib/vouchers/pdf";
 import { getShopDeal, getShopProfile } from "@/lib/shop/queries";
 
 const size = { width: 1200, height: 630 };
@@ -19,10 +20,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ten
     getShopDeal(tenant, slug),
     readFile(path.join(process.cwd(), "src/app/fonts/Inter-Bold.ttf")),
   ]);
+  // Only real deals are drawn (nothing to burn computing time with), and only pictures from our own storage.
+  if (!shop || !deal) return new Response("Not found", { status: 404, headers: { "cache-control": "public, max-age=300, s-maxage=300" } });
+  const picture = await loadImage(deal.images[0]?.url ?? null, 900, "jpeg");
   const c = shop?.theme.colors ?? { primary: "#ff4b23", text: "#111111", background: "#ffffff" };
   const teaser = deal ? isTeaser(deal, new Date()) : false;
   const savings = deal && !teaser ? savingsPercent(deal.price_cents, deal.compare_at_cents) : null;
-  const cover = deal?.images[0]?.url;
+  const cover = picture ? `data:image/jpeg;base64,${picture.data.toString("base64")}` : null;
   return new ImageResponse(
     (
       <div style={{ display: "flex", width: "100%", height: "100%", background: c.background, color: c.text, fontFamily: "Inter" }}>

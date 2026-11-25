@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ImageUpload } from "@/components/image-upload";
 import { Notice } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { AD_FORMAT, adIssues, type VoucherSize } from "@/lib/vouchers/design";
 

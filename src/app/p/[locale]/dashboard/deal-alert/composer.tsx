@@ -4,7 +4,7 @@ import { Eye, Loader2, MailCheck, Search, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, Field, Input, Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { previewManualAlert, sendManualAlert, testManualAlert, type ManualError } from "./actions";
 

@@ -5,10 +5,11 @@ import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
 import { shopTexts } from "@/components/shop/shop-texts";
 import { VoucherCard } from "@/components/shop/voucher-card";
+import { fileKey } from "@/lib/vouchers/file-key";
 import { VoucherActions } from "@/components/shop/wallet-buttons";
 import { getDictionary } from "@/lib/i18n";
 import { walletAvailable } from "@/lib/wallet/passes";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { emailForLink } from "@/lib/mail/deliver";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -78,7 +79,7 @@ async function MyVouchers({ params }: Pick<PageProps<"/shop/[locale]/[tenant]/my
               locale={shop.locale}
               currency={v.currency}
               v={{ title: v.title, code: v.code, codeFormat: v.codeFormat, barcodeType: v.barcodeType, status: v.status, validUntil: v.validUntil, valueCents: v.valueCents, remainingCents: v.remainingCents, partner: v.partner, link: v.link }}
-              actions={<VoucherActions token={v.token} t={getDictionary(shop.locale).wallet} available={walletAvailable()} status={v.status} />}
+              actions={<VoucherActions token={v.token} fileKey={fileKey(v.token)} t={getDictionary(shop.locale).wallet} available={walletAvailable()} status={v.status} />}
             />
           ))}
         </div>

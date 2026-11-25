@@ -3551,9 +3551,15 @@ export type Database = {
         }[]
       }
       is_staff: { Args: never; Returns: boolean }
+      is_staff_member: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       is_tenant_member: { Args: { p_tenant: string }; Returns: boolean }
       issue_vouchers: { Args: { p_order: string }; Returns: number }
+      my_partner_ids: { Args: never; Returns: string[] }
+      my_tenant_ids: {
+        Args: { p_roles: Database["public"]["Enums"]["member_role"][] }
+        Returns: string[]
+      }
       my_tenants: {
         Args: never
         Returns: {

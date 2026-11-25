@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
-import { fmt } from "@/lib/i18n";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { fmt } from "@/lib/i18n/fmt";
 import type { ShopTexts } from "./shop-texts";
 
 const KEY = "sc_consent";
@@ -24,6 +25,9 @@ function readChoice(): "yes" | "no" | null {
   }
 }
 
+/** Pages whose address is a secret (vouchers, orders, sign-in links): never any tracking script there. */
+const PRIVATE = /^\/(v|my|order|alert|scan|redeem)(\/|$)/;
+
 /**
  * Cookie notice (revDSG/DSGVO): the shop's own analytics (GA4, Meta Pixel) load only after an
  * explicit "accept". Shown only when the shop configured such an id; the choice stays in the
@@ -31,8 +35,12 @@ function readChoice(): "yes" | "no" | null {
  */
 export function ConsentBanner({ ga4, metaPixel, t }: { ga4: string | null; metaPixel: string | null; t: ShopTexts }) {
   const choice = useSyncExternalStore(subscribe, readChoice, () => undefined);
+  const path = usePathname();
+  const loaded = useRef(false);
   useEffect(() => {
-    if (choice !== "yes") return;
+    // The address the visitor sees; inside Next it may be the internal one.
+    if (choice !== "yes" || loaded.current || PRIVATE.test(window.location.pathname)) return;
+    loaded.current = true;
     if (ga4 && /^G-[A-Z0-9]{4,20}$/.test(ga4)) {
       const s = document.createElement("script");
       s.async = true;
@@ -45,7 +53,7 @@ export function ConsentBanner({ ga4, metaPixel, t }: { ga4: string | null; metaP
         w.dataLayer.push(arguments);
       };
       w.gtag("js", new Date());
-      w.gtag("config", ga4, { anonymize_ip: true });
+      w.gtag("config", ga4, { anonymize_ip: true, page_location: window.location.origin + window.location.pathname });
     }
     if (metaPixel && /^\d{6,20}$/.test(metaPixel)) {
       const s = document.createElement("script");
@@ -53,7 +61,7 @@ export function ConsentBanner({ ga4, metaPixel, t }: { ga4: string | null; metaP
       s.text = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${metaPixel}');fbq('track','PageView');`;
       document.head.appendChild(s);
     }
-  }, [choice, ga4, metaPixel]);
+  }, [choice, ga4, metaPixel, path]);
 
   if (choice !== null) return null;
   const decide = (v: "yes" | "no") => {

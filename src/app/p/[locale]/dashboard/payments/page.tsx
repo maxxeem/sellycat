@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { Badge, Card, Notice, PageHeader, Skeleton, buttonClass } from "@/components/ui";
 import type { Dictionary } from "@/lib/i18n";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { fromParams } from "@/lib/i18n/params";
 import { roleAtLeast } from "@/lib/auth/tenants";
 import { requireTenant } from "@/lib/dashboard/context";

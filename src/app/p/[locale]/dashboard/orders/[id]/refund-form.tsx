@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Field, Input, Notice, buttonClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { refundOrder, type RefundState } from "./actions";

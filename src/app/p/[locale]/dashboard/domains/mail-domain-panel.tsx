@@ -4,7 +4,7 @@ import { CheckCircle2, Copy, RefreshCw, Trash2, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import type { DnsRecord } from "@/lib/mail/mailgun";
 import { recordName } from "@/lib/mail/record-name";

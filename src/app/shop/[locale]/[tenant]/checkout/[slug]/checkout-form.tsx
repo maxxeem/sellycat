@@ -4,7 +4,7 @@ import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { useMemo, useState, useTransition } from "react";
 import type { ShopTexts } from "@/components/shop/shop-texts";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { startCheckout, type StartResult } from "./actions";
 import { Select } from "@/components/select";

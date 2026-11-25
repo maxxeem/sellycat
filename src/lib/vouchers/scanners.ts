@@ -3,6 +3,7 @@ import { brandOf, shopBase } from "@/lib/mail/deliver";
 import { sendMail } from "@/lib/mail/mailgun";
 import { loadSender } from "@/lib/mail/sender-load";
 import { scannerInviteMail } from "@/lib/mail/templates";
+import { invitesAllowed } from "@/lib/team/team";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -33,6 +34,7 @@ export async function inviteScanner(tenantId: string, partnerId: string, rawName
   const name = rawName.trim().slice(0, 120);
   const email = rawEmail.trim().toLowerCase();
   if (!name || !validEmail(email)) return { ok: false, error: "invalid" };
+  if (!(await invitesAllowed(tenantId, email))) return { ok: false, error: "failed" };
   const db = createAdminClient();
   const { data: partner } = await db.from("partners").select("id, name").eq("id", partnerId).eq("tenant_id", tenantId).maybeSingle();
   if (!partner) return { ok: false, error: "invalid" };

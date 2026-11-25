@@ -2,15 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { fmt, getDictionary } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { codeLogin, requestCode, type LoginError } from "./actions";
 
 const field =
   "w-full rounded-[var(--shop-radius)] border border-[var(--shop-line)] bg-[var(--shop-surface)] px-3 py-3 text-base text-[var(--shop-text)] outline-none focus:border-[var(--shop-primary)]";
 
 /** Sign-in on the shop domain with a six-digit code by email (no password to remember). */
-export function RedeemLogin({ shopName, locale }: { shopName: string; locale: "de" | "en" }) {
-  const t = getDictionary(locale).redeem;
+export function RedeemLogin({ shopName, texts }: { shopName: string; texts: Pick<Dictionary, "redeem"> }) {
+  const t = texts.redeem;
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");

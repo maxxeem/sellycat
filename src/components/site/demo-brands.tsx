@@ -74,11 +74,13 @@ export const DEMO_DEALS: DemoDeal[] = [
 export const chf = (cents: number) => `CHF ${Number.isInteger(cents / 100) ? cents / 100 : (cents / 100).toFixed(2)}`;
 export const discount = (d: DemoDeal) => Math.round((1 - d.priceCents / d.valueCents) * 100);
 
-/** Square crop from the image CDN: one URL per photo (cached once, reused by every card). */
+const DEMO_PHOTO = 640;
+
+/** Square crop, served through our own image optimizer (no visitor address goes to Unsplash; list of photos in next.config.ts). */
 export const dealPhotoUrl = (deal: Pick<DemoDeal, "photo" | "focus">, size = 640) =>
   deal.photo.startsWith("/")
     ? deal.photo
-    : `https://images.unsplash.com/${deal.photo}?w=${size}&h=${size}&fit=crop${deal.focus ? `&crop=focalpoint&fp-x=${deal.focus[0]}&fp-y=${deal.focus[1]}` : ""}&q=70&auto=format`;
+    : `/_next/image?url=${encodeURIComponent(`https://images.unsplash.com/${deal.photo}?w=${DEMO_PHOTO}&h=${DEMO_PHOTO}&fit=crop${deal.focus ? `&crop=focalpoint&fp-x=${deal.focus[0]}&fp-y=${deal.focus[1]}` : ""}&q=70&auto=format`)}&w=${size}&q=75`;
 
 /** The deal's photo, filling its box (object-cover around the focal point). Decorative: the card names the deal. */
 export function DealArt({ deal, className = "" }: { deal: Pick<DemoDeal, "id" | "photo" | "focus">; className?: string }) {

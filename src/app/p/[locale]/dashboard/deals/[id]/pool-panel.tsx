@@ -4,7 +4,7 @@ import { FileUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { Badge, Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { POOL_MAX_IMPORT, parsePoolCodes, poolLevel } from "@/lib/vouchers/pool";
 import { clearPoolCodes, importPoolCodes } from "../actions";

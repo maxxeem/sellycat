@@ -1,4 +1,4 @@
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import type { ShopTexts } from "./shop-texts";
 
 /**

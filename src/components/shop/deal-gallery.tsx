@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { shopImage } from "@/lib/shop/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import type { ShopTexts } from "./shop-texts";
 
 type Picture = { url: string; alt?: string | null };

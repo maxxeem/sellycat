@@ -9,7 +9,7 @@ import type { PreviewDevice } from "@/components/preview-frame";
 import { SOCIAL_ICON } from "@/components/shop/social-icons";
 import { Field, Input, Select, buttonClass } from "@/components/ui";
 import { FONT_ACCEPT, checkFontFile, familyFromFile, fontCssFormat } from "@/lib/design/font-file";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { SOCIAL_LABEL, SOCIAL_NETWORKS, socialUrl, type SocialNetwork } from "@/lib/shop/social";
 import type { HeroBackdrop, ShopTheme, ThemeFont } from "@/lib/shop/theme";

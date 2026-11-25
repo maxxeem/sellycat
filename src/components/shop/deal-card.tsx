@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { dealStatus, formatMoney, isTeaser, remaining, savingsPercent, stockTotal } from "@/lib/shop/deal-status";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { shopImage } from "@/lib/shop/image";
 import { Countdown } from "./countdown";
 import { StockBar } from "./stock-bar";

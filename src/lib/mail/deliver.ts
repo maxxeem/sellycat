@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { walletAvailable } from "@/lib/wallet/passes";
 import { lightLogo, loadVouchers, pdfInput, pdfName, type VoucherBundle } from "@/lib/vouchers/data";
 import { mailLogoUrl } from "./logo";
+import { fileKey } from "@/lib/vouchers/file-key";
 import { renderVoucherPdf } from "@/lib/vouchers/pdf";
 import { mailConfigured, sendMail, type Attachment, type MailResult } from "./mailgun";
 import { loadSender } from "./sender-load";
@@ -44,7 +45,7 @@ const mailVouchers = (b: VoucherBundle): MailVoucher[] => {
     currency: v.currency,
     validUntil: v.validUntil,
     link: v.link,
-    wallet: v.status === "valid" ? { ...(w.apple ? { apple: `${base}/v/${v.token}/pkpass` } : {}), ...(w.google ? { google: `${base}/v/${v.token}/google` } : {}) } : undefined,
+    wallet: v.status === "valid" ? { ...(w.apple ? { apple: `${base}/v/${v.token}/pkpass?k=${fileKey(v.token)}` } : {}), ...(w.google ? { google: `${base}/v/${v.token}/google?k=${fileKey(v.token)}` } : {}) } : undefined,
   }));
 };
 

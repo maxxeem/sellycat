@@ -3,7 +3,8 @@
 import { ChevronLeft, ChevronRight, Eye, ScanLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { fmt, getDictionary } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { RedeemLogin } from "../../scan/redeem-login";
 import { checkCode, sendCode, type AccessError } from "./actions";
 
@@ -14,8 +15,8 @@ const field =
  * What a phone shows after scanning a voucher's QR code (before anything about the voucher is
  * revealed): the owner confirms with a code by email (first), staff and partners sign in to redeem.
  */
-export function VoucherGate({ token, title, shopName, locale, ownerEmail, notYours }: { token: string; title: string; shopName: string; locale: "de" | "en"; ownerEmail: string; notYours: string | null }) {
-  const t = getDictionary(locale).voucherAccess;
+export function VoucherGate({ token, title, shopName, texts, ownerEmail, notYours }: { texts: Pick<Dictionary, "redeem" | "voucherAccess">; token: string; title: string; shopName: string; ownerEmail: string; notYours: string | null }) {
+  const t = texts.voucherAccess;
   const [step, setStep] = useState<"menu" | "scan" | "show">("menu");
   const back = (
     <button type="button" onClick={() => setStep("menu")} className="inline-flex items-center gap-1 self-start text-sm font-semibold underline-offset-2 hover:underline">
@@ -27,14 +28,14 @@ export function VoucherGate({ token, title, shopName, locale, ownerEmail, notYou
     return (
       <div className="flex flex-col gap-3">
         {back}
-        <RedeemLogin shopName={shopName} locale={locale} />
+        <RedeemLogin shopName={shopName} texts={texts} />
       </div>
     );
   if (step === "show")
     return (
       <div className="flex flex-col gap-3">
         {back}
-        <OwnerCode token={token} locale={locale} ownerEmail={ownerEmail} />
+        <OwnerCode token={token} texts={texts} ownerEmail={ownerEmail} />
       </div>
     );
 
@@ -71,8 +72,8 @@ export function VoucherGate({ token, title, shopName, locale, ownerEmail, notYou
 }
 
 /** The owner asks for a code (sent to the order's address) and enters it. */
-function OwnerCode({ token, locale, ownerEmail }: { token: string; locale: "de" | "en"; ownerEmail: string }) {
-  const t = getDictionary(locale).voucherAccess;
+function OwnerCode({ token, texts, ownerEmail }: { token: string; texts: Pick<Dictionary, "voucherAccess">; ownerEmail: string }) {
+  const t = texts.voucherAccess;
   const router = useRouter();
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState("");

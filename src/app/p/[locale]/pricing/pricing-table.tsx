@@ -6,12 +6,13 @@ import { useActionState, useState } from "react";
 import { Field, Input, Notice, buttonClass, inputClass } from "@/components/ui";
 import type { Currency } from "@/lib/billing/currency";
 import { feePercent, formatPrice, withFeeMin, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
-import { fmt, getDictionary } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { sendContact, type ContactState } from "./actions";
 
 /** Plan cards with the monthly/yearly switch; Business opens the contact form. */
-export function PricingTable({ plans, locale, currency }: { plans: Plan[]; locale: "de" | "en"; currency: Currency }) {
-  const t = getDictionary(locale).pricing;
+export function PricingTable({ plans, locale, currency, texts }: { texts: Pick<Dictionary, "pricing"> & { feeMin: string }; plans: Plan[]; locale: "de" | "en"; currency: Currency }) {
+  const t = texts.pricing;
   const [interval, setInterval] = useState<Interval>("yearly");
   const [contactPlan, setContactPlan] = useState<string | null>(null);
   const [state, action, pending] = useActionState<ContactState, FormData>(sendContact, null);
@@ -77,7 +78,7 @@ export function PricingTable({ plans, locale, currency }: { plans: Plan[]; local
                 ) : (
                   <p className="text-2xl font-bold">–</p>
                 )}
-                <p className="mt-1 text-sm font-semibold">{withFeeMin(fmt(t.fee, { fee: feePercent(p.feeBps) }), p.feeMin, currency, getDictionary(locale).common.feeMin)}</p>
+                <p className="mt-1 text-sm font-semibold">{withFeeMin(fmt(t.fee, { fee: feePercent(p.feeBps) }), p.feeMin, currency, texts.feeMin)}</p>
               </div>
               <ul className="flex flex-1 flex-col gap-2 text-sm">
                 {features(p).map((f) => (

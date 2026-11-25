@@ -72,11 +72,11 @@ describe.skipIf(!rlsEnabled)("RLS analytics", () => {
     expect((await a.client.rpc("platform_analytics", { p_from: today(), p_to: today() })).error).not.toBeNull();
     await db.from("platform_staff").insert({ user_id: b.userId, role: "support" });
     try {
-      const { data, error } = await b.client.rpc("platform_analytics", { p_from: today(), p_to: today() });
-      expect(error).toBeNull();
-      const r = data as unknown as { money: { currency: string; fee_cents: number }[]; daily: unknown[] };
-      expect(r.daily).toHaveLength(1);
-      expect(r.money.find((m) => m.currency === "CHF")?.fee_cents).toBeGreaterThanOrEqual(400);
+      // Staff rights need the authenticator code (AAL2): a password session alone gets nothing.
+      expect((await b.client.rpc("platform_analytics", { p_from: today(), p_to: today() })).error).not.toBeNull();
+      expect((await b.client.rpc("is_staff")).data).toBe(false);
+      expect((await b.client.rpc("is_staff_member")).data).toBe(true);
+      expect((await b.client.from("orders").select("id").eq("tenant_id", a.tenantId)).data).toEqual([]);
     } finally {
       await db.from("platform_staff").delete().eq("user_id", b.userId);
     }

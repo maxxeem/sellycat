@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PageFallback } from "@/components/shop/page-fallback";
 import { shopTexts } from "@/components/shop/shop-texts";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { completeSession } from "@/lib/payments/orders";
 import { getStripe, stripeConfigured } from "@/lib/payments/stripe";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { VoucherCard } from "@/components/shop/voucher-card";
+import { fileKey } from "@/lib/vouchers/file-key";
 import { VoucherActions } from "@/components/shop/wallet-buttons";
 import { getDictionary } from "@/lib/i18n";
 import { walletAvailable } from "@/lib/wallet/passes";
@@ -131,7 +132,7 @@ async function Order({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[t
                 partner: v.partners?.name ?? null,
                 link: checkUrl(host, v.token),
               }}
-              actions={<VoucherActions token={v.token} t={getDictionary(shop.locale).wallet} available={wallet} status={v.status} />}
+              actions={<VoucherActions token={v.token} fileKey={fileKey(v.token)} t={getDictionary(shop.locale).wallet} available={wallet} status={v.status} />}
             />
           ))}
         </section>

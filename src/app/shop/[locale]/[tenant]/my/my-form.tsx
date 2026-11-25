@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { ShopTexts } from "@/components/shop/shop-texts";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { requestMyLink } from "./actions";
 
 export function MyForm({ tenantId, t }: { tenantId: string; t: ShopTexts }) {

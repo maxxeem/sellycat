@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Providers } from "@/components/providers";
 import { getDictionary } from "@/lib/i18n";
+import { publicDictionary } from "@/lib/i18n/public-dictionary";
 import { LOCALES, isLocale } from "@/lib/i18n/locales";
 import { inter } from "../../fonts";
 import "../../globals.css";
@@ -28,7 +29,7 @@ export default async function PlatformLayout({ children, params }: LayoutProps<"
   return (
     <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body className="min-h-dvh">
-        <Providers locale={locale} dictionary={getDictionary(locale)}>
+        <Providers locale={locale} dictionary={publicDictionary(getDictionary(locale))}>
           {children}
         </Providers>
       </body>

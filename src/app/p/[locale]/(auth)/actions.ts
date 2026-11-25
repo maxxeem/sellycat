@@ -200,7 +200,7 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
   const { shopName, slug, locale } = parsed.data;
   const code = normaliseCode(parsed.data.code);
   const mode = await getSignupMode();
-  const staff = (await supabase.rpc("is_staff")).data === true;
+  const staff = (await supabase.rpc("is_staff_member")).data === true;
   if (!(await rateLimit("welcome", networkOf(await clientIp()), 10, 3600))) return { error: "rateLimited" };
   const check = validateSlug(slug);
   if (!check.ok) return { error: check.reason === "reserved" ? "slugReserved" : "slugInvalid", field: "slug" };

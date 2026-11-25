@@ -5,6 +5,7 @@ import { esc } from "@/lib/mail/templates";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import type { PartnerBilling } from "./billing";
 import { periodText } from "./period";
 import { renderSettlementPdf } from "./pdf";
@@ -43,12 +44,14 @@ export async function loadSettlement(tenantId: string, id: string): Promise<{ s:
   const db = await createClient();
   const { data: s } = await db.from("partner_settlements").select(COLS).eq("id", id).eq("tenant_id", tenantId).maybeSingle();
   if (!s) return null;
-  const { data: lines } = await db
+  const lines = await fetchAll((from, to) => db
     .from("partner_settlement_lines")
     .select("id, kind, deal_title, code, occurred_at, base_cents, commission_cents, payout_cents")
     .eq("settlement_id", id)
-    .order("occurred_at");
-  return { s: s as SettlementRow, lines: (lines ?? []) as LineRow[] };
+    .order("occurred_at")
+    .order("id")
+    .range(from, to), 50_000);
+  return { s: s as SettlementRow, lines: lines as LineRow[] };
 }
 
 export type OpenRow = { partner_id: string; partner_name: string; lines: number; base_cents: number; commission_cents: number; payout_cents: number; has_draft: boolean };

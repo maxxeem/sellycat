@@ -3,7 +3,7 @@
 import { Bell, Mail, X } from "lucide-react";
 import { useRef, useState, useTransition, type CSSProperties } from "react";
 import { subscribeDealAlert } from "@/app/shop/[locale]/[tenant]/alert-actions";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import type { ShopTexts } from "./shop-texts";
 
 /**

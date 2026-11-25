@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, CalendarClock, Eye, GripVertical, Hand, Sparkles, Star, TrendingUp } from "lucide-react";
 import { useMemo, useState, useTransition, type DragEvent } from "react";
 import { Card, Notice, buttonClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { DEAL_ORDERS, sortDeals, type DealOrder, type OrderableDeal } from "@/lib/shop/deal-order";
 import { dealStatus } from "@/lib/shop/deal-status";

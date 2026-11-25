@@ -50,5 +50,5 @@ async function Plans({ locale }: { locale: "de" | "en" }) {
     currencyFromRequest(),
   ]);
   const plans = (data ?? []).map(toPlan);
-  return <PricingTable plans={plans} locale={locale} currency={currency} />;
+  return <PricingTable plans={plans} locale={locale} currency={currency} texts={{ pricing: getDictionary(locale).pricing, feeMin: getDictionary(locale).common.feeMin }} />;
 }

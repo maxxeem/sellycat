@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { brandingFromLogo, importBranding, type ImportResult } from "@/lib/design/brand-import";
 import { themeSchema, type ShopTheme } from "@/lib/shop/theme";
-import { createRateLimiter } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/access/server";
 import { designToRow, parseDesign, type VoucherDesign } from "@/lib/vouchers/design";
 import { parseWalletDesign, type WalletDesign } from "@/lib/wallet/content";
 
@@ -23,7 +23,6 @@ export async function saveTheme(theme: ShopTheme, publish: boolean): Promise<{ o
   return { ok: true };
 }
 
-const importLimit = createRateLimiter({ limit: 10, windowMs: 60 * 60 * 1000 });
 
 /**
  * Suggestion from the customer's website. Logo and icon are copied into the shop's own storage
@@ -31,7 +30,7 @@ const importLimit = createRateLimiter({ limit: 10, windowMs: 60 * 60 * 1000 });
  */
 export async function importFromWebsite(url: string): Promise<ImportResult> {
   const { tenant, supabase } = await requireTenant("editor");
-  if (!importLimit.check(tenant.id).ok || url.length > 300) return { ok: false, reason: "unreachable" };
+  if (!(await rateLimit("brand-import", tenant.id, 15, 3600)) || url.length > 300) return { ok: false, reason: "unreachable" };
   try {
     const r = await importBranding(url);
     if (!r.ok) return r;
@@ -55,7 +54,7 @@ export async function importFromWebsite(url: string): Promise<ImportResult> {
 export async function colorsFromLogo(logoUrl: string): Promise<ImportResult> {
   const { tenant, supabase } = await requireTenant("editor");
   const own = supabase.storage.from("shop-media").getPublicUrl(`${tenant.id}/`).data.publicUrl;
-  if (!logoUrl.startsWith(own) || !importLimit.check(tenant.id).ok) return { ok: false, reason: "nothing" };
+  if (!logoUrl.startsWith(own) || !(await rateLimit("brand-import", tenant.id, 15, 3600))) return { ok: false, reason: "nothing" };
   try {
     const suggestion = await brandingFromLogo(logoUrl);
     return suggestion ? { ok: true, suggestion, partial: false } : { ok: false, reason: "nothing" };

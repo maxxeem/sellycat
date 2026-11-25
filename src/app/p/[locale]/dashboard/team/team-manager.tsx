@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Badge, Card, Field, Input, Notice, Select, buttonClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { TEAM_ROLES, canChangeRole, canInvite, canRemove, seatsLeft, type TeamRole } from "@/lib/team/rules";
 import type { TeamInvite, TeamMember } from "@/lib/team/team";

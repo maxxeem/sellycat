@@ -8,13 +8,14 @@ import { dealRow, validateDeal, type DealErrors, type DealForm } from "@/lib/sho
 import { newForLibrary } from "@/lib/shop/faq-library";
 import { EMPTY_DOC } from "@/lib/shop/rich-text";
 import { POOL_MAX_CODE, POOL_MAX_IMPORT } from "@/lib/vouchers/pool";
+import { allowedImage } from "@/lib/vouchers/pdf";
 import { symbolVector, type BarcodeType } from "@/lib/vouchers/symbol";
 import { randomUUID } from "node:crypto";
 import type { JSONContent } from "@tiptap/core";
 import sharp from "sharp";
 import { aiImportConfigured, importFromPage, type ImportError } from "@/lib/deals/import-ai";
 import { blocksToDoc } from "@/lib/deals/import-parse";
-import { createRateLimiter } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/access/server";
 import { audit, requireStaff } from "@/lib/platform/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -66,7 +67,7 @@ export async function saveDeal(id: string, form: DealForm, poolCodes: string[] =
   // Images and locations are replaced as a whole (small lists, order matters).
   await supabase.from("deal_images").delete().eq("deal_id", id).eq("tenant_id", tenant.id);
   if (form.images.length) {
-    await supabase.from("deal_images").insert(form.images.slice(0, 12).map((img, i) => ({ tenant_id: tenant.id, deal_id: id, url: img.url, alt: img.alt || null, sort_order: i })));
+    await supabase.from("deal_images").insert(form.images.filter((img) => allowedImage(img.url)).slice(0, 12).map((img, i) => ({ tenant_id: tenant.id, deal_id: id, url: img.url, alt: img.alt || null, sort_order: i })));
   }
   await supabase.from("deal_locations").delete().eq("deal_id", id).eq("tenant_id", tenant.id);
   if (form.locationIds.length) {
@@ -177,8 +178,6 @@ export async function clearPoolCodes(dealId: string): Promise<PoolResult> {
   return { ok: true, removed: r.removed ?? 0 };
 }
 
-const importLimit = createRateLimiter({ limit: 10, windowMs: 3_600_000 });
-
 export type ImportResult =
   | { ok: true; title: string; subtitle: string; description: JSONContent; terms: string; faq: Array<{ q: string; a: string }>; images: Array<{ url: string; alt: string }>; regularPrice: number | null; basic: boolean }
   | { ok: false; error: ImportError | "limit" | "invalid" };
@@ -196,7 +195,7 @@ export async function importDealFromUrl(url: string, pastedText?: string, withFa
     return { ok: false, error: "invalid" };
   }
   if (!aiImportConfigured()) return { ok: false, error: "not_configured" };
-  if (!importLimit.check(tenant.id).ok) return { ok: false, error: "limit" };
+  if (!(await rateLimit("ai-import", tenant.id, 15, 3600))) return { ok: false, error: "limit" };
   const { data: info } = await supabase.from("tenants").select("locale").eq("id", tenant.id).single();
   const r = await importFromPage(target.toString(), info?.locale === "en" ? "en" : "de", typeof pastedText === "string" ? pastedText.slice(0, 60_000) : undefined, { withFaq: withFaq !== false });
   if (!r.ok) return r;

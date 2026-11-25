@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Field, Input, Notice, buttonClass } from "@/components/ui";
 import { CURRENCIES } from "@/lib/billing/currency";
 import { INTERVALS, LIMIT_FLAGS, LIMIT_NUMBERS, type Plan } from "@/lib/billing/plans";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { savePlan, type PlanFormState } from "./actions";
 

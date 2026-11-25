@@ -3,7 +3,7 @@
 import { Check, History, Library, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 

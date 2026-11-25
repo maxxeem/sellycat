@@ -35,7 +35,7 @@ export async function readSession(request: NextRequest): Promise<ProxySession> {
   return {
     user: sub ? { id: sub } : null,
     // Runs as the user (RLS-safe definer function); only asked for /admin.
-    isStaff: async () => (sub ? Boolean((await supabase.rpc("is_staff")).data) : false),
+    isStaff: async () => (sub ? Boolean((await supabase.rpc("is_staff_member")).data) : false),
     apply: (res) => {
       pending.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
       return res;

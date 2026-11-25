@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarClock, Clock, ExternalLink, MapPin } from "lucide-react";
 import { describeWindows, dealStatus, formatMoney, isTeaser, remaining, savingsPercent, stockTotal } from "@/lib/shop/deal-status";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { Countdown } from "./countdown";
 import { formatHours, parseHours } from "@/lib/shop/hours";
 import { DealGallery } from "./deal-gallery";

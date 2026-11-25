@@ -62,7 +62,7 @@ export function registerFonts() {
 }
 
 /** Only our own storage is fetched (no requests to arbitrary hosts). */
-function allowedImage(url: string | null): url is string {
+export function allowedImage(url: string | null): url is string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return Boolean(url && base && url.startsWith(`${base.replace(/\/$/, "")}/storage/v1/object/public/`));
 }

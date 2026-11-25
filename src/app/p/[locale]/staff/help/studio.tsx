@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { Badge, Card, Field, Input, Notice, Select, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { HELP_CATEGORIES } from "@/lib/help/categories";
 import { renderHelpMarkdown } from "@/lib/help/markdown";

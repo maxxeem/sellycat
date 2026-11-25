@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from "react";
 import { DashboardShellSkeleton } from "@/components/dashboard/shell";
 import { ShellFrame, type StaffIcon } from "@/components/dashboard/shell-frame";
 import { getMyTenants } from "@/lib/auth/tenants";
+import { I18nProvider } from "@/lib/i18n/context";
 import type { Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { onMfaPage, requireStaff } from "@/lib/platform/staff";
@@ -10,11 +11,13 @@ export const metadata = { title: "Admin", robots: { index: false, follow: false 
 
 /** Staff admin (served at sellycat.com/admin; the proxy already 404s everyone who is not staff). */
 export default async function StaffLayout({ children, params }: LayoutProps<"/p/[locale]/staff">) {
-  const { t } = await fromParams(params);
+  const { t, locale } = await fromParams(params);
   return (
+    <I18nProvider locale={locale} dictionary={t}>
     <Suspense fallback={<DashboardShellSkeleton />}>
       <StaffShell t={t}>{children}</StaffShell>
     </Suspense>
+    </I18nProvider>
   );
 }
 

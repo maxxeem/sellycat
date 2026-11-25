@@ -137,9 +137,11 @@ describe.skipIf(!rlsEnabled)("RLS vouchers", () => {
     expect((await anon().rpc("redeem_voucher", { p_voucher: v.id })).error).not.toBeNull();
     expect((await a.client.from("vouchers").update({ status: "redeemed" }).eq("id", v.id).select("id")).data ?? []).toEqual([]);
 
-    const { data: pub } = await anon().rpc("voucher_public", { p_token: v.token });
+    const { data: pub } = await db.rpc("voucher_public", { p_token: v.token });
     expect(pub?.[0]).toMatchObject({ tenant_id: a.tenantId, title: "EAN", status: "valid", code: v.code });
-    expect((await anon().rpc("voucher_public", { p_token: "short" })).data).toEqual([]);
+    expect((await db.rpc("voucher_public", { p_token: "short" })).data).toEqual([]);
+    // The QR token alone must not reveal the code.
+    expect((await anon().rpc("voucher_public", { p_token: v.token })).error).not.toBeNull();
   });
 
   it("a full refund takes unused vouchers out", async () => {

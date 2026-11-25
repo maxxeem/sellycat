@@ -3,7 +3,7 @@
 import { CheckCircle2, Search, TicketCheck, XCircle } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { VOUCHER_TONE } from "@/lib/dashboard/order-ui";
 import { formatMoney } from "@/lib/shop/deal-status";

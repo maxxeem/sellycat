@@ -10,7 +10,7 @@ import { PreviewFrame, type PreviewDevice } from "@/components/preview-frame";
 import { SHOP_CSS, themeAttrs, themeStyle } from "@/components/shop/shop-styles";
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Field, Input, Notice, buttonClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { normaliseHex } from "@/lib/design/color";
 import type { BrandingSuggestion } from "@/lib/design/brand-parse";

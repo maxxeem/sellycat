@@ -93,6 +93,7 @@ function rewrite(request: NextRequest, path: string) {
 }
 
 export const config = {
-  // Everything except Next internals and static files (shop hosts need every path).
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|android-chrome-.*|brand/|.*\\.(?:png|jpg|jpeg|svg|webp|ico|woff2?|txt|xml|webmanifest)$).*)"],
+  // Everything except Next internals and static files (shop hosts need every path). Only real
+  // public files are left out, never by ending: "/shop/…/x.png" must not reach the internal routes.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico$|icon.png$|apple-icon.png$|android-chrome-(?:192|512).png$|robots.txt$|sitemap.xml$|llms.txt$|brand/|help-img/|mail/|site/).*)"],
 };

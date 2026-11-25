@@ -3,7 +3,7 @@
 import { ScanLine, Trash2, UserPlus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import type { Scanner } from "@/lib/vouchers/scanners";
 import { addScanner, deleteScanner } from "../actions";

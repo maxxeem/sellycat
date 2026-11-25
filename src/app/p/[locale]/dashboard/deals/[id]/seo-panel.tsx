@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { DealView, ShopInfo } from "@/components/shop/types";
 import { Badge, Field, Input, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import type { DealForm } from "@/lib/shop/deal-input";
 import { DESCRIPTION_MAX, TITLE_MAX, autoDescription, autoTitle, clip, type SeoTexts } from "@/lib/shop/seo";

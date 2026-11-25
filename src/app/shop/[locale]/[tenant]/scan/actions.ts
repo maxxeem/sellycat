@@ -8,6 +8,7 @@ import { sendRedeemCode, verifyRedeemCode } from "@/lib/vouchers/redeem-login";
 import { parseScan } from "@/lib/vouchers/scan";
 import { resolveShop } from "@/lib/site/resolve-shop";
 import { classifyHost } from "@/lib/site/hosts";
+import { rateLimit } from "@/lib/access/server";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { readCodesFromPhoto, readCodeConfigured } from "@/lib/vouchers/read-code-ai";
 
@@ -85,8 +86,6 @@ export async function lookup(input: string): Promise<ScanResult> {
   return typeof partner === "string" ? { ok: false, error: "other_partner", partner } : { ok: false, error: "not_found" };
 }
 
-const photoLimit = createRateLimiter({ limit: 30, windowMs: 600_000 });
-
 export type PhotoResult = ScanResult | { ok: false; error: "unreadable" | "unavailable" | "limit" };
 
 /**
@@ -101,7 +100,7 @@ export async function lookupPhoto(jpegBase64: string): Promise<PhotoResult> {
   if (!readCodeConfigured()) return { ok: false, error: "unavailable" };
   if (typeof jpegBase64 !== "string" || jpegBase64.length > 3_000_000 || !/^[A-Za-z0-9+/=]+$/.test(jpegBase64)) return { ok: false, error: "unreadable" };
   const { data: user } = await supabase.auth.getUser();
-  if (!photoLimit.check(user.user?.id ?? shop.id).ok) return { ok: false, error: "limit" };
+  if (!(await rateLimit("scan-photo", user.user?.id ?? shop.id, 60, 600))) return { ok: false, error: "limit" };
   const codes = await readCodesFromPhoto(jpegBase64);
   if (codes === null) return { ok: false, error: "unavailable" };
   if (!codes.length) return { ok: false, error: "unreadable" };

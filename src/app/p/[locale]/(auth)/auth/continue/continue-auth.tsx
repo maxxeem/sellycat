@@ -12,8 +12,8 @@ import { ResendForm } from "../../forms";
 import { safeNext } from "@/lib/site/routing";
 
 /**
- * Turns whatever the auth mail carried into a session: a PKCE `code`, a `token_hash` (custom
- * mail templates) or tokens in the URL fragment (Supabase's default invite links). Then creates
+ * Turns what the link carried into a session: a PKCE `code` (Google) or a `token_hash` (our own
+ * mails). Never tokens from the URL fragment: a link could sign a person into a foreign account. Then creates
  * the shop from the signup data (first login only) and moves on to `next`.
  *
  * A `token_hash` is only redeemed by a click: mail scanners open links (some even run scripts), and
@@ -49,8 +49,6 @@ export function ContinueAuth() {
       let error: unknown = null;
       if (code) ({ error } = await supabase.auth.exchangeCodeForSession(code));
       else if (tokenHash && type) ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type }));
-      else if (fragment.get("access_token") && fragment.get("refresh_token"))
-        ({ error } = await supabase.auth.setSession({ access_token: fragment.get("access_token")!, refresh_token: fragment.get("refresh_token")! }));
       else error = new Error("no credentials in link");
       if (error || fragment.get("error")) {
         // getUser waits for the client's own URL detection, so a session it created counts.

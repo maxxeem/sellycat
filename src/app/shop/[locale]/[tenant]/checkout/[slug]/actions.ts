@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { networkOf, rateLimit } from "@/lib/access/server";
 import { requestOrigin } from "@/lib/auth/session";
 import { RESERVATION_MINUTES, SESSION_MINUTES, checkoutError, checkoutInput, giftFields, stripeBranding, type CheckoutError } from "@/lib/payments/map";
 import { getStripe, publishableKey, stripeConfigured } from "@/lib/payments/stripe";
@@ -36,6 +37,10 @@ export async function startCheckout(tenantId: string, slug: string, raw: unknown
   const host = classifyHost(h.get("x-forwarded-host") ?? h.get("host"));
   const shop = host.kind === "apex" ? null : await resolveShop(host);
   if (!shop || shop.id !== tenantId) return { ok: false, error: "unavailable" };
+
+  // Across all instances: nobody blocks a whole deal with unpaid reservations. Generous, because many
+  // phones share one address when a deal is announced on air.
+  if (!(await rateLimit("checkout", `${tenantId}|${networkOf(ip)}`, 40, 600))) return { ok: false, error: "rate" };
 
   const admin = createAdminClient();
   const [{ data: account }, { data: deal }, profile] = await Promise.all([

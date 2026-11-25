@@ -40,12 +40,15 @@ function PdfIcon({ className = "h-5 w-5" }: { className?: string }) {
  */
 export function VoucherActions({
   token,
+  fileKey,
   pdfHref,
   t,
   available,
   status,
 }: {
   token: string;
+  /** Opens the files without an email code (only on pages whose visitor is known to be the owner). */
+  fileKey: string;
   pdfHref?: string;
   t: Dictionary["wallet"];
   available: { apple: boolean; google: boolean };
@@ -53,9 +56,9 @@ export function VoucherActions({
 }) {
   const wallets = status === "valid";
   const items = [
-    { key: "pdf", href: pdfHref ?? `/v/${token}/pdf`, label: t.pdf, title: t.pdfTitle, icon: <PdfIcon />, newTab: true },
-    ...(wallets && available.apple ? [{ key: "apple", href: `/v/${token}/pkpass`, label: "Apple Wallet", title: t.addApple, icon: <AppleWalletIcon />, newTab: false }] : []),
-    ...(wallets && available.google ? [{ key: "google", href: `/v/${token}/google`, label: "Google Wallet", title: t.addGoogle, icon: <GoogleWalletIcon />, newTab: false }] : []),
+    { key: "pdf", href: pdfHref ?? `/v/${token}/pdf?k=${fileKey}`, label: t.pdf, title: t.pdfTitle, icon: <PdfIcon />, newTab: true },
+    ...(wallets && available.apple ? [{ key: "apple", href: `/v/${token}/pkpass?k=${fileKey}`, label: "Apple Wallet", title: t.addApple, icon: <AppleWalletIcon />, newTab: false }] : []),
+    ...(wallets && available.google ? [{ key: "google", href: `/v/${token}/google?k=${fileKey}`, label: "Google Wallet", title: t.addGoogle, icon: <GoogleWalletIcon />, newTab: false }] : []),
   ];
   return (
     <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }} data-testid="voucher-actions">

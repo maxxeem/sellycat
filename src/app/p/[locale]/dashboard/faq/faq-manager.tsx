@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Card, EmptyState, Field, Input, Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { FAQ_A_MAX, FAQ_Q_MAX } from "@/lib/shop/faq-library";
 import { deleteFaq, saveFaq } from "./actions";

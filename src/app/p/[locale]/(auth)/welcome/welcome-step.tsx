@@ -15,7 +15,7 @@ export async function Welcome({ searchParams, additional: wanted = false }: { se
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect(wanted ? "/login?next=/new-shop" : "/login?next=/welcome");
-  const [{ data: mine }, mode, query, { data: staff }] = await Promise.all([supabase.rpc("my_tenants"), getSignupMode(), searchParams, supabase.rpc("is_staff")]);
+  const [{ data: mine }, mode, query, { data: staff }] = await Promise.all([supabase.rpc("my_tenants"), getSignupMode(), searchParams, supabase.rpc("is_staff_member")]);
   const additional = wanted && Boolean(mine && mine.length > 0);
   // Room in a plan that includes several shops (Business): no code needed, the shop joins that plan.
   const room = additional ? ((await supabase.rpc("included_shop_room")).data ?? 0) : 0;

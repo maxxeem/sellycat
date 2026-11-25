@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import type { ShopTexts } from "@/components/shop/shop-texts";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { confirmDealAlert, stopDealAlert } from "../../../alert-actions";
 
 /**

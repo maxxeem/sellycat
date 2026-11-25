@@ -85,7 +85,7 @@ async function Redeem({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[
         </header>
 
         {!user ? (
-          <RedeemLogin shopName={shop.name} locale={shop.locale} />
+          <RedeemLogin shopName={shop.name} texts={{ redeem: getDictionary(shop.locale).redeem }} />
         ) : !access ? (
           <div className="shop-card flex flex-col gap-3 p-6 text-center" data-testid="redeem-no-access">
             <p className="text-lg font-bold">{t.redeem.noAccessTitle}</p>
@@ -93,9 +93,12 @@ async function Redeem({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[
             <p className="text-sm text-[var(--shop-muted)]">{user.email}</p>
           </div>
         ) : (
-          <RedeemApp locale={shop.locale} email={user.email} initial={initial} recent={recent} />
+          <RedeemApp texts={scanTexts(getDictionary(shop.locale))} locale={shop.locale} email={user.email} initial={initial} recent={recent} />
         )}
       </div>
     </div>
   );
 }
+
+/** Only the texts the app shows (the full dictionary would be a large download). */
+const scanTexts = (d: ReturnType<typeof getDictionary>) => ({ redeem: d.redeem, vouchers: d.vouchers, shop: d.shop });

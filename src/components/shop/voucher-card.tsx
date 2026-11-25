@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { formatMoney } from "@/lib/shop/deal-status";
 import { voucherSymbol, type BarcodeType, type CodeFormat } from "@/lib/vouchers/symbol";
 import type { ShopTexts } from "./shop-texts";

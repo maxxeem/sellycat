@@ -1,4 +1,5 @@
 import "server-only";
+import { rateLimit } from "@/lib/access/server";
 import { createHash, randomBytes } from "node:crypto";
 import { brandOf } from "@/lib/mail/deliver";
 import { sendMail } from "@/lib/mail/mailgun";
@@ -54,6 +55,11 @@ async function sendInvite(tenantId: string, invite: { email: string; name: strin
 }
 
 /** Invite (or re-invite) an address with a role; checks rights, seats and existing membership. */
+/** Invitation mails go to any address: per shop and per recipient, so nobody mails strangers through us. */
+export async function invitesAllowed(tenantId: string, email: string): Promise<boolean> {
+  return (await rateLimit("invite-to", email, 5, 86_400)) && (await rateLimit("invite", tenantId, 60, 86_400));
+}
+
 export async function inviteMember(
   tenantId: string,
   actor: { id: string; role: string; name: string },
@@ -63,6 +69,7 @@ export async function inviteMember(
   const name = input.name.trim().slice(0, 120) || null;
   if (!validEmail(email) || !isTeamRole(input.role)) return { ok: false, error: "invalid" };
   if (!canInvite(actor.role, input.role)) return { ok: false, error: "forbidden" };
+  if (!(await invitesAllowed(tenantId, email))) return { ok: false, error: "failed" };
   const db = createAdminClient();
 
   const { data: userId } = await db.rpc("auth_user_id", { p_email: email });
@@ -96,6 +103,7 @@ export async function resendInvite(tenantId: string, actor: { id: string; role: 
   const { data: inv } = await db.from("tenant_invites").select("email, name, role").eq("id", inviteId).eq("tenant_id", tenantId).is("accepted_at", null).maybeSingle();
   if (!inv || !isTeamRole(inv.role)) return { ok: false, error: "invalid" };
   if (!canInvite(actor.role, inv.role)) return { ok: false, error: "forbidden" };
+  if (!(await invitesAllowed(tenantId, String(inv.email)))) return { ok: false, error: "failed" };
   const token = randomBytes(32).toString("base64url");
   const { error } = await db.from("tenant_invites").update({ token_hash: hashToken(token), expires_at: new Date(Date.now() + INVITE_DAYS * 86_400_000).toISOString() }).eq("id", inviteId);
   if (error) return { ok: false, error: "failed" };

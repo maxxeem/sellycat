@@ -4,7 +4,7 @@ import { CheckCircle2, ExternalLink, Loader2, RefreshCw, Star, Trash2 } from "lu
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Badge, Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { DNS_PROVIDERS, parseCustomDomain, type DnsProvider, type DnsRow } from "@/lib/site/custom-domain";
 import { CopyButton } from "./mail-domain-panel";

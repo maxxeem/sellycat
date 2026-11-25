@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { Card, Notice, buttonClass } from "@/components/ui";
 import type { Currency } from "@/lib/billing/currency";
 import { feePercent, formatPrice, withFeeMin, isFree, yearlyPerMonth, type Interval, type Plan } from "@/lib/billing/plans";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { choosePlan, keepPlan, openPortal, type BillingResult } from "./actions";
 

@@ -4,7 +4,8 @@ import type { IScannerControls } from "@zxing/browser";
 import type { DecodeHintType as HintType } from "@zxing/library";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { fmt, getDictionary } from "@/lib/i18n";
+import type { Dictionary } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { formatMoney } from "@/lib/shop/deal-status";
 import type { VoucherError, VoucherInfo } from "@/lib/vouchers/redeem";
 import { lookup, lookupPhoto, redeemNow, type PhotoResult } from "./actions";
@@ -17,8 +18,8 @@ const field =
 type Result = { tone: "ok"; text: string; detail?: string } | { tone: "error"; text: string };
 
 /** Scan (camera) or type a code → voucher → redeem. Big, clear feedback for the counter. */
-export function RedeemApp({ locale, email, initial, recent }: { locale: "de" | "en"; email: string; initial: VoucherInfo | null; recent: RecentRedemption[] }) {
-  const dict = getDictionary(locale);
+export function RedeemApp({ locale, email, initial, recent, texts }: { texts: Pick<Dictionary, "redeem" | "vouchers" | "shop">; locale: "de" | "en"; email: string; initial: VoucherInfo | null; recent: RecentRedemption[] }) {
+  const dict = texts;
   const t = dict.redeem;
   const v = dict.vouchers;
   const router = useRouter();

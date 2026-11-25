@@ -3,7 +3,7 @@
 import { Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { Notice, buttonClass, inputClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { importDealFromUrl, type ImportResult } from "../actions";
 

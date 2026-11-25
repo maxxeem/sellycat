@@ -7,6 +7,7 @@ import { getCurrentTenant } from "@/lib/auth/tenants";
 import { summarise } from "@/lib/dashboard/overview";
 import { dealStatus } from "@/lib/shop/deal-status";
 import { DEFAULT_ROOT, shopUrlForSlug, siteHost } from "@/lib/site/hosts";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 import { createClient } from "@/lib/supabase/server";
 import { HomeView } from "./home-view";
 import { roleAtLeast } from "@/lib/auth/tenants";
@@ -59,12 +60,12 @@ async function Home({ t, locale }: { t: Dictionary; locale: string }) {
   const now = new Date();
   // Two spans of 30 days: the current one and the one before for the trend.
   const since = new Date(now.getTime() - 60 * DAY).toISOString();
-  const [{ data: theme }, { data: legal }, { data: deals }, { data: profile }, { data: paid }, { data: recent }] = await Promise.all([
+  const [{ data: theme }, { data: legal }, { data: deals }, { data: profile }, paid, { data: recent }] = await Promise.all([
     supabase.from("shop_themes").select("published_at, published, draft").eq("tenant_id", tenant.id).maybeSingle(),
     supabase.rpc("shop_legal_complete", { p_tenant: tenant.id }),
     supabase.from("deals").select("state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free").eq("tenant_id", tenant.id).eq("state", "published"),
     supabase.rpc("shop_profile", { p_tenant: tenant.id }),
-    supabase.from("orders").select("paid_at, amount_cents, refunded_cents, order_items(title, qty, deal_id)").eq("tenant_id", tenant.id).gte("paid_at", since).limit(5000),
+    fetchAll((from, to) => supabase.from("orders").select("paid_at, amount_cents, refunded_cents, order_items(title, qty, deal_id)").eq("tenant_id", tenant.id).gte("paid_at", since).order("paid_at").order("id").range(from, to), 20_000).catch(() => []),
     supabase.from("orders").select("id, number, status, email, currency, amount_cents, created_at").eq("tenant_id", tenant.id).neq("status", "expired").order("created_at", { ascending: false }).limit(5),
   ]);
   const shop = profile?.[0];
@@ -84,7 +85,7 @@ async function Home({ t, locale }: { t: Dictionary; locale: string }) {
       currency={shop?.currency ?? "CHF"}
       setup={{ design: Boolean(theme?.published_at), legal: Boolean(legal), deal: Boolean(deals?.length), payments: Boolean(shop?.payments_ready) }}
       liveDeals={(deals ?? []).filter((d) => dealStatus(d, now) === "live").length}
-      stats={summarise(paid ?? [], now)}
+      stats={summarise(paid, now)}
       recent={recent ?? []}
     />
   );

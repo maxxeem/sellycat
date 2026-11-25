@@ -9,7 +9,7 @@
  */
 
 /** RPCs that only read (stable functions); their POSTs can be repeated. */
-export const READ_ONLY_RPCS = new Set(["is_staff", "is_superadmin", "resolve_shop", "slug_available", "my_tenants"]);
+export const READ_ONLY_RPCS = new Set(["is_staff", "is_staff_member", "is_superadmin", "resolve_shop", "slug_available", "my_tenants"]);
 
 const CONNECTION_ERROR_CODES = new Set(["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE", "EAI_AGAIN", "UND_ERR_SOCKET", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT"]);
 

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, Copy } from "lucide-react";
 import { Badge, Card, EmptyState, Field, Input, Notice, buttonClass, linkClass } from "@/components/ui";
-import { fmt } from "@/lib/i18n";
+import { fmt } from "@/lib/i18n/fmt";
 import { useI18n } from "@/lib/i18n/context";
 import { WEBHOOK_EVENTS } from "@/lib/developers/rules";
 import type { ApiKeyRow, DeliveryRow, EndpointRow } from "@/lib/developers/manage";

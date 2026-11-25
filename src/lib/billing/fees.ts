@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/supabase/fetch-all";
 
 export type FeeMonth = { month: string; currency: string; orders: number; amount_cents: number; refunded_cents: number; fee_cents: number };
 export type FeeLine = { number: string; paid_at: string; currency: string; amount_cents: number; refunded_cents: number; fee_cents: number; net_fee_cents: number };
@@ -17,9 +18,7 @@ export async function feeMonths(tenantId: string): Promise<FeeMonth[]> {
 /** Orders of one month (YYYY-MM) with gross and net fee. */
 export async function feeLines(tenantId: string, month: string): Promise<FeeLine[]> {
   const db = await createClient();
-  const { data, error } = await db.rpc("fee_lines", { p_tenant: tenantId, p_month: `${month}-01` });
-  if (error) throw error;
-  return (data ?? []) as FeeLine[];
+  return (await fetchAll((from, to) => db.rpc("fee_lines", { p_tenant: tenantId, p_month: `${month}-01` }).range(from, to), 100_000)) as FeeLine[];
 }
 
 export function monthName(month: string, locale: "de" | "en"): string {
