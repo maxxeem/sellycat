@@ -2170,7 +2170,7 @@ export const en = {
     missing: "missing",
     copy: "Copy",
     copied: "Copied",
-    optional: "Optional (receive replies)",
+    mxHint: "The MX records are required too: without them, providers like iCloud reject your mails. Until everything is green, your mails go out through Sellycat. If the domain already has mailboxes, leave their MX records as they are, they count as well.",
     notOnPlan: "Your own sender domain is not included in your plan. Your emails go out via Sellycat.",
     pausedPlan: "Your plan no longer includes your own sender domain. Emails go out via Sellycat for now.",
     subdomainTip: "Tip: use a subdomain (e.g. mail.{domain}) so your existing mailbox is not disturbed.",

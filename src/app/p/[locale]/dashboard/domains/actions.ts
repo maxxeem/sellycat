@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireTenant } from "@/lib/dashboard/context";
-import { createSenderDomain, deleteSenderDomain, mailConfigured, platformMailDomain, verifySenderDomain, type DomainState } from "@/lib/mail/mailgun";
+import { currentColumns } from "@/lib/mail/domain-check";
+import { createSenderDomain, deleteSenderDomain, mailConfigured, platformMailDomain, verifySenderDomain } from "@/lib/mail/mailgun";
 import { normaliseMailDomain } from "@/lib/mail/sender";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -11,14 +12,6 @@ export type MailDomainResult = { ok: true } | { ok: false; error: MailDomainErro
 
 const refresh = () => revalidatePath("/p/[locale]/dashboard/domains", "page");
 const LOCAL = /^[a-z0-9._-]{1,40}$/;
-
-const columns = (state: Extract<DomainState, { ok: true }>) => ({
-  status: state.state === "active" ? "active" : "pending",
-  records: state.records,
-  error: null,
-  last_checked_at: new Date().toISOString(),
-  ...(state.state === "active" ? { verified_at: new Date().toISOString() } : {}),
-});
 
 /** Owner/admin enters a sender domain: Sellycat adds it at Mailgun and shows the DNS records. */
 export async function addMailDomain(rawDomain: string, rawLocal: string): Promise<MailDomainResult> {
@@ -49,7 +42,7 @@ export async function addMailDomain(rawDomain: string, rawLocal: string): Promis
     // Already in Sellycat's Mailgun account (another product or shop): never taken over.
     return { ok: false, error: state.status === 400 && /already|exist/i.test(state.error) ? "taken" : "mailgun" };
   }
-  const { error } = await admin.from("mail_domains").insert({ tenant_id: tenant.id, domain, local_part: local, ...columns(state) });
+  const { error } = await admin.from("mail_domains").insert({ tenant_id: tenant.id, domain, local_part: local, ...(await currentColumns(domain, state, false)) });
   if (error) {
     await deleteSenderDomain(domain);
     return { ok: false, error: "taken" };
@@ -62,7 +55,7 @@ export async function addMailDomain(rawDomain: string, rawLocal: string): Promis
 export async function checkMailDomain(): Promise<MailDomainResult> {
   const { tenant } = await requireTenant("admin");
   const admin = createAdminClient();
-  const { data: row } = await admin.from("mail_domains").select("domain").eq("tenant_id", tenant.id).maybeSingle();
+  const { data: row } = await admin.from("mail_domains").select("domain, status").eq("tenant_id", tenant.id).maybeSingle();
   if (!row) return { ok: false, error: "invalid" };
   const state = await verifySenderDomain(row.domain);
   if (!state.ok) {
@@ -70,7 +63,7 @@ export async function checkMailDomain(): Promise<MailDomainResult> {
     refresh();
     return { ok: false, error: "mailgun" };
   }
-  await admin.from("mail_domains").update(columns(state)).eq("tenant_id", tenant.id);
+  await admin.from("mail_domains").update(await currentColumns(row.domain, state, row.status === "active")).eq("tenant_id", tenant.id);
   refresh();
   return { ok: true };
 }

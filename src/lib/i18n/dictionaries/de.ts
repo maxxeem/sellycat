@@ -2172,7 +2172,7 @@ export const de: Dictionary = {
     missing: "fehlt",
     copy: "Kopieren",
     copied: "Kopiert",
-    optional: "Optional (Antworten empfangen)",
+    mxHint: "Auch die MX-Einträge sind nötig: Ohne sie lehnen Anbieter wie iCloud deine Mails ab. Bis alles grün ist, gehen deine Mails über Sellycat raus. Hat die Domain schon ein Postfach, lass dessen MX-Einträge unverändert, sie zählen auch.",
     notOnPlan: "Eine eigene Absender-Domain ist in deinem Abo nicht enthalten. Deine Mails gehen über Sellycat raus.",
     pausedPlan: "Dein Abo enthält keine eigene Absender-Domain mehr. Mails gehen bis auf Weiteres über Sellycat raus.",
     subdomainTip: "Tipp: Nimm eine Subdomain (z.B. mail.{domain}), damit dein bestehendes E-Mail-Postfach nicht gestört wird.",

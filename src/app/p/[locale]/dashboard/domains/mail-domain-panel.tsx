@@ -156,20 +156,11 @@ export function MailDomainPanel({ sender, planAllows, domain }: Props) {
           ) : null}
 
           <ul className="flex flex-col gap-2">
-            {domain.records.filter((r) => r.purpose === "sending").map((r, i) => (
-              <RecordRow key={`s${i}`} r={r} domain={domain.domain} />
+            {domain.records.map((r, i) => (
+              <RecordRow key={i} r={r} domain={domain.domain} />
             ))}
           </ul>
-          {domain.records.some((r) => r.purpose === "receiving") ? (
-            <details className="text-sm">
-              <summary className="cursor-pointer text-muted">{m.optional}</summary>
-              <ul className="mt-2 flex flex-col gap-2">
-                {domain.records.filter((r) => r.purpose === "receiving").map((r, i) => (
-                  <RecordRow key={`r${i}`} r={r} domain={domain.domain} />
-                ))}
-              </ul>
-            </details>
-          ) : null}
+          {domain.records.some((r) => r.purpose === "receiving" && !r.valid) ? <p className="text-sm text-muted">{m.mxHint}</p> : null}
 
           <form
             className="flex flex-wrap items-end gap-2"
