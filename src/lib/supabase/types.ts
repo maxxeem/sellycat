@@ -682,6 +682,8 @@ export type Database = {
       }
       deals: {
         Row: {
+          ad_image: string | null
+          ad_mode: string
           alert_skip: boolean
           archived_at: string | null
           barcode_type: Database["public"]["Enums"]["barcode_type"] | null
@@ -734,6 +736,8 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          ad_image?: string | null
+          ad_mode?: string
           alert_skip?: boolean
           archived_at?: string | null
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
@@ -786,6 +790,8 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          ad_image?: string | null
+          ad_mode?: string
           alert_skip?: boolean
           archived_at?: string | null
           barcode_type?: Database["public"]["Enums"]["barcode_type"] | null
@@ -854,6 +860,41 @@ export type Database = {
           },
           {
             foreignKeyName: "deals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faq_library: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_library_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

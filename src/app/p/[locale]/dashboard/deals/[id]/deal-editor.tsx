@@ -2,7 +2,7 @@
 
 import { generateHTML } from "@tiptap/html";
 import Link from "next/link";
-import { Archive, ArchiveRestore, Monitor, Plus, Send, Smartphone, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, FileText, Monitor, Plus, Send, Smartphone, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { acceptedFiles, uploadMedia } from "@/components/image-upload";
@@ -26,9 +26,11 @@ import type { SeoTexts } from "@/lib/shop/seo";
 import { RICH_TEXT_EXTENSIONS, docToText } from "@/lib/shop/rich-text";
 import { themeFontCss, type ShopTheme } from "@/lib/shop/theme";
 import { zurichLocalToIso } from "@/lib/shop/time";
-import { mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
+import { faqChoices, mergeTerms, sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 import { archiveDeal, deleteDeal, deleteDealForever, restoreDeal, saveDeal, setDealState, type SaveResult } from "../actions";
 import { AiImport } from "./ai-import";
+import { VoucherAdUpload } from "@/components/voucher-ad-upload";
+import type { VoucherSize } from "@/lib/vouchers/design";
 import { SeoPanel } from "./seo-panel";
 import { POOL_MAX_IMPORT, parsePoolCodes, poolShortage } from "@/lib/vouchers/pool";
 import { PoolPanel } from "./pool-panel";
@@ -60,6 +62,10 @@ export function DealEditor(props: {
   hasSales: boolean;
   /** Sellycat staff with authenticator code: may delete archived deals for good. */
   canDeleteForever: boolean;
+  /** General questions of the shop. */
+  faqLibrary: Array<{ q: string; a: string }>;
+  /** Paper size of the voucher PDF and whether the shop has general advertising. */
+  shopAd: { size: VoucherSize; active: boolean };
   /** Conditions and FAQ of the shop's other deals. */
   reuse: { terms: ReusableTerms[]; faq: ReusableFaq[] };
 }) {
@@ -95,6 +101,16 @@ export function DealEditor(props: {
     return fmt(d.settle.example, { price: formatMoney(price, props.shop.currency, locale), payout: formatMoney(payout, props.shop.currency, locale) });
   }, [form.settleMode, form.settleKind, form.settleCommission, form.settlePayout, form.price, props.shop.currency, locale, d.settle.example]);
 
+  const choices = useMemo(() => faqChoices(props.faqLibrary, props.reuse.faq), [props.faqLibrary, props.reuse.faq]);
+  const inLibrary = (f: { q: string; a: string }) => props.faqLibrary.some((l) => sameFaq(l, f));
+  // Library entries this deal does not have yet, for one-click adding.
+  const quickFaq = props.faqLibrary.filter((l) => !form.faq.some((f) => sameFaq(f, l)));
+  const addFaq = (entries: Array<{ q: string; a: string }>) =>
+    setForm((f) => {
+      // Empty rows make way for the new entries.
+      const kept = f.faq.filter((x) => x.q.trim() || x.a.trim());
+      return { ...f, faq: [...kept, ...entries.filter((n) => !kept.some((k) => sameFaq(k, n)))] };
+    });
   const partner = props.partners.find((p) => p.id === form.partnerId) ?? null;
   const view: DealView = useMemo(() => {
     let descriptionHtml = "";
@@ -150,10 +166,8 @@ export function DealEditor(props: {
   const status = dealStatus({ ...view, state });
   const result = (r: SaveResult, okText: string) => {
     setErrors(r.errors ?? {});
-    if (r.pool) {
-      setPoolText("");
-      router.refresh();
-    }
+    if (r.pool) setPoolText("");
+    if (r.pool || (r.ok && form.faq.some((f) => f.keep))) router.refresh();
     const imported = r.pool ? ` ${fmt(d.pool.imported, { added: r.pool.added })}${r.pool.skipped ? ` ${fmt(d.pool.skipped, { n: r.pool.skipped })}` : ""}` : "";
     if (r.ok) setMessage({ tone: "success", text: okText + imported });
     else setMessage({ tone: "error", text: r.message === "legalMissing" ? d.legalMissing : r.message === "hasSales" ? d.deleteHasSales : r.message === "planLimit" ? d.planLimit : r.message === "codesMissing" ? d.codesMissing : r.message === "poolImport" ? (typedCodes.length > POOL_MAX_IMPORT ? d.pool.tooMany : d.pool.failed) : r.errors ? Object.values(r.errors).map((k) => d.errors[k!]).join(" ") : t.common.error });
@@ -373,18 +387,41 @@ export function DealEditor(props: {
               <div className="flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">{d.faq}</span>
-                  <ReuseButton count={props.reuse.faq.length} onClick={() => setPicker("faq")} />
+                  <ReuseButton library count={choices.length} onClick={() => setPicker("faq")} />
                 </div>
                 {form.faq.map((f, i) => (
                   <div key={i} className="flex gap-2 rounded-input border border-line p-2">
                     <div className="flex flex-1 flex-col gap-2">
                       <Input placeholder={d.faqQuestion} value={f.q} onChange={(e) => set("faq", form.faq.map((x, j) => (j === i ? { ...x, q: e.target.value } : x)))} />
                       <textarea placeholder={d.faqAnswer} value={f.a} rows={2} className={inputClass} onChange={(e) => set("faq", form.faq.map((x, j) => (j === i ? { ...x, a: e.target.value } : x)))} />
+                      {f.q.trim() && f.a.trim() ? (
+                        inLibrary(f) ? (
+                          <p className="text-xs text-muted">{d.faqInLibrary}</p>
+                        ) : (
+                          <label className="flex items-center gap-2 text-xs">
+                            <input type="checkbox" checked={Boolean(f.keep)} onChange={(e) => set("faq", form.faq.map((x, j) => (j === i ? { ...x, keep: e.target.checked } : x)))} className="h-4 w-4 accent-[var(--coral)]" data-testid="faq-keep" />
+                            {d.faqKeep}
+                          </label>
+                        )
+                      ) : null}
                     </div>
                     <button type="button" onClick={() => set("faq", form.faq.filter((_, j) => j !== i))} className="self-start p-2 text-danger" aria-label={t.design.remove}><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}
                 <button type="button" className={`${buttonClass.ghost} self-start`} onClick={() => set("faq", [...form.faq, { q: "", a: "" }])}><Plus className="h-4 w-4" /> {d.addFaq}</button>
+                {quickFaq.length ? (
+                  <div className="flex flex-col gap-1.5" data-testid="faq-quick">
+                    <p className="text-xs text-muted">{d.faqQuick}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {quickFaq.slice(0, 8).map((f) => (
+                        <button key={`${f.q} ${f.a}`} type="button" onClick={() => addFaq([f])} className="inline-flex max-w-full items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs font-medium hover:border-muted">
+                          <Plus className="h-3 w-3 shrink-0" aria-hidden /> <span className="truncate">{f.q}</span>
+                        </button>
+                      ))}
+                      {quickFaq.length > 8 ? <button type="button" onClick={() => setPicker("faq")} className="px-2 py-1 text-xs font-semibold text-accent-text">{fmt(d.faqMore, { n: quickFaq.length - 8 })}</button> : null}
+                    </div>
+                  </div>
+                ) : null}
               </div>
               {picker === "terms" ? (
                 <TermsPicker
@@ -399,13 +436,11 @@ export function DealEditor(props: {
               ) : null}
               {picker === "faq" ? (
                 <FaqPicker
-                  items={props.reuse.faq}
+                  items={choices}
                   current={form.faq}
                   onClose={() => setPicker(null)}
                   onAdd={(entries) => {
-                    // Empty rows make way for the new entries.
-                    const kept = form.faq.filter((f) => f.q.trim() || f.a.trim());
-                    set("faq", [...kept, ...entries.filter((n) => !kept.some((k) => sameFaq(k, n)))]);
+                    addFaq(entries);
                     setPicker(null);
                   }}
                 />
@@ -549,6 +584,25 @@ export function DealEditor(props: {
                   {state === "published" && props.initial.codeSource === "shared" && form.sharedCode !== props.initial.sharedCode ? <Notice tone="warning">{d.sharedChanged}</Notice> : null}
                 </div>
               ) : null}
+            </div>
+          </Card>
+
+          <Card title={d.ad.title} description={d.ad.intro}>
+            <div className="flex flex-col gap-4" data-testid="deal-ad">
+              <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label={d.ad.title}>
+                <Choice checked={form.adMode === "default"} onSelect={() => set("adMode", "default")} title={d.ad.default} hint={props.shopAd.active ? d.ad.defaultOn : d.ad.defaultOff} />
+                <Choice checked={form.adMode === "own"} onSelect={() => set("adMode", "own")} title={d.ad.own} hint={d.ad.ownHint} />
+                <Choice checked={form.adMode === "off"} onSelect={() => set("adMode", "off")} title={d.ad.off} hint={d.ad.offHint} />
+              </div>
+              {form.adMode === "own" ? (
+                <>
+                  <VoucherAdUpload tenantId={props.tenantId} size={props.shopAd.size} value={form.adImage || null} onChange={(url) => set("adImage", url ?? "")} />
+                  {!form.adImage ? <p className="text-xs text-muted">{d.ad.ownMissing}</p> : null}
+                </>
+              ) : null}
+              <a href={`/api/dashboard/voucher-preview?${new URLSearchParams({ deal: props.id, adMode: form.adMode, adImage: form.adImage })}`} target="_blank" rel="noreferrer" className={`${buttonClass.secondary} self-start`} data-testid="deal-pdf-preview">
+                <FileText className="h-4 w-4" aria-hidden /> {d.ad.preview}
+              </a>
             </div>
           </Card>
 

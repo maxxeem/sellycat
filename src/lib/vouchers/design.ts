@@ -34,6 +34,15 @@ export function adIssues(width: number, height: number, size: VoucherSize): { sm
   return { small: width < f.width / 2 || height < f.height / 2, cropped: ratio < 0.95 || ratio > 1.05 };
 }
 
+export const AD_MODES = ["default", "own", "off"] as const;
+export type AdMode = (typeof AD_MODES)[number];
+
+/** A deal's advertising: its own visual, none, or (undefined) whatever the shop uses. */
+export function dealAd(mode: unknown, image: string | null | undefined): string | null | undefined {
+  if (mode === "off") return null;
+  return mode === "own" && image ? image : undefined;
+}
+
 /** The visual that is really printed, or null for a full-page voucher. */
 export const activeAd = (d: VoucherDesign) => (d.adEnabled ? d.adImage : null);
 

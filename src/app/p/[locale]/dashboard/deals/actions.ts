@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { kickDealAlerts } from "@/lib/alerts/deal-alert";
 import { refreshShop, requireTenant } from "@/lib/dashboard/context";
 import { dealRow, validateDeal, type DealErrors, type DealForm } from "@/lib/shop/deal-input";
+import { newForLibrary } from "@/lib/shop/faq-library";
 import { EMPTY_DOC } from "@/lib/shop/rich-text";
 import { POOL_MAX_CODE, POOL_MAX_IMPORT } from "@/lib/vouchers/pool";
 import { symbolVector, type BarcodeType } from "@/lib/vouchers/symbol";
@@ -55,6 +56,12 @@ export async function saveDeal(id: string, form: DealForm, poolCodes: string[] =
     if (error.message.includes("codes missing")) return { ok: false, message: "codesMissing", pool };
     if (error.code === "23505") return { ok: false, errors: { slug: "slugTaken" } };
     return { ok: false, message: "error" };
+  }
+  // Ticked questions go into the shop's FAQ library (the deal itself is saved already).
+  if (form.faq.some((f) => f.keep)) {
+    const { data: library } = await supabase.from("faq_library").select("question, answer").eq("tenant_id", tenant.id);
+    const add = newForLibrary(form.faq, (library ?? []).map((l) => ({ q: l.question, a: l.answer })));
+    if (add.length) await supabase.from("faq_library").insert(add.map((f) => ({ tenant_id: tenant.id, question: f.q, answer: f.a })));
   }
   // Images and locations are replaced as a whole (small lists, order matters).
   await supabase.from("deal_images").delete().eq("deal_id", id).eq("tenant_id", tenant.id);
@@ -180,7 +187,7 @@ export type ImportResult =
  * "Mit KI aus Link übernehmen": a draft from a product page; the chosen images are stored in the
  * shop's own storage. Nothing is saved to the deal: the editor shows the draft for review.
  */
-export async function importDealFromUrl(url: string, pastedText?: string): Promise<ImportResult> {
+export async function importDealFromUrl(url: string, pastedText?: string, withFaq = true): Promise<ImportResult> {
   const { tenant, supabase } = await requireTenant("editor");
   let target: URL;
   try {
@@ -191,7 +198,7 @@ export async function importDealFromUrl(url: string, pastedText?: string): Promi
   if (!aiImportConfigured()) return { ok: false, error: "not_configured" };
   if (!importLimit.check(tenant.id).ok) return { ok: false, error: "limit" };
   const { data: info } = await supabase.from("tenants").select("locale").eq("id", tenant.id).single();
-  const r = await importFromPage(target.toString(), info?.locale === "en" ? "en" : "de", typeof pastedText === "string" ? pastedText.slice(0, 60_000) : undefined);
+  const r = await importFromPage(target.toString(), info?.locale === "en" ? "en" : "de", typeof pastedText === "string" ? pastedText.slice(0, 60_000) : undefined, { withFaq: withFaq !== false });
   if (!r.ok) return r;
   const images: Array<{ url: string; alt: string }> = [];
   for (const img of r.draft.images) {

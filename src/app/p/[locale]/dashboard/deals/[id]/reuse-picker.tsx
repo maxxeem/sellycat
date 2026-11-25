@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, History, Search, X } from "lucide-react";
+import { Check, History, Library, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { buttonClass, inputClass } from "@/components/ui";
 import { fmt } from "@/lib/i18n";
@@ -8,11 +8,11 @@ import { useI18n } from "@/lib/i18n/context";
 import { sameFaq, type ReusableFaq, type ReusableTerms } from "@/lib/shop/reuse";
 
 /** Small button next to a field label that opens the picker. */
-export function ReuseButton({ onClick, count }: { onClick: () => void; count: number }) {
+export function ReuseButton({ onClick, count, library = false }: { onClick: () => void; count: number; library?: boolean }) {
   const { t } = useI18n();
   return (
     <button type="button" onClick={onClick} disabled={!count} className="inline-flex items-center gap-1.5 rounded-input px-2 py-1 text-xs font-semibold text-accent-text hover:bg-accent/10 disabled:opacity-40" data-testid="reuse-open">
-      <History className="h-3.5 w-3.5" aria-hidden /> {t.deals.reuse}
+      {library ? <Library className="h-3.5 w-3.5" aria-hidden /> : <History className="h-3.5 w-3.5" aria-hidden />} {library ? t.deals.faqLibraryOpen : t.deals.reuse}
       {count ? <span className="rounded-full bg-accent/15 px-1.5 text-[11px]">{count}</span> : null}
     </button>
   );
@@ -96,7 +96,7 @@ export function TermsPicker({ items, current, onPick, onClose }: { items: Reusab
   );
 }
 
-/** Earlier questions: tick several and add them below the existing ones. */
+/** Questions of the shop's library, then of earlier deals: tick several and add them below the existing ones. */
 export function FaqPicker({ items, current, onAdd, onClose }: { items: ReusableFaq[]; current: Array<{ q: string; a: string }>; onAdd: (entries: Array<{ q: string; a: string }>) => void; onClose: () => void }) {
   const { t } = useI18n();
   const d = t.deals;
@@ -106,7 +106,7 @@ export function FaqPicker({ items, current, onAdd, onClose }: { items: ReusableF
   const toggle = (i: number) => setPicked((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]));
   return (
     <Sheet
-      title={d.reuseFaqTitle}
+      title={d.faqPickerTitle}
       onClose={onClose}
       query={query}
       setQuery={setQuery}
@@ -118,17 +118,19 @@ export function FaqPicker({ items, current, onAdd, onClose }: { items: ReusableF
     >
       {!items.length ? <p className="py-6 text-center text-sm text-muted">{d.reuseEmpty}</p> : !shown.length ? <p className="py-6 text-center text-sm text-muted">{d.reuseNoMatch}</p> : null}
       <ul className="flex flex-col gap-2">
-        {shown.map(({ item, i }) => {
+        {shown.map(({ item, i }, n) => {
+          const heading = n === 0 || Boolean(shown[n - 1]!.item.library) !== Boolean(item.library) ? (item.library ? d.faqFromLibrary : d.reuseFaqTitle) : null;
           const already = current.some((c) => sameFaq(c, item));
           const on = picked.includes(i);
           return (
             <li key={i}>
+              {heading ? <p className={`mb-2 text-xs font-semibold uppercase tracking-wide text-muted ${n ? "mt-4" : ""}`}>{heading}</p> : null}
               <label className={`flex gap-3 rounded-input border p-3 text-sm transition ${already ? "border-line opacity-60" : on ? "border-accent bg-accent/5" : "cursor-pointer border-line hover:bg-surface"}`}>
                 <input type="checkbox" checked={on} disabled={already} onChange={() => toggle(i)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]" />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">{item.q}</span>
                   <span className="mt-0.5 line-clamp-3 block whitespace-pre-line text-muted">{item.a}</span>
-                  <span className="mt-1 block text-xs text-muted">{already ? d.reuseAlready : fmt(d.reuseFrom, { deal: item.from })}</span>
+                  <span className="mt-1 block text-xs text-muted">{already ? d.reuseAlready : item.library ? "" : fmt(d.reuseFrom, { deal: item.from })}</span>
                 </span>
               </label>
             </li>

@@ -1,7 +1,7 @@
 import "server-only";
 import { getShopProfile, type ShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { designFromRow, type VoucherDesign } from "./design";
+import { dealAd, designFromRow, type VoucherDesign } from "./design";
 import type { PdfInput, PdfVoucher } from "./pdf";
 import { checkUrl, type BarcodeType, type CodeFormat } from "./symbol";
 
@@ -10,7 +10,7 @@ import { checkUrl, type BarcodeType, type CodeFormat } from "./symbol";
  * access first: a Stripe session id, a voucher token, a sign-in link or a dashboard role).
  */
 const SELECT =
-  "id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, order_id, partners(name), deals(subtitle, terms, deal_images(url, sort_order), deal_locations(partner_locations(name, street, zip, city, lat, lng))), orders(number, currency, gift, gift_from, gift_message)";
+  "id, title, code, code_format, barcode_type, status, valid_until, value_cents, remaining_cents, token, order_id, partners(name), deals(subtitle, terms, ad_mode, ad_image, deal_images(url, sort_order), deal_locations(partner_locations(name, street, zip, city, lat, lng))), orders(number, currency, gift, gift_from, gift_message)";
 
 export type LoadedVoucher = PdfVoucher & { id: string; token: string; orderId: string };
 export type VoucherBundle = { shop: ShopProfile; host: string; design: VoucherDesign; vouchers: LoadedVoucher[]; order: { number: string; gift: { from: string | null; message: string | null } | null } | null };
@@ -31,6 +31,8 @@ type Row = {
   deals: {
     subtitle: string | null;
     terms: string | null;
+    ad_mode: string;
+    ad_image: string | null;
     deal_images: Array<{ url: string; sort_order: number }> | null;
     deal_locations: Array<{ partner_locations: { name: string; street: string | null; zip: string | null; city: string | null; lat: number | null; lng: number | null } | null }> | null;
   } | null;
@@ -71,6 +73,7 @@ export async function loadVouchers(tenantId: string, by: { orderId: string } | {
       currency: r.orders?.currency ?? shop.currency,
       validUntil: r.valid_until,
       terms: r.deals?.terms ?? null,
+      ad: dealAd(r.deals?.ad_mode, r.deals?.ad_image),
       image: [...(r.deals?.deal_images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null,
       locations: (r.deals?.deal_locations ?? []).map((l) => l.partner_locations).filter((l): l is NonNullable<typeof l> => Boolean(l)),
     })),

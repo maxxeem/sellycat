@@ -14,6 +14,7 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
   const [url, setUrl] = useState("");
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const [pending, start] = useTransition();
+  const [withFaq, setWithFaq] = useState(true);
   const [seconds, setSeconds] = useState(0);
   // Sites that let no robot in: the customer copies the page text from the browser instead.
   const [pasteOffer, setPasteOffer] = useState(false);
@@ -32,7 +33,7 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
       // A dropped connection is retried once; a new Sellycat version needs a reload.
       for (let attempt = 0; attempt < 2 && !r; attempt++) {
         try {
-          r = await importDealFromUrl(url, text);
+          r = await importDealFromUrl(url, text, withFaq);
         } catch (e) {
           const text = e instanceof Error ? e.message : "";
           if (/Server Action|was not found|older or newer deployment/i.test(text)) return setMessage({ tone: "error", text: a.errors.outdated });
@@ -47,7 +48,7 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
       setPasteOffer(false);
       setPasted("");
       onDraft(r);
-      setMessage(r.basic ? { tone: "info", text: fmt(a.basic, { images: String(r.images.length) }) } : { tone: "success", text: fmt(a.done, { images: String(r.images.length) }) });
+      setMessage(r.basic ? { tone: "info", text: fmt(a.basic, { images: String(r.images.length) }) } : { tone: "success", text: fmt(withFaq ? a.done : a.doneNoFaq, { images: String(r.images.length) }) });
     });
   };
   return (
@@ -68,6 +69,13 @@ export function AiImport({ onDraft }: { onDraft: (draft: Extract<ImportResult, {
           {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />} {a.start}
         </button>
       </form>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" checked={withFaq} disabled={pending} onChange={(e) => setWithFaq(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--coral)]" data-testid="ai-import-faq" />
+        <span>
+          {a.withFaq}
+          <span className="block text-xs text-muted">{withFaq ? a.withFaqHint : a.withoutFaqHint}</span>
+        </span>
+      </label>
       {pending ? <p className="text-xs text-muted" aria-live="polite">{fmt(a.working, { seconds: String(seconds) })}</p> : <p className="text-xs text-muted">{a.replaceHint}</p>}
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
       {pasteOffer && !pending ? (

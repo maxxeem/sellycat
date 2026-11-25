@@ -3,6 +3,8 @@
  * the server enforces). Error values are keys of the `deals.errors` dictionary.
  */
 import type { JSONContent } from "@tiptap/core";
+import { AD_MODES, parseDesign, type AdMode } from "@/lib/vouchers/design";
+import type { FaqDraft } from "./faq-library";
 import { parseMoney, type RedeemWindow } from "./deal-status";
 import { isoToZurichLocal, zurichLocalToIso } from "./time";
 
@@ -14,7 +16,7 @@ export type DealForm = {
   slug: string;
   description: JSONContent | null;
   terms: string;
-  faq: Array<{ q: string; a: string }>;
+  faq: FaqDraft[];
   partnerId: string;
   categoryId: string;
   locationIds: string[];
@@ -50,6 +52,9 @@ export type DealForm = {
   seoTitle: string;
   seoDescription: string;
   seoNoindex: boolean;
+  /** Advertising on the voucher PDF: the shop's, an own visual, or none. */
+  adMode: AdMode;
+  adImage: string;
   /** Partner settlement for this deal: off, after sale or after redemption. */
   settleMode: "off" | "sale" | "redemption";
   settleKind: "percent" | "fixed";
@@ -157,6 +162,8 @@ export function dealRow(f: DealForm) {
     seo_title: f.seoTitle.trim().slice(0, 120) || null,
     seo_description: f.seoDescription.trim().slice(0, 320) || null,
     seo_noindex: f.seoNoindex,
+    ad_mode: f.adMode,
+    ad_image: parseDesign({ adImage: f.adImage }).adImage,
     settle_mode: f.settleMode,
     settle_kind: f.settleKind,
     settle_commission_bps: f.settleKind === "percent" ? (commissionBps(f.settleCommission) ?? 0) : 0,
@@ -176,6 +183,7 @@ type DealRowIn = {
   redeem_windows: unknown; code_format: "qr" | "numeric" | "barcode"; barcode_type: string | null; code_source: "generated" | "pool" | "shared";
   show_remaining: boolean; show_countdown: boolean; show_stock_bar?: boolean; featured: boolean; teaser?: boolean; alert_skip?: boolean;
   seo_title?: string | null; seo_description?: string | null; seo_noindex?: boolean;
+  ad_mode?: string; ad_image?: string | null;
   settle_mode?: string; settle_kind?: string; settle_commission_bps?: number; settle_payout_cents?: number | null;
 };
 
@@ -219,6 +227,8 @@ export function dealToForm(d: DealRowIn, images: Array<{ url: string; alt: strin
     seoTitle: d.seo_title ?? "",
     seoDescription: d.seo_description ?? "",
     seoNoindex: d.seo_noindex ?? false,
+    adMode: AD_MODES.find((m) => m === d.ad_mode) ?? "default",
+    adImage: d.ad_image ?? "",
     settleMode: d.settle_mode === "sale" || d.settle_mode === "redemption" ? d.settle_mode : "off",
     settleKind: d.settle_kind === "fixed" ? "fixed" : "percent",
     settleCommission: d.settle_commission_bps ? String(d.settle_commission_bps / 100) : "",

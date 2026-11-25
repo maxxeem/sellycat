@@ -174,7 +174,7 @@ async function ask(client: Anthropic, locale: "de" | "en", content: Anthropic.Be
  * `pasted`: the page text the customer copied from their browser, for sites that let no robot
  * in (then nothing is fetched and the draft has no images).
  */
-export async function importFromPage(url: string, locale: "de" | "en", pasted?: string): Promise<{ ok: true; draft: Imported } | { ok: false; error: ImportError }> {
+export async function importFromPage(url: string, locale: "de" | "en", pasted?: string, { withFaq = true }: { withFaq?: boolean } = {}): Promise<{ ok: true; draft: Imported } | { ok: false; error: ImportError }> {
   if (!aiImportConfigured()) return { ok: false, error: "not_configured" };
   const started = Date.now();
   const client = new Anthropic({ maxRetries: 2, timeout: AI_TIMEOUT_MS });
@@ -216,7 +216,8 @@ export async function importFromPage(url: string, locale: "de" | "en", pasted?: 
     withImages.push({ type: "text", text: `Image ${i}:` });
     withImages.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: img.thumb } });
   });
-  withImages.push({ type: "text", text: images.length ? `Write the deal draft. Choose images by their number (0 to ${images.length - 1}).` : "Write the deal draft. There are no usable images: return an empty image list." });
+  const faqNote = withFaq ? "" : " Return an empty faq list: the shop writes the questions itself.";
+  withImages.push({ type: "text", text: images.length ? `Write the deal draft. Choose images by their number (0 to ${images.length - 1}).${faqNote}` : `Write the deal draft. There are no usable images: return an empty image list.${faqNote}` });
 
   let answer = await ask(client, locale, withImages);
   // Second try without the photos (an unusual image can make the request fail); the photos are
@@ -224,7 +225,7 @@ export async function importFromPage(url: string, locale: "de" | "en", pasted?: 
   let pickedByAi = true;
   if (!answer.ok && !answer.refused && Date.now() - started < AI_SECOND_TRY_UNTIL_MS) {
     pickedByAi = false;
-    answer = await ask(client, locale, [{ type: "text", text: `<page>\n${summary}\n</page>` }, { type: "text", text: "Write the deal draft. Return an empty image list." }]);
+    answer = await ask(client, locale, [{ type: "text", text: `<page>\n${summary}\n</page>` }, { type: "text", text: `Write the deal draft. Return an empty image list.${faqNote}` }]);
   }
   if (!answer.ok) {
     if (answer.refused) return { ok: false, error: "refused" };
@@ -240,7 +241,7 @@ export async function importFromPage(url: string, locale: "de" | "en", pasted?: 
       subtitle: d.subtitle.trim().slice(0, 120),
       blocks: d.blocks.map((b) => (b.kind === "bullets" ? { kind: "bullets", items: b.items } : { kind: b.kind, text: b.text })),
       terms: d.terms.trim().slice(0, 4000),
-      faq: d.faq.filter((f) => f.q.trim() && f.a.trim()).slice(0, 4),
+      faq: !withFaq ? [] : d.faq.filter((f) => f.q.trim() && f.a.trim()).slice(0, 4),
       images: [...new Set(chosen.map((c) => c.index))].map((i) => ({ data: images[i].full, alt: chosen.find((c) => c.index === i)?.alt.slice(0, 200) ?? "" })),
       regularPrice: d.regularPrice,
       basic: false,

@@ -33,6 +33,8 @@ export type PdfVoucher = {
   validUntil: string | null;
   terms: string | null;
   image: string | null;
+  /** The deal's advertising: a visual, null = none, undefined = the shop's setting. */
+  ad?: string | null;
   locations: Array<{ name: string; street: string | null; zip: string | null; city: string | null; lat?: number | null; lng?: number | null }>;
 };
 export type PdfInput = {
@@ -435,30 +437,32 @@ const LAYOUTS = { classic: Classic, ticket: Ticket, minimal: Minimal } as const;
 export async function renderVoucherPdf(input: PdfInput): Promise<Buffer> {
   await registerFonts();
   const design = input.design ?? DEFAULT_DESIGN;
-  const [ad, logo, ...prepared] = await Promise.all([
-    loadImage(activeAd(design), design.size === "a6" ? 1240 : 1860, "jpeg"),
+  // Every visual once, however many vouchers show it; one that cannot be loaded leaves a full page.
+  const general = activeAd(design);
+  const adUrl = (v: PdfVoucher) => (v.ad === undefined ? general : v.ad);
+  const adWidth = design.size === "a6" ? 1240 : 1860;
+  const ads = new Map<string, Loaded | null>();
+  await Promise.all([...new Set(input.vouchers.map(adUrl))].map(async (url) => url && ads.set(url, await loadImage(url, adWidth, "jpeg"))));
+  const [logo, ...prepared] = await Promise.all([
     loadImage(input.logoUrl, 600, "png"),
     ...input.vouchers.map(async (v) => ({ v, cover: design.showImage ? await loadImage(v.image, design.size === "a6" ? 800 : 1400, "jpeg") : null, symbol: symbolOf(v) })),
   ]);
-  // A visual that cannot be loaded leaves the normal full-page voucher.
-  const m = METRICS[ad ? `${design.size}ad` as const : design.size];
   const accentRaw = design.accent ?? input.primary;
-  const ctx: Ctx = {
+  const base: Omit<Ctx, "ad" | "m"> = {
     input,
     design,
-    m,
     accent: /^#[0-9a-f]{6}$/i.test(accentRaw) ? accentRaw : "#ff4b23",
     logo: logo as Loaded | null,
-    ad: ad as Loaded | null,
     t: getDictionary(input.locale),
     money: (c, cur) => formatMoney(c, cur, input.locale),
   };
   const Layout = LAYOUTS[design.layout];
   const doc = (
     <Document title={input.vouchers[0]?.title ?? input.shopName} author={input.shopName} creator="Sellycat" producer="Sellycat" language={input.locale}>
-      {(prepared as Prepared[]).map((p, n) => (
-        <Layout key={n} c={ctx} p={p} />
-      ))}
+      {(prepared as Prepared[]).map((p, n) => {
+        const ad = ads.get(adUrl(p.v) ?? "") ?? null;
+        return <Layout key={n} c={{ ...base, ad, m: METRICS[ad ? (`${design.size}ad` as const) : design.size] }} p={p} />;
+      })}
     </Document>
   );
   return renderToBuffer(doc);

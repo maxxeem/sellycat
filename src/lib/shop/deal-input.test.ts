@@ -5,7 +5,7 @@ const form: DealForm = {
   title: "2 Pizzas", subtitle: "", slug: "2-pizzas", description: null, terms: "", faq: [], partnerId: "", categoryId: "", locationIds: [], images: [],
   dealType: "fixed", price: "20", compareAt: "40", value: "", partial: false, totalQty: "100", maxPerOrder: "4", maxPerBuyer: "", salesStart: "2026-12-01T09:00",
   salesEnd: "2026-12-31T23:59", redeemValidity: "days_after_purchase", redeemUntil: "", redeemDays: "90", windows: [{ days: [1, 2, 3, 4, 5], from: "11:00", to: "14:00" }],
-  codeFormat: "qr", barcodeType: "", codeSource: "generated", sharedCode: "", showRemaining: true, showCountdown: true, showStockBar: false, featured: false, teaser: false, alert: true, seoTitle: "", seoDescription: "", seoNoindex: false, settleMode: "off", settleKind: "percent", settleCommission: "", settlePayout: "",
+  codeFormat: "qr", barcodeType: "", codeSource: "generated", sharedCode: "", showRemaining: true, showCountdown: true, showStockBar: false, featured: false, teaser: false, alert: true, adMode: "default", adImage: "", seoTitle: "", seoDescription: "", seoNoindex: false, settleMode: "off", settleKind: "percent", settleCommission: "", settlePayout: "",
 };
 
 describe("deal form", () => {

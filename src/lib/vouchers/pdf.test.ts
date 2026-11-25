@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { VOUCHER_LAYOUTS, VOUCHER_SIZES, activeAd, adIssues, parseDesign } from "./design";
+import { VOUCHER_LAYOUTS, VOUCHER_SIZES, activeAd, adIssues, dealAd, parseDesign } from "./design";
 import { renderVoucherPdf, type PdfVoucher } from "./pdf";
 
 const voucher: PdfVoucher = {
@@ -74,6 +74,27 @@ describe("advertising half", () => {
     const pdf = await render({ layout: "classic", adEnabled: true, adImage: IMG }, { ...voucher, terms: "Nur mit Reservation. Nicht kumulierbar. ".repeat(62) });
     if (process.env.PDF_OUT) writeFileSync(`${process.env.PDF_OUT}/ad-long.pdf`, pdf);
     expect(pages(pdf)).toBe(2);
+  }, 30_000);
+
+  it("a deal can have its own advertising or none, next to other deals", async () => {
+    const own = IMG.replace("ad.jpg", "own.jpg");
+    const input = (ads: Array<string | null | undefined>, design: Record<string, unknown>) =>
+      renderVoucherPdf({ shopName: "City Deals", locale: "de", primary: "#0a7cff", logoUrl: null, host: "x.ch", orderNumber: null, gift: null, vouchers: ads.map((ad) => ({ ...voucher, terms: null, ad })), design: parseDesign({ showImage: "0", ...design }) });
+    const images = (pdf: Buffer) => pdf.toString("latin1").match(/\/Subtype \/Image/g)?.length ?? 0;
+    const general = { adEnabled: true, adImage: IMG };
+    const requested: string[] = [];
+    const before = globalThis.fetch;
+    vi.stubGlobal("fetch", async (u: string) => (requested.push(u), before(u)));
+    const mixed = await input([undefined, own, null, own], general);
+    expect(requested.sort()).toEqual([IMG, own].sort());
+    expect(pages(mixed)).toBe(4);
+    if (process.env.PDF_OUT) writeFileSync(`${process.env.PDF_OUT}/ad-mixed.pdf`, mixed);
+    expect(images(await input([null], general))).toBe(0);
+    expect(images(await input([undefined], general))).toBeGreaterThan(0);
+    // Own advertising works without general advertising.
+    expect(images(await input([own], {}))).toBeGreaterThan(0);
+    expect(images(await input([undefined], {}))).toBe(0);
+    expect([dealAd("off", own), dealAd("own", own), dealAd("own", null), dealAd("default", own)]).toEqual([null, own, undefined, undefined]);
   }, 30_000);
 
   it("needs switch and image; describes the format", () => {

@@ -38,6 +38,16 @@ describe.skipIf(!rlsEnabled)("RLS shop content", () => {
     expect((await a.client.from("deals").select("id").eq("id", bDraft)).data).toEqual([]);
   });
 
+  it("the FAQ library belongs to the shop's team", async () => {
+    const row = { tenant_id: a.tenantId, question: "Wie?", answer: "So." };
+    expect((await a.client.from("faq_library").insert(row)).error).toBeNull();
+    expect((await b.client.from("faq_library").insert(row)).error).not.toBeNull();
+    expect((await b.client.from("faq_library").select("id")).data).toEqual([]);
+    expect((await anon().from("faq_library").select("id")).error).not.toBeNull();
+    expect((await a.client.from("faq_library").select("question")).data).toEqual([{ question: "Wie?" }]);
+    expect((await anon().from("deals").select("ad_image").limit(1)).error).not.toBeNull();
+  });
+
   it("anon sees published deals of a live shop, never drafts", async () => {
     const { data } = await anon().from("deals").select("slug").eq("tenant_id", b.tenantId);
     expect(data?.map((d) => d.slug)).toEqual(["live"]);

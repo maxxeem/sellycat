@@ -4,6 +4,7 @@ import type { Dictionary } from "@/lib/i18n";
 export const DASHBOARD_SECTIONS = [
   { key: "deals", phase: 2 },
   { key: "partners", phase: 2 },
+  { key: "faq", phase: 2 },
   { key: "orders", phase: 3 },
   { key: "settlements", phase: 7 },
   { key: "vouchers", phase: 4 },
@@ -32,6 +33,7 @@ export const isSection = (v: string): v is SectionKey => DASHBOARD_SECTIONS.some
 export const SECTION_MIN_ROLE: Record<SectionKey, "redeemer" | "editor" | "admin"> = {
   deals: "editor",
   partners: "editor",
+  faq: "editor",
   orders: "editor",
   settlements: "admin",
   vouchers: "editor",

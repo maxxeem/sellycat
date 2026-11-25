@@ -2,7 +2,7 @@
 
 export type ReuseSource = { title: string; terms: string | null; faq: unknown };
 export type ReusableTerms = { text: string; from: string };
-export type ReusableFaq = { q: string; a: string; from: string };
+export type ReusableFaq = { q: string; a: string; from: string; library?: boolean };
 
 const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
@@ -32,6 +32,12 @@ export function reusableTexts(deals: ReuseSource[]): { terms: ReusableTerms[]; f
   }
   return { terms, faq };
 }
+
+/** Library entries first, then those of earlier deals that the library does not have. */
+export const faqChoices = (library: Array<{ q: string; a: string }>, earlier: ReusableFaq[]): ReusableFaq[] => [
+  ...library.map((l) => ({ ...l, from: "", library: true })),
+  ...earlier.filter((e) => !library.some((l) => sameFaq(l, e))),
+];
 
 /** Same question and answer (ignoring spaces and case): already in the deal. */
 export const sameFaq = (x: { q: string; a: string }, y: { q: string; a: string }) => norm(x.q) === norm(y.q) && norm(x.a) === norm(y.a);

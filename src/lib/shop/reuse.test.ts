@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeTerms, reusableTexts, sameFaq } from "./reuse";
+import { faqChoices, mergeTerms, reusableTexts, sameFaq } from "./reuse";
 
 describe("reusableTexts", () => {
   it("collects distinct terms and FAQ entries with their deal", () => {
@@ -21,6 +21,9 @@ describe("helpers", () => {
     expect(mergeTerms("", "Neu", "append")).toBe("Neu");
     expect(mergeTerms("Alt\n", "Neu", "append")).toBe("Alt\n\nNeu");
     expect(mergeTerms("Alt", "Neu", "replace")).toBe("Neu");
+  });
+  it("offers the library first, without repeating it", () => {
+    expect(faqChoices([{ q: "A?", a: "1" }], [{ q: "a?", a: "1", from: "X" }, { q: "B?", a: "2", from: "X" }]).map((f) => [f.q, Boolean(f.library)])).toEqual([["A?", true], ["B?", false]]);
   });
   it("compares FAQ entries loosely", () => {
     expect(sameFaq({ q: "A ?", a: "b" }, { q: "a ?", a: " B " })).toBe(true);

@@ -32,7 +32,7 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
   const id = await idPromise;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { tenant, supabase } = await requireTenant("editor");
-  const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }, { count: poolUsed }, { data: domain }, { data: shared }, { data: allowedAlert }, { data: autoAlert }, { data: handAlert }] = await Promise.all([
+  const [{ data: deal }, { data: partners }, { data: categories }, { data: info }, { data: theme }, { data: legal }, { data: others }, { count: poolUsed }, { data: domain }, { data: shared }, { data: allowedAlert }, { data: autoAlert }, { data: handAlert }, { data: faqLibrary }, { data: voucherDesign }] = await Promise.all([
     supabase.from("deals").select("*, deal_images(url, alt, sort_order), deal_locations(location_id)").eq("id", id).eq("tenant_id", tenant.id).maybeSingle(),
     supabase.from("partners").select("id, name, logo_url, website_url, partner_locations(id, name, street, zip, city, lat, lng, opening_hours, hours)").eq("tenant_id", tenant.id).order("name"),
     supabase.from("categories").select("id, name, slug").eq("tenant_id", tenant.id).order("sort_order"),
@@ -48,6 +48,8 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
     // Readable for owners and admins only: editors just do not see when it was sent.
     supabase.from("deal_alerts").select("created_at").eq("deal_id", id).maybeSingle(),
     supabase.from("deal_alert_deals").select("deal_alerts(created_at)").eq("deal_id", id),
+    supabase.from("faq_library").select("question, answer").eq("tenant_id", tenant.id).order("created_at"),
+    supabase.from("voucher_designs").select("size, ad_enabled, ad_image").eq("tenant_id", tenant.id).maybeSingle(),
   ]);
   const alertSent = [autoAlert?.created_at, ...(handAlert ?? []).map((x) => x.deal_alerts?.created_at)].filter((x): x is string => Boolean(x)).sort().at(-1) ?? null;
   if (!deal) notFound();
@@ -69,6 +71,8 @@ async function Editor({ id: idPromise }: { id: Promise<string> }) {
       shopUrl={shopBase(domain?.hostname ?? null, siteHost())}
       alert={{ allowed: allowedAlert === true, on: Boolean(info?.deal_alert_at), sentAt: alertSent }}
       legalComplete={Boolean(legal)}
+      faqLibrary={(faqLibrary ?? []).map((f) => ({ q: f.question, a: f.answer }))}
+      shopAd={{ size: voucherDesign?.size === "a6" ? "a6" : "a4", active: Boolean(voucherDesign?.ad_enabled && voucherDesign.ad_image) }}
       reuse={reusableTexts(others ?? [])}
       canArchive={tenant.role === "owner" || tenant.role === "admin"}
       archived={Boolean(deal.archived_at)}
