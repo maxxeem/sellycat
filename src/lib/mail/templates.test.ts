@@ -52,7 +52,7 @@ describe("waitlistTeamMail", () => {
   it("deal alert mail shows price, saving, deal link and the way out", () => {
     const band = { background: "#180f26", text: "#ffffff", logoUrl: null };
     const deal = { title: "Sonos <Roam>", subtitle: null, priceCents: 14900, compareAtCents: 19900, currency: "CHF", image: null, left: 10, url: "https://velo.sellycat.com/d/sonos" };
-    const m = dealAlertMail({ brand, band, deal, unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok" });
+    const m = dealAlertMail({ brand, band, deals: [deal], unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok" });
     expect(m.subject).toMatch(/^Neuer Deal: Sonos <Roam> für CHF.149$/);
     expect(m.html).toContain("Sonos &lt;Roam&gt;");
     expect(m.html).toContain("-25%");
@@ -60,9 +60,18 @@ describe("waitlistTeamMail", () => {
     expect(m.html).toContain("https://velo.sellycat.com/d/sonos");
     expect(m.html).toContain("https://velo.sellycat.com/alert/off/tok");
     expect(m.text).toContain("https://velo.sellycat.com/alert/off/tok");
-    const plain = dealAlertMail({ brand, band, deal: { ...deal, compareAtCents: null, left: null }, unsubscribeUrl: "u" });
+    const plain = dealAlertMail({ brand, band, deals: [{ ...deal, compareAtCents: null, left: null }], unsubscribeUrl: "u" });
     expect(plain.html).not.toContain("<s ");
     expect(plain.html).not.toContain("verfügbar");
+    // Sent by hand: several deals, own words (escaped), way out still there.
+    const many = dealAlertMail({ brand, band, deals: [deal, { ...deal, title: "Pizza", url: "https://velo.sellycat.com/d/pizza" }], unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok", manual: { subject: "", message: "Hallo <b>" } });
+    expect(many.subject).toBe("2 Deals bei Velo <Deals>");
+    expect(many.html).toContain("Hallo &lt;b&gt;");
+    expect(many.html).toContain("/d/sonos");
+    expect(many.html).toContain("/d/pizza");
+    expect(many.html).toContain("/alert/off/tok");
+    expect(many.html).not.toContain("Neu im Shop");
+    expect(dealAlertMail({ brand, band, deals: [deal], unsubscribeUrl: "u", manual: { subject: "Nur heute", message: null } }).subject).toBe("Nur heute");
     const active = dealAlertActiveMail({ brand, band, unsubscribeUrl: "https://velo.sellycat.com/alert/off/tok" });
     expect(active.html).toContain("/alert/off/tok");
     expect(active.text).toContain("Velo <Deals>");

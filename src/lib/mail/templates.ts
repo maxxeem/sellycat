@@ -510,38 +510,77 @@ export function dealAlertActiveMail(i: { brand: MailBrand; band: MailBand; unsub
   };
 }
 
-/** A deal that just went live, to everyone with an active deal alert. */
-export function dealAlertMail(i: {
-  brand: MailBrand;
-  band: MailBand;
-  deal: { title: string; subtitle: string | null; priceCents: number; compareAtCents: number | null; currency: string; image: string | null; left: number | null; url: string };
-  unsubscribeUrl: string;
-}): Mail {
-  const m = getDictionary(i.brand.locale).mail.dealAlert;
-  const d = i.deal;
-  const money = (c: number) => formatMoney(c, d.currency, i.brand.locale);
+export type AlertDeal = { title: string; subtitle: string | null; priceCents: number; compareAtCents: number | null; currency: string; image: string | null; left: number | null; url: string };
+
+/** What a deal card of the alert says besides its title. */
+function alertFacts(brand: MailBrand, d: AlertDeal) {
+  const m = getDictionary(brand.locale).mail.dealAlert;
+  const money = (c: number) => formatMoney(c, d.currency, brand.locale);
   const percent = savingsPercent(d.priceCents, d.compareAtCents);
   const saved = percent && d.compareAtCents ? fmt(m.saved, { amount: money(d.compareAtCents - d.priceCents) }) : null;
-  const facts = [saved, d.left !== null ? fmt(m.left, { count: d.left }) : null].filter((x): x is string => Boolean(x)).join(" · ");
+  return {
+    percent,
+    price: money(d.priceCents),
+    was: percent && d.compareAtCents ? money(d.compareAtCents) : null,
+    facts: [saved, d.left !== null ? fmt(m.left, { count: d.left }) : null].filter((x): x is string => Boolean(x)).join(" · "),
+  };
+}
+
+/** Subject and message of an alert sent by hand ("" or null = the usual subject, no message). */
+export type ManualAlert = { subject: string | null; message: string | null };
+
+/**
+ * Deal alert to everyone with an active subscription: a deal that just went live, or (`manual`) one
+ * or several deals the shop picked, with its own subject and message.
+ */
+export function dealAlertMail(i: { brand: MailBrand; band: MailBand; deals: AlertDeal[]; unsubscribeUrl: string; manual?: ManualAlert }): Mail {
+  const m = getDictionary(i.brand.locale).mail.dealAlert;
+  const t = getDictionary(i.brand.locale).shop;
   const v = { shop: i.brand.shopName };
   const link = (href: string, label: string) => `<a href="${esc(href)}" style="color:#71717a;text-decoration:underline;">${esc(label)}</a>`;
-  const t = getDictionary(i.brand.locale).shop;
+  const single = i.deals.length === 1;
+  const message = i.manual?.message?.trim() ?? "";
+  const messageHtml = message ? `<p style="margin:0 0 18px;white-space:pre-line;">${esc(message)}</p>` : "";
+  const image = (d: AlertDeal, radius = "") => `<a href="${esc(d.url)}"><img src="${esc(d.image!)}" alt="${esc(d.title)}" width="560" style="display:block;width:100%;height:auto;border:0;${radius}"></a>`;
+  const card = (d: AlertDeal) => {
+    const f = alertFacts(i.brand, d);
+    const label = [i.manual ? "" : m.badge, f.percent ? `-${f.percent}%` : ""].filter(Boolean).join(" · ");
+    const size = single ? 26 : 21;
+    return `${label ? `<span style="display:inline-block;background:${i.brand.primary};color:${readableOn(i.brand.primary)};border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;">${esc(label)}</span>` : ""}
+<h1 style="margin:14px 0 8px;font-size:${size}px;line-height:1.2;">${esc(d.title)}</h1>
+${d.subtitle ? `<p style="margin:0;color:#52525b;">${esc(d.subtitle)}</p>` : ""}
+<p style="margin:${single ? 18 : 12}px 0 4px;"><strong style="font-size:${size}px;">${esc(f.price)}</strong>${f.was ? ` <s style="margin-left:8px;color:#71717a;">${esc(f.was)}</s>` : ""}</p>
+${f.facts ? `<p style="margin:0;font-size:14px;color:#52525b;">${esc(f.facts)}</p>` : ""}
+${button(i.brand, d.url, m.button)}`;
+  };
+  const first = i.deals[0]!;
+  const firstFacts = alertFacts(i.brand, first);
+  const after = `<p style="margin:0;font-size:13px;color:#71717a;">${esc(m.after)}</p>`;
+  const body = single
+    ? `${messageHtml}${card(first)}\n${after}`
+    : `${messageHtml}${i.deals.map((d, n) => `<div style="${n ? "margin-top:28px;padding-top:28px;border-top:1px solid #e4e4e7;" : ""}">${d.image ? `${image(d, "border-radius:12px;")}<div style="height:16px;line-height:16px;">&nbsp;</div>` : ""}${card(d)}</div>`).join("\n")}${after}`;
+  const subject = i.manual?.subject?.trim() || (single ? fmt(i.manual ? m.manualSubject : m.subject, { title: first.title, price: firstFacts.price }) : fmt(m.manySubject, { ...v, count: i.deals.length }));
+  const preheader = message || (single ? firstFacts.facts || first.subtitle || first.title : i.deals.map((d) => d.title).join(", "));
   return {
-    subject: subjectLine(fmt(m.subject, { title: d.title, price: money(d.priceCents) })),
+    subject: subjectLine(subject),
     html: bandLayout(
       i.brand,
       i.band,
-      d.image ? `<tr><td><a href="${esc(d.url)}"><img src="${esc(d.image)}" alt="${esc(d.title)}" width="560" style="display:block;width:100%;height:auto;border:0;"></a></td></tr>\n` : "",
-      `<span style="display:inline-block;background:${i.brand.primary};color:${readableOn(i.brand.primary)};border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;">${esc(m.badge)}${percent ? ` · -${percent}%` : ""}</span>
-<h1 style="margin:14px 0 8px;font-size:26px;line-height:1.2;">${esc(d.title)}</h1>
-${d.subtitle ? `<p style="margin:0;color:#52525b;">${esc(d.subtitle)}</p>` : ""}
-<p style="margin:18px 0 4px;"><strong style="font-size:26px;">${esc(money(d.priceCents))}</strong>${percent && d.compareAtCents ? ` <s style="margin-left:8px;color:#71717a;">${esc(money(d.compareAtCents))}</s>` : ""}</p>
-${facts ? `<p style="margin:0;font-size:14px;color:#52525b;">${esc(facts)}</p>` : ""}
-${button(i.brand, d.url, m.button)}
-<p style="margin:0;font-size:13px;color:#71717a;">${esc(m.after)}</p>`,
+      single && first.image ? `<tr><td>${image(first)}</td></tr>\n` : "",
+      body,
       `${esc(fmt(m.footer, v))} ${link(i.unsubscribeUrl, m.unsubscribe)} · ${link(`${i.brand.shopUrl}/impressum`, t.imprint)} · ${link(`${i.brand.shopUrl}/datenschutz`, t.privacy)}`,
-      facts || d.subtitle || d.title,
+      preheader,
     ),
-    text: [d.title, d.subtitle, "", `${money(d.priceCents)}${facts ? ` (${facts})` : ""}`, "", `${m.button}: ${d.url}`, "", m.after, "", fmt(m.footer, v), `${m.unsubscribe}: ${i.unsubscribeUrl}`].filter((x) => x !== null).join("\n"),
+    text: [
+      ...(message ? [message, ""] : []),
+      ...i.deals.flatMap((d) => {
+        const f = alertFacts(i.brand, d);
+        return [d.title, ...(d.subtitle ? [d.subtitle] : []), "", `${f.price}${f.facts ? ` (${f.facts})` : ""}`, "", `${m.button}: ${d.url}`, ""];
+      }),
+      m.after,
+      "",
+      fmt(m.footer, v),
+      `${m.unsubscribe}: ${i.unsubscribeUrl}`,
+    ].join("\n"),
   };
 }

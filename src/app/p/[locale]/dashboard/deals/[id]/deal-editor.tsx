@@ -2,7 +2,7 @@
 
 import { generateHTML } from "@tiptap/html";
 import Link from "next/link";
-import { Archive, ArchiveRestore, Monitor, Plus, Smartphone, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Monitor, Plus, Send, Smartphone, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { acceptedFiles, uploadMedia } from "@/components/image-upload";
@@ -51,6 +51,8 @@ export function DealEditor(props: {
   /** Shop-language texts for the generated search title and description. */
   seoTexts: SeoTexts;
   shopUrl: string;
+  /** Deal alert of the shop: in the plan, switched on, when this deal last went out. */
+  alert: { allowed: boolean; on: boolean; sentAt: string | null };
   legalComplete: boolean;
   canArchive: boolean;
   archived: boolean;
@@ -593,7 +595,22 @@ export function DealEditor(props: {
               <Check label={d.showCountdown} checked={form.showCountdown} onChange={(v) => set("showCountdown", v)} />
               <Check label={form.totalQty ? d.showStockBar : d.showStockBarNeedsQty} checked={form.showStockBar && form.totalQty !== ""} disabled={!form.totalQty} onChange={(v) => set("showStockBar", v)} />
               <Check label={d.featured} checked={form.featured} onChange={(v) => set("featured", v)} />
-              <Check label={d.alert} checked={form.alert} onChange={(v) => set("alert", v)} />
+            </div>
+          </Card>
+
+          <Card title={d.alertCard.title} description={d.alertCard.intro}>
+            <div className="flex flex-col gap-4" data-testid="deal-alert-choice">
+              <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={d.alertCard.title}>
+                <Choice checked={form.alert} onSelect={() => set("alert", true)} title={d.alertCard.include} hint={d.alertCard.includeHint} />
+                <Choice checked={!form.alert} onSelect={() => set("alert", false)} title={d.alertCard.exclude} hint={d.alertCard.excludeHint} />
+              </div>
+              {!props.alert.allowed ? <p className="text-sm text-muted">{d.alertCard.notOnPlan}</p> : !props.alert.on ? <p className="text-sm text-muted">{d.alertCard.off}</p> : null}
+              {props.alert.sentAt ? <p className="text-sm text-muted">{fmt(d.alertCard.sentAt, { date: new Date(props.alert.sentAt).toLocaleString(locale === "de" ? "de-CH" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zurich" }) })}</p> : null}
+              {props.alert.allowed && props.alert.on && props.canArchive && status === "live" ? (
+                <Link href={`/dashboard/deal-alert?deal=${props.id}#manual`} className={`${buttonClass.secondary} self-start`}>
+                  <Send className="h-4 w-4" aria-hidden /> {d.alertCard.sendNow}
+                </Link>
+              ) : null}
             </div>
           </Card>
 

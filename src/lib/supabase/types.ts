@@ -342,6 +342,49 @@ export type Database = {
           },
         ]
       }
+      deal_alert_deals: {
+        Row: {
+          alert_id: string
+          deal_id: string
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          alert_id: string
+          deal_id: string
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          alert_id?: string
+          deal_id?: string
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_alert_deals_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "deal_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_alert_deals_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_alert_deals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_alert_sends: {
         Row: {
           alert_id: string
@@ -462,30 +505,42 @@ export type Database = {
       deal_alerts: {
         Row: {
           created_at: string
-          deal_id: string
+          created_by: string | null
+          deal_id: string | null
           id: string
+          kind: string
+          message: string | null
           recipients: number
+          subject: string | null
           tenant_id: string
         }
         Insert: {
           created_at?: string
-          deal_id: string
+          created_by?: string | null
+          deal_id?: string | null
           id?: string
+          kind?: string
+          message?: string | null
           recipients?: number
+          subject?: string | null
           tenant_id: string
         }
         Update: {
           created_at?: string
-          deal_id?: string
+          created_by?: string | null
+          deal_id?: string | null
           id?: string
+          kind?: string
+          message?: string | null
           recipients?: number
+          subject?: string | null
           tenant_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "deal_alerts_deal_id_fkey"
             columns: ["deal_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "deals"
             referencedColumns: ["id"]
           },
@@ -3204,7 +3259,11 @@ export type Database = {
         Returns: {
           alert_id: string
           deal_id: string
+          deal_ids: string[]
           email: string
+          kind: string
+          message: string
+          subject: string
           subscriber_id: string
           tenant_id: string
           token: string
@@ -3227,6 +3286,7 @@ export type Database = {
           deal_id: string
           failed: number
           id: string
+          kind: string
           open: number
           recipients: number
           sent: number
@@ -3234,6 +3294,20 @@ export type Database = {
         }[]
       }
       deal_alert_live: {
+        Args: { d: Database["public"]["Tables"]["deals"]["Row"] }
+        Returns: boolean
+      }
+      deal_alert_manual: {
+        Args: {
+          p_deals: string[]
+          p_message: string
+          p_subject: string
+          p_tenant: string
+          p_user: string
+        }
+        Returns: Json
+      }
+      deal_alert_sellable: {
         Args: { d: Database["public"]["Tables"]["deals"]["Row"] }
         Returns: boolean
       }

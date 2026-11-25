@@ -5,6 +5,8 @@ import { requireTenant } from "@/lib/dashboard/context";
 import { fmt, type Dictionary } from "@/lib/i18n";
 import { fromParams } from "@/lib/i18n/params";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { dealStatus, formatMoney } from "@/lib/shop/deal-status";
+import { ManualComposer } from "./composer";
 import { AlertSwitch, RemoveButton } from "./controls";
 
 export const metadata = { title: "Deal-Alarm" };
@@ -25,19 +27,38 @@ export default async function DealAlertPage({ params, searchParams }: PageProps<
 async function Alert({ t, locale, searchParams }: { t: Dictionary; locale: string; searchParams: PageProps<"/p/[locale]/dashboard/deal-alert">["searchParams"] }) {
   const { tenant, supabase } = await requireTenant("admin");
   const a = t.dealAlertAdmin;
-  const page = Math.max(1, Number((await searchParams).page) || 1);
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
+  const preselect = typeof sp.deal === "string" ? sp.deal : null;
   const admin = createAdminClient();
-  const [{ data: allowed }, { data: info }, list, { count: active }, { data: history }, { data: payments }] = await Promise.all([
+  const [{ data: allowed }, { data: info }, list, { count: active }, { data: history }, { data: payments }, { data: live }, { data: auto }, { data: byHand }] = await Promise.all([
     admin.rpc("plan_allows", { p_tenant: tenant.id, p_feature: "deal_alert" }),
-    supabase.from("tenants").select("deal_alert_at").eq("id", tenant.id).single(),
+    supabase.from("tenants").select("deal_alert_at, currency").eq("id", tenant.id).single(),
     supabase.from("deal_alert_subscribers").select("id, email, status, created_at", { count: "exact" }).eq("tenant_id", tenant.id).order("created_at", { ascending: false }).range((page - 1) * PAGE, page * PAGE - 1),
     supabase.from("deal_alert_subscribers").select("id", { count: "exact", head: true }).eq("tenant_id", tenant.id).eq("status", "confirmed"),
     supabase.rpc("deal_alert_history", { p_tenant: tenant.id }),
     admin.from("stripe_accounts").select("charges_enabled").eq("tenant_id", tenant.id).maybeSingle(),
+    supabase.from("deals").select("id, title, state, sales_start, sales_end, total_qty, sold_qty, reserved_qty, code_source, pool_free, price_cents, alert_skip, deal_images(url, sort_order)").eq("tenant_id", tenant.id).eq("state", "published").is("archived_at", null).order("published_at", { ascending: false }),
+    supabase.from("deal_alerts").select("deal_id, created_at").eq("tenant_id", tenant.id).eq("kind", "auto"),
+    supabase.from("deal_alert_deals").select("deal_id, deal_alerts(created_at)").eq("tenant_id", tenant.id),
   ]);
   const on = Boolean(info?.deal_alert_at);
   const date = (iso: string) => new Date(iso).toLocaleString(locale === "de" ? "de-CH" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zurich" });
   const total = list.count ?? 0;
+  // When each deal last went out, by itself or by hand.
+  const lastSent = new Map<string, string>();
+  for (const [id, at] of [...(auto ?? []).map((x) => [x.deal_id, x.created_at] as const), ...(byHand ?? []).map((x) => [x.deal_id, x.deal_alerts?.created_at] as const)])
+    if (id && at && at > (lastSent.get(id) ?? "")) lastSent.set(id, at);
+  const deals = (live ?? [])
+    .filter((d) => dealStatus(d) === "live")
+    .map((d) => ({
+      id: d.id,
+      title: d.title,
+      price: formatMoney(d.price_cents, info?.currency ?? "CHF", locale),
+      image: [...d.deal_images].sort((x, y) => x.sort_order - y.sort_order)[0]?.url ?? null,
+      sentAt: lastSent.has(d.id) ? date(lastSent.get(d.id)!) : null,
+      skipped: d.alert_skip,
+    }));
   return (
     <div className="flex flex-col gap-6">
       {allowed !== true ? (
@@ -59,6 +80,12 @@ async function Alert({ t, locale, searchParams }: { t: Dictionary; locale: strin
           {allowed === true || on ? <AlertSwitch on={on} /> : null}
         </div>
       </Card>
+
+      <div id="manual" className="scroll-mt-24">
+        <Card title={a.manual.title} description={a.manual.intro}>
+          {on && allowed === true && payments?.charges_enabled ? <ManualComposer key={preselect ?? ""} deals={deals} recipients={active ?? 0} preselect={preselect} /> : <p className="text-sm text-muted">{a.manual.errors.off}</p>}
+        </Card>
+      </div>
 
       <Card
         title={fmt(a.subscribers, { count: active ?? 0 })}
@@ -105,8 +132,8 @@ async function Alert({ t, locale, searchParams }: { t: Dictionary; locale: strin
             {history.map((h) => (
               <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                 <span className="min-w-0">
-                  <Link href={`/dashboard/deals/${h.deal_id}`} className="font-semibold hover:underline">{h.title}</Link>
-                  <span className="block text-xs text-muted">{date(h.created_at)}</span>
+                  {h.deal_id ? <Link href={`/dashboard/deals/${h.deal_id}`} className="font-semibold hover:underline">{h.title}</Link> : <span className="font-semibold">{h.title}</span>}
+                  <span className="block text-xs text-muted">{date(h.created_at)} · {h.kind === "manual" ? a.byHand : a.automatic}</span>
                 </span>
                 <span className="text-muted">
                   {fmt(a.sentOf, { sent: h.sent, total: h.recipients })}

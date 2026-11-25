@@ -5,9 +5,9 @@ import { clientIp, networkOf, rateLimit } from "@/lib/access/server";
 import { brandOf, shopBase } from "@/lib/mail/deliver";
 import { sendMail } from "@/lib/mail/mailgun";
 import { loadSender } from "@/lib/mail/sender-load";
-import { dealAlertActiveMail, dealAlertConfirmMail, dealAlertMail, type MailBand, type MailBrand } from "@/lib/mail/templates";
+import { dealAlertActiveMail, dealAlertConfirmMail, dealAlertMail, type AlertDeal, type Mail, type MailBand, type MailBrand } from "@/lib/mail/templates";
 import { readableOn } from "@/lib/design/color";
-import { remaining } from "@/lib/shop/deal-status";
+import { dealStatus, remaining } from "@/lib/shop/deal-status";
 import { getShopProfile, type ShopProfile } from "@/lib/shop/queries";
 import { headerBase, headerLogo } from "@/lib/shop/theme";
 import { apexUrl } from "@/lib/site/hosts";
@@ -15,7 +15,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { nextConfirmMail } from "./confirm-limit";
 
 /**
- * Deal alert: subscribers of a shop get one mail per deal that goes live. What is due and who gets
+ * Deal alert: subscribers of a shop get one mail per deal that goes live, plus what the shop sends by hand
+ * (`deal_alert_manual`). What is due and who gets
  * it is decided in SQL (`deal_alert_start`, `deal_alert_claim`); this module renders and sends.
  * Runs after publishing, every five minutes (the database calls /api/cron/deal-alert when there is
  * work) and daily as a safety net.
@@ -89,39 +90,49 @@ export async function unsubscribe(token: string): Promise<void> {
   await createAdminClient().from("deal_alert_subscribers").delete().eq("token", token);
 }
 
-type Work = { alert_id: string; subscriber_id: string; tenant_id: string; deal_id: string; email: string; token: string };
-type Context = { brand: MailBrand; band: MailBand; sender: Awaited<ReturnType<typeof loadSender>>; deal: Parameters<typeof dealAlertMail>[0]["deal"] };
+type Work = { alert_id: string; subscriber_id: string; tenant_id: string; email: string; token: string; kind: string; deal_ids: string[]; subject: string | null; message: string | null };
+type Context = { brand: MailBrand; band: MailBand; sender: Awaited<ReturnType<typeof loadSender>>; deals: AlertDeal[] };
 
-async function loadContext(w: Work): Promise<Context | null> {
+/** Shop, sender and the given deals in their order; deals that cannot be bought any more drop out. */
+async function loadContext(tenantId: string, dealIds: string[]): Promise<Context | null> {
   const admin = createAdminClient();
-  const [shop, { data: d }] = await Promise.all([
-    getShopProfile(w.tenant_id),
+  const [shop, { data: rows }] = await Promise.all([
+    getShopProfile(tenantId),
     admin
       .from("deals")
-      .select("title, subtitle, slug, price_cents, compare_at_cents, total_qty, sold_qty, reserved_qty, code_source, pool_free, show_remaining, deal_images(url, sort_order)")
-      .eq("id", w.deal_id)
-      .eq("tenant_id", w.tenant_id)
-      .maybeSingle(),
+      .select("id, title, subtitle, slug, state, sales_start, sales_end, price_cents, compare_at_cents, total_qty, sold_qty, reserved_qty, code_source, pool_free, show_remaining, deal_images(url, sort_order)")
+      .in("id", dealIds)
+      .eq("tenant_id", tenantId),
   ]);
-  if (!shop || !d) return null;
+  if (!shop) return null;
   const base = shopBase(shop);
   const sender = await loadSender(shop.id);
-  const image = [...d.deal_images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null;
-  return {
-    brand: brandOf(shop, sender),
-    band: bandOf(shop),
-    sender,
-    deal: {
-      title: d.title,
-      subtitle: d.subtitle,
-      priceCents: d.price_cents,
-      compareAtCents: d.compare_at_cents,
-      currency: shop.currency,
-      image: image ? `${base}/_next/image?url=${encodeURIComponent(image)}&w=1200&q=75` : null,
-      left: d.show_remaining ? remaining(d) : null,
-      url: `${base}/d/${d.slug}`,
-    },
-  };
+  const deals = dealIds.flatMap((id) => {
+    const d = rows?.find((r) => r.id === id);
+    if (!d || !["live", "sold_out"].includes(dealStatus(d))) return [];
+    const image = [...d.deal_images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null;
+    return [
+      {
+        title: d.title,
+        subtitle: d.subtitle,
+        priceCents: d.price_cents,
+        compareAtCents: d.compare_at_cents,
+        currency: shop.currency,
+        image: image ? `${base}/_next/image?url=${encodeURIComponent(image)}&w=1200&q=75` : null,
+        left: d.show_remaining ? remaining(d) : null,
+        url: `${base}/d/${d.slug}`,
+      },
+    ];
+  });
+  return deals.length ? { brand: brandOf(shop, sender), band: bandOf(shop), sender, deals } : null;
+}
+
+const manualOf = (subject: string | null, message: string | null) => ({ subject: subject?.trim().slice(0, 120) || null, message: message?.trim().slice(0, 600) || null });
+
+/** The mail of a manual alert as it would look (preview and test mail; the unsubscribe link leads nowhere). */
+export async function manualAlertMail(tenantId: string, dealIds: string[], subject: string, message: string): Promise<{ mail: Mail; sender: Context["sender"] } | null> {
+  const c = await loadContext(tenantId, dealIds.slice(0, 10));
+  return c ? { mail: dealAlertMail({ brand: c.brand, band: c.band, deals: c.deals, unsubscribeUrl: c.brand.shopUrl, manual: manualOf(subject, message) }), sender: c.sender } : null;
 }
 
 /** Queues newly live deals and sends what is due, within the time budget. */
@@ -140,10 +151,10 @@ export async function runDealAlerts({ budgetMs = 240_000 } = {}): Promise<{ star
       batch.map(async (w) => {
         let message: string | null = null;
         try {
-          if (!contexts.has(w.alert_id)) contexts.set(w.alert_id, loadContext(w));
+          if (!contexts.has(w.alert_id)) contexts.set(w.alert_id, loadContext(w.tenant_id, w.deal_ids));
           const c = await contexts.get(w.alert_id);
           if (!c) throw new Error("deal or shop missing");
-          const mail = dealAlertMail({ brand: c.brand, band: c.band, deal: c.deal, unsubscribeUrl: `${c.brand.shopUrl}/alert/off/${w.token}` });
+          const mail = dealAlertMail({ brand: c.brand, band: c.band, deals: c.deals, unsubscribeUrl: `${c.brand.shopUrl}/alert/off/${w.token}`, manual: w.kind === "manual" ? manualOf(w.subject, w.message) : undefined });
           const r = await sendMail({
             domain: c.sender.domain,
             from: c.sender.from,
