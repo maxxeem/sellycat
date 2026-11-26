@@ -5,7 +5,7 @@ import { getShopProfile } from "@/lib/shop/queries";
 import { createClient } from "@/lib/supabase/server";
 import type { VoucherError } from "@/lib/vouchers/redeem";
 import { endScanSession, scanActor, type Lookup } from "@/lib/vouchers/scan-session";
-import { sendRedeemCode, verifyRedeemCode } from "@/lib/vouchers/redeem-login";
+import { sendRedeemCode, verifyPartnerCode, verifyRedeemCode } from "@/lib/vouchers/redeem-login";
 import { parseScan } from "@/lib/vouchers/scan";
 import { resolveShop } from "@/lib/site/resolve-shop";
 import { classifyHost } from "@/lib/site/hosts";
@@ -47,6 +47,15 @@ export async function codeLogin(email: string, code: string): Promise<{ ok: true
   return verifyRedeemCode(shop.id, email, code);
 }
 
+/** A partner's code: few guesses per network, and per shop in all (codes are short). */
+export async function partnerCodeLogin(code: string): Promise<{ ok: true } | { ok: false; error: LoginError }> {
+  const shop = await hostShop();
+  if (!shop || typeof code !== "string" || code.length > 64) return { ok: false, error: "failed" };
+  if (!(await rateLimit("scan-pcode", `${shop.id}|${networkOf(await clientIp())}`, 10, 900))) return { ok: false, error: "tooMany" };
+  if (!(await rateLimit("scan-pcode-shop", shop.id, 60, 3600))) return { ok: false, error: "tooMany" };
+  return verifyPartnerCode(shop.id, code);
+}
+
 export async function signOut(): Promise<void> {
   // Signed in with the app's own session: that one ends. Else the account session of a Sellycat host.
   if (await endScanSession()) return;
@@ -82,7 +91,7 @@ export async function lookupPhoto(jpegBase64: string): Promise<PhotoResult> {
   if (!actor) return { ok: false, error: "forbidden" };
   if (!readCodeConfigured()) return { ok: false, error: "unavailable" };
   if (typeof jpegBase64 !== "string" || jpegBase64.length > 3_000_000 || !/^[A-Za-z0-9+/=]+$/.test(jpegBase64)) return { ok: false, error: "unreadable" };
-  if (!(await rateLimit("scan-photo", actor.userId, 60, 600))) return { ok: false, error: "limit" };
+  if (!(await rateLimit("scan-photo", actor.key, 60, 600))) return { ok: false, error: "limit" };
   const codes = await readCodesFromPhoto(jpegBase64);
   if (codes === null) return { ok: false, error: "unavailable" };
   if (!codes.length) return { ok: false, error: "unreadable" };

@@ -6,6 +6,7 @@ import { loadSender } from "@/lib/mail/sender-load";
 import { redeemCodeMail } from "@/lib/mail/templates";
 import type { ShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizePartnerCode, validPartnerCode } from "./partner-code-rules";
 import { startScanSession } from "./scan-session";
 
 /**
@@ -75,5 +76,18 @@ export async function verifyRedeemCode(shopId: string, rawEmail: string, rawCode
   // Still allowed? Then a session of this app, for this shop and host only.
   const { data: userId } = await admin.rpc("redeem_user_id", { p_tenant: shopId, p_email: email });
   if (!userId) return { ok: false, error: "code" };
-  return (await startScanSession(shopId, userId)) ? { ok: true } : { ok: false, error: "failed" };
+  return (await startScanSession(shopId, { userId })) ? { ok: true } : { ok: false, error: "failed" };
+}
+
+/**
+ * A partner's code (instead of scanners): a session for that partner on this host. The caller
+ * limits guesses per network and per shop before this runs.
+ */
+export async function verifyPartnerCode(shopId: string, raw: string): Promise<CodeResult> {
+  const code = normalizePartnerCode(raw);
+  if (!validPartnerCode(code)) return { ok: false, error: "code" };
+  const { data: partnerId, error } = await createAdminClient().rpc("partner_code_match", { p_tenant: shopId, p_code: code });
+  if (error) return { ok: false, error: "failed" };
+  if (!partnerId) return { ok: false, error: "code" };
+  return (await startScanSession(shopId, { partnerId })) ? { ok: true } : { ok: false, error: "failed" };
 }

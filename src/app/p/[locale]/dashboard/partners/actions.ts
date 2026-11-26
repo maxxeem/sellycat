@@ -8,7 +8,7 @@ import { placeDetails, placesConfigured, searchPlaces, type PlaceDetails, type P
 import { createRateLimiter } from "@/lib/rate-limit";
 import { parseHours, type OpeningHours } from "@/lib/shop/hours";
 import { cleanBilling } from "@/lib/settlements/billing";
-import { inviteScanner, removeScanner, type ScannerError } from "@/lib/vouchers/scanners";
+import { clearPartnerCode, inviteScanner, removeScanner, setPartnerCode, type PartnerCodeError, type ScannerError } from "@/lib/vouchers/scanners";
 
 export type FormState = { error?: string; ok?: boolean } | null;
 
@@ -139,4 +139,21 @@ export async function deleteScanner(partnerId: string, userId: string): Promise<
   const ok = await removeScanner(tenant.id, partnerId, userId);
   revalidatePath(`/p/[locale]/dashboard/partners/[id]`, "page");
   return ok ? { ok: true } : { ok: false, error: "failed" };
+}
+
+/** Owner/admin sets the partner's code (typed, or a new one when empty). The code comes back once. */
+export async function saveScanCode(partnerId: string, code: string): Promise<{ ok: true; code: string } | { ok: false; error: PartnerCodeError }> {
+  const { tenant } = await requireTenant("admin");
+  if (typeof partnerId !== "string" || typeof code !== "string" || code.length > 64) return { ok: false, error: "invalid" };
+  const r = await setPartnerCode(tenant.id, partnerId, code);
+  revalidatePath(`/p/[locale]/dashboard/partners/[id]`, "page");
+  return r;
+}
+
+/** Back to authorised scanners: the code stops working at once. */
+export async function removeScanCode(partnerId: string): Promise<{ ok: boolean }> {
+  const { tenant } = await requireTenant("admin");
+  const ok = await clearPartnerCode(tenant.id, partnerId);
+  revalidatePath(`/p/[locale]/dashboard/partners/[id]`, "page");
+  return { ok };
 }

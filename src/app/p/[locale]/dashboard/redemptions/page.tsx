@@ -44,7 +44,7 @@ async function Log({ t, locale }: { t: Dictionary; locale: string }) {
   // Names of the people who redeemed (after the role check above).
   const ids = [...new Set((rows ?? []).map((r) => r.user_id).filter((x): x is string => Boolean(x)))];
   const { data: people } = ids.length ? await createAdminClient().from("profiles").select("user_id, full_name").in("user_id", ids) : { data: [] };
-  const name = (id: string | null) => people?.find((p) => p.user_id === id)?.full_name ?? "–";
+  const name = (id: string | null, source?: string) => people?.find((p) => p.user_id === id)?.full_name ?? (!id && source === "pwa" ? v.byCode : "–");
   const canUndo = roleAtLeast(tenant.role, "admin");
 
   return (
@@ -80,7 +80,7 @@ async function Log({ t, locale }: { t: Dictionary; locale: string }) {
                 </td>
                 <td className={`${tdClass} hidden whitespace-nowrap font-mono sm:table-cell`}>{r.vouchers?.code}</td>
                 <td className={`${tdClass} hidden max-w-56 truncate md:table-cell`}>{r.vouchers?.title}</td>
-                <td className={`${tdClass} hidden max-w-40 truncate sm:table-cell`}>{name(r.user_id)}</td>
+                <td className={`${tdClass} hidden max-w-40 truncate sm:table-cell`}>{name(r.user_id, r.source)}</td>
                 <td className={`${tdClass} whitespace-nowrap text-right`}>{r.amount_cents ? formatMoney(r.amount_cents, r.vouchers?.orders?.currency ?? "CHF", locale) : "–"}</td>
                 <td className={`${tdClass} whitespace-nowrap text-right no-underline`}>
                   {r.undone_at ? (

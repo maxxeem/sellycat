@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Eye, ScanLine } from "lucide-react";
+import { ChevronLeft, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { Dictionary } from "@/lib/i18n";
@@ -12,61 +12,31 @@ const field =
   "w-full rounded-[var(--shop-radius)] border border-[var(--shop-line)] bg-[var(--shop-surface)] px-3 py-3 text-base text-[var(--shop-text)] outline-none focus:border-[var(--shop-primary)]";
 
 /**
- * What a phone shows after scanning a voucher's QR code (before anything about the voucher is
- * revealed): the owner confirms with a code by email (first), staff and partners sign in to redeem.
+ * What a phone shows after scanning a voucher's QR code: straight to the sign-in for redeeming
+ * (partner code or scanner sign-in), nothing about the voucher. Its owner can still open it with
+ * a code to the order's address (small link below).
  */
-export function VoucherGate({ token, title, shopName, texts, ownerEmail, notYours }: { texts: Pick<Dictionary, "redeem" | "voucherAccess">; token: string; title: string; shopName: string; ownerEmail: string; notYours: string | null }) {
+export function VoucherGate({ token, shopName, texts, ownerEmail, notYours, withCode }: { texts: Pick<Dictionary, "redeem" | "voucherAccess">; token: string; shopName: string; ownerEmail: string; notYours: string | null; withCode: boolean }) {
   const t = texts.voucherAccess;
-  const [step, setStep] = useState<"menu" | "scan" | "show">("menu");
-  const back = (
-    <button type="button" onClick={() => setStep("menu")} className="inline-flex items-center gap-1 self-start text-sm font-semibold underline-offset-2 hover:underline">
-      <ChevronLeft className="h-4 w-4" aria-hidden /> {t.back}
-    </button>
-  );
+  const [step, setStep] = useState<"scan" | "show">("scan");
 
-  if (step === "scan")
-    return (
-      <div className="flex flex-col gap-3">
-        {back}
-        <RedeemLogin shopName={shopName} texts={texts} />
-      </div>
-    );
   if (step === "show")
     return (
       <div className="flex flex-col gap-3">
-        {back}
+        <button type="button" onClick={() => setStep("scan")} className="inline-flex items-center gap-1 self-start text-sm font-semibold underline-offset-2 hover:underline">
+          <ChevronLeft className="h-4 w-4" aria-hidden /> {t.back}
+        </button>
         <OwnerCode token={token} texts={texts} ownerEmail={ownerEmail} />
       </div>
     );
 
-  const option = (key: "scan" | "show", Icon: typeof Eye, label: string, hint: string) => (
-    <button
-      type="button"
-      onClick={() => setStep(key)}
-      className="shop-card flex w-full items-center gap-4 p-5 text-left transition hover:-translate-y-0.5"
-      data-testid={`voucher-${key}`}
-    >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--shop-primary)] text-[var(--shop-on-primary)]">
-        <Icon className="h-6 w-6" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="shop-heading block text-lg font-bold">{label}</span>
-        <span className="block text-sm text-[var(--shop-muted)]">{hint}</span>
-      </span>
-      <ChevronRight className="h-5 w-5 shrink-0 text-[var(--shop-muted)]" aria-hidden />
-    </button>
-  );
-
   return (
     <div className="flex flex-col gap-4" data-testid="voucher-gate">
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-wide text-[var(--shop-muted)]">{shopName}</p>
-        <h1 className="shop-heading mt-1 text-2xl font-bold">{title}</h1>
-        <p className="mt-3 text-[var(--shop-muted)]">{t.menuTitle}</p>
-      </div>
       {notYours ? <p className="rounded-[var(--shop-radius)] bg-[var(--shop-surface)] p-3 text-sm font-semibold">{notYours}</p> : null}
-      {option("show", Eye, t.showTitle, t.showHint)}
-      {option("scan", ScanLine, t.scanTitle, t.scanHint)}
+      <RedeemLogin shopName={shopName} texts={texts} withCode={withCode} />
+      <button type="button" onClick={() => setStep("show")} className="mx-auto inline-flex items-center gap-1.5 text-sm text-[var(--shop-muted)] underline underline-offset-2" data-testid="voucher-show">
+        <Eye className="h-4 w-4" aria-hidden /> {t.ownerLink}
+      </button>
     </div>
   );
 }

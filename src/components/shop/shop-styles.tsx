@@ -36,6 +36,7 @@ function heroDeviceCss(device: "desktop" | "mobile"): string {
   const pad = (top: string, bottom: string) => `{padding-top:${top};padding-bottom:${bottom};}`;
   const soft = phone ? "7rem" : "11rem";
   const mask = `linear-gradient(to bottom,#000 calc(100% - ${soft}),transparent)`;
+  const fillMask = `linear-gradient(to bottom,#000 calc(100% - ${phone ? "5rem" : "8rem"}),transparent)`;
   return [
     `.shop-hero{background:var(--hero-bg${v});color:var(--hero-text${v});}`,
     `.shop-hero-img{object-position:var(--hero-pos${v});}`,
@@ -55,6 +56,14 @@ function heroDeviceCss(device: "desktop" | "mobile"): string {
     `${fade("image")} .shop-hero-media{-webkit-mask-image:${mask};mask-image:${mask};}`,
     `${fade("image")} + .shop-below{position:relative;margin-top:${phone ? "-5rem" : "-8.5rem"};}`,
     `${fade("image")} + .shop-below .shop-chip:not([aria-current="page"]){background:var(--shop-bg);}`,
+    // Colour or gradient: the ground fades out (a masked layer below the text), deals move up over it.
+    ...["fill", "header"].flatMap((kind) => [
+      `${fade(kind)}{background:transparent;}`,
+      `${fade(kind)}::before{content:"";position:absolute;inset:0;background:var(--hero-bg${v});-webkit-mask-image:${fillMask};mask-image:${fillMask};}`,
+      `${fade(kind)} .shop-hero-text{padding-bottom:${phone ? "6rem" : "8.5rem"};}`,
+      `${fade(kind)} + .shop-below{position:relative;margin-top:${phone ? "-3.5rem" : "-5.5rem"};}`,
+      `${fade(kind)} + .shop-below .shop-chip:not([aria-current="page"]){background:var(--shop-bg);}`,
+    ]),
   ].join("\n");
 }
 

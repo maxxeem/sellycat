@@ -2,7 +2,7 @@ import "server-only";
 import { getStripe, stripeConfigured } from "@/lib/payments/stripe";
 import { siteHost, DEFAULT_ROOT } from "@/lib/site/hosts";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { addProjectDomain, domainConfig, getProjectDomain, removeProjectDomain, verifyProjectDomain } from "@/lib/vercel/domains";
+import { addProjectDomain, domainConfig, getProjectDomain, registerDomain, removeProjectDomain, verifyProjectDomain } from "@/lib/vercel/domains";
 import { dnsRows, parseCustomDomain, providerFromNs, type DnsProvider, type DnsRow, type ParsedDomain } from "./custom-domain";
 
 /**
@@ -164,4 +164,39 @@ export async function checkDueDomains(limit = 50): Promise<{ checked: number; te
     if (r.ok && r.status !== d.status) tenants.add(d.tenant_id);
   }
   return { checked: data?.length ?? 0, tenants: [...tenants] };
+}
+
+/**
+ * Cron: every Sellycat address of a shop (<slug>.sellycat.com) must answer over HTTPS. Its
+ * certificate exists only once the address is registered on Vercel; when that failed at signup,
+ * phones show a security warning (e.g. after scanning a voucher). Such an address is registered
+ * again. The ones checked longest ago come first.
+ */
+export async function checkShopSubdomains(limit = 60): Promise<{ checked: number; repaired: string[] }> {
+  const root = (siteHost() || DEFAULT_ROOT).split(":")[0]!;
+  if (!root.includes(".") || root.endsWith("localhost")) return { checked: 0, repaired: [] };
+  const db = createAdminClient();
+  const { data } = await db
+    .from("tenant_domains")
+    .select("id, hostname")
+    .eq("kind", "subdomain")
+    .like("hostname", `%.${root}`)
+    .order("last_checked_at", { ascending: true, nullsFirst: true })
+    .limit(limit);
+  const repaired: string[] = [];
+  const rows = data ?? [];
+  // Ten at a time: the cron's time limit holds even when every address times out.
+  for (let i = 0; i < rows.length; i += 10) {
+    await Promise.all(
+      rows.slice(i, i + 10).map(async (d) => {
+        if (!(await servesHttps(d.hostname))) {
+          const r = await registerDomain(d.hostname);
+          console.error(`[domains] ${d.hostname} did not answer over HTTPS; ${r.message}`);
+          repaired.push(d.hostname);
+        }
+        await db.from("tenant_domains").update({ last_checked_at: new Date().toISOString() }).eq("id", d.id);
+      }),
+    );
+  }
+  return { checked: data?.length ?? 0, repaired };
 }

@@ -1584,6 +1584,42 @@ export type Database = {
           },
         ]
       }
+      partner_scan_codes: {
+        Row: {
+          code_hash: string
+          partner_id: string
+          set_at: string
+          tenant_id: string
+        }
+        Insert: {
+          code_hash: string
+          partner_id: string
+          set_at?: string
+          tenant_id: string
+        }
+        Update: {
+          code_hash?: string
+          partner_id?: string
+          set_at?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_scan_codes_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_scan_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_settlement_lines: {
         Row: {
           base_cents: number
@@ -2211,9 +2247,10 @@ export type Database = {
           host: string
           id: string
           last_used_at: string
+          partner_id: string | null
           tenant_id: string
           token_hash: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2221,9 +2258,10 @@ export type Database = {
           host: string
           id?: string
           last_used_at?: string
+          partner_id?: string | null
           tenant_id: string
           token_hash: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2231,11 +2269,19 @@ export type Database = {
           host?: string
           id?: string
           last_used_at?: string
+          partner_id?: string | null
           tenant_id?: string
           token_hash?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "scan_sessions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scan_sessions_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -3618,6 +3664,19 @@ export type Database = {
         }
         Returns: string
       }
+      partner_code_clear: {
+        Args: { p_partner: string; p_tenant: string }
+        Returns: undefined
+      }
+      partner_code_match: {
+        Args: { p_code: string; p_tenant: string }
+        Returns: string
+      }
+      partner_code_set: {
+        Args: { p_code: string; p_partner: string; p_tenant: string }
+        Returns: string
+      }
+      partner_uses_code: { Args: { p_partner: string }; Returns: boolean }
       plan_allows: {
         Args: { p_feature: string; p_tenant: string }
         Returns: boolean
@@ -3696,6 +3755,15 @@ export type Database = {
         }
         Returns: Json
       }
+      scan_find_partner: {
+        Args: {
+          p_code: string
+          p_partner: string
+          p_tenant: string
+          p_token: string
+        }
+        Returns: Json
+      }
       scan_member: {
         Args: { p_tenant: string; p_user: string }
         Returns: boolean
@@ -3709,10 +3777,21 @@ export type Database = {
         }
         Returns: Json
       }
+      scan_redeem_partner: {
+        Args: {
+          p_amount?: number
+          p_partner: string
+          p_tenant: string
+          p_voucher: string
+        }
+        Returns: Json
+      }
       scan_session_use: {
         Args: { p_hash: string; p_host: string; p_tenant: string }
         Returns: {
           email: string
+          partner_id: string
+          partner_name: string
           user_id: string
         }[]
       }

@@ -80,8 +80,8 @@ export const themeSchema = z.object({
   /**
    * Hero, always on every screen; `desktop` (and tablet) and `mobile` (below 640 px) choose their own
    * background. `imageMobile`: own picture for phones, else `image`. `focus…` (0–100 %): the point of
-   * that picture that stays visible when it is cropped. `edge`: a picture ends with a line or fades
-   * into the page (deals overlap it).
+   * that picture that stays visible when it is cropped. `edge`: a picture, colour or gradient ends
+   * with a line or fades into the page (deals overlap it).
    */
   hero: z.preprocess(
     upgradeHero,

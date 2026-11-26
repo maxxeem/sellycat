@@ -268,13 +268,13 @@ export function ThemeEditor(props: { tenantId: string; initial: ShopTheme; hasUn
               </HeroBackdropField>
                 </div>
               </Part>
-              {heroLook(theme, "desktop").kind === "image" || heroLook(theme, "mobile").kind === "image" ? (
+              {[heroLook(theme, "desktop").kind, heroLook(theme, "mobile").kind].some((k) => k !== "plain") ? (
                 <Part>
                   <div>
                     <Segmented label={g.heroEdge} value={theme.hero.edge} onChange={(v) => update((th) => ({ ...th, hero: { ...th.hero, edge: v } }))} options={[["line", g.heroEdgeLine], ["fade", g.heroEdgeFade]]} />
                     <p className="mt-1.5 text-xs text-muted">{g.heroEdgeHint}</p>
                   </div>
-                  <HeroGuide />
+                  {heroLook(theme, "desktop").kind === "image" || heroLook(theme, "mobile").kind === "image" ? <HeroGuide /> : null}
                 </Part>
               ) : null}
                 </>

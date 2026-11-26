@@ -16,16 +16,18 @@ import { walletAvailable } from "@/lib/wallet/passes";
 import { accessTarget, hasAccess } from "@/lib/vouchers/access";
 import { fileKey } from "@/lib/vouchers/file-key";
 import { VoucherGate } from "./voucher-gate";
+import { shopUsesPartnerCodes } from "@/lib/vouchers/scanners";
+import { fmt } from "@/lib/i18n/fmt";
 
 export function generateStaticParams() {
   return [{ token: "placeholder" }];
 }
 
 /**
- * Voucher page (the QR code points here). Signed-in staff and partners of the shop get "slide to
- * redeem". Everyone else first sees a menu: "Scan voucher" (sign in with an email code) or "Show
- * voucher" (the owner confirms with a code sent to the order's address; the device is remembered
- * for 30 days). Only then are code, status and the wallet/PDF buttons shown.
+ * Voucher page (the QR code points here). Signed-in staff, scanners and partner codes of the shop
+ * get "slide to redeem". Everyone else lands on the sign-in for redeeming (partner code or scanner
+ * email code), without anything about the voucher; its owner opens it with a code sent to the
+ * order's address (device remembered for 30 days). Only then are code, status and wallet/PDF shown.
  */
 export default function VoucherPage({ params }: PageProps<"/shop/[locale]/[tenant]/v/[token]">) {
   return (
@@ -59,9 +61,9 @@ async function Voucher({ params }: { params: PageProps<"/shop/[locale]/[tenant]/
       <meta name="robots" content="noindex, nofollow" />
       <meta name="referrer" content="no-referrer" />
       {found && forScanner && actor ? (
-        <ScannerRedeem texts={{ redeem: d.redeem, vouchers: d.vouchers, shop: d.shop }} voucher={forScanner} locale={shop.locale} email={actor.email} />
+        <ScannerRedeem texts={{ redeem: d.redeem, vouchers: d.vouchers, shop: d.shop }} voucher={forScanner} locale={shop.locale} who={actor.kind === "code" ? fmt(d.redeem.codeSignedIn, { partner: actor.label }) : fmt(d.redeem.signedInAs, { email: actor.label })} />
       ) : found && !unlocked ? (
-        <VoucherGate token={token} title={v.title} shopName={shop.name} texts={{ redeem: d.redeem, voucherAccess: d.voucherAccess }} ownerEmail={ownerEmail ?? "•••"} notYours={actor ? d.redeem.notYours : null} />
+        <VoucherGate token={token} shopName={shop.name} texts={{ redeem: d.redeem, voucherAccess: d.voucherAccess }} ownerEmail={ownerEmail ?? "•••"} notYours={actor ? d.redeem.notYours : null} withCode={await shopUsesPartnerCodes(tenant)} />
       ) : found ? (
         <div className="flex flex-col gap-4">
           <VoucherCard

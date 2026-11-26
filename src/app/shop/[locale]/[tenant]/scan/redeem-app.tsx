@@ -18,7 +18,7 @@ const field =
 type Result = { tone: "ok"; text: string; detail?: string } | { tone: "error"; text: string };
 
 /** Scan (camera) or type a code → voucher → redeem. Big, clear feedback for the counter. */
-export function RedeemApp({ locale, email, initial, recent, texts }: { texts: Pick<Dictionary, "redeem" | "vouchers" | "shop">; locale: "de" | "en"; email: string; initial: VoucherInfo | null; recent: RecentRedemption[] }) {
+export function RedeemApp({ locale, who, initial, recent, texts }: { texts: Pick<Dictionary, "redeem" | "vouchers" | "shop">; locale: "de" | "en"; who: string; initial: VoucherInfo | null; recent: RecentRedemption[] }) {
   const dict = texts;
   const t = dict.redeem;
   const v = dict.vouchers;
@@ -289,7 +289,7 @@ export function RedeemApp({ locale, email, initial, recent, texts }: { texts: Pi
       </section>
 
       <footer className="flex flex-col gap-1 text-center text-xs text-[var(--shop-muted)]">
-        <p>{fmt(t.signedInAs, { email })}</p>
+        <p>{who}</p>
         <p>{t.install}</p>
       </footer>
     </div>

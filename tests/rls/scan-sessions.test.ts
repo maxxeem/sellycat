@@ -73,7 +73,7 @@ describe.skipIf(!rlsEnabled)("scan sessions", () => {
 
   it("is good for its shop and host only, until it expires", async () => {
     const hash = await start(a, worker, "deals.a.test");
-    expect(await use(hash, a, "deals.a.test")).toEqual([{ user_id: worker, email: `w-${run}@example.com` }]);
+    expect(await use(hash, a, "deals.a.test")).toEqual([{ user_id: worker, email: `w-${run}@example.com`, partner_id: null, partner_name: null }]);
     expect(await use(hash, a, "other.test")).toEqual([]);
     expect(await use(hash, b, "deals.a.test")).toEqual([]);
     expect(await use("0".repeat(64), a, "deals.a.test")).toEqual([]);

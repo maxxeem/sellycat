@@ -16,7 +16,7 @@ const field =
  * What a signed-in partner sees after scanning a voucher with the phone camera: the voucher and
  * "slide to redeem" (value vouchers with partial use: amount first). Large, clear outcome.
  */
-export function ScannerRedeem({ voucher, locale, email, texts }: { texts: Pick<Dictionary, "redeem" | "vouchers" | "shop">; voucher: VoucherInfo; locale: "de" | "en"; email: string }) {
+export function ScannerRedeem({ voucher, locale, who, texts }: { texts: Pick<Dictionary, "redeem" | "vouchers" | "shop">; voucher: VoucherInfo; locale: "de" | "en"; who: string }) {
   const dict = texts;
   const r = dict.redeem;
   const v = dict.vouchers;
@@ -83,7 +83,7 @@ export function ScannerRedeem({ voucher, locale, email, texts }: { texts: Pick<D
         <Link href="/scan" className="font-semibold text-[var(--shop-text)] underline underline-offset-2">
           {r.toScan}
         </Link>
-        <span>{fmt(r.signedInAs, { email })}</span>
+        <span>{who}</span>
       </div>
     </div>
   );

@@ -161,7 +161,9 @@ export async function provisionFromSignup(): Promise<void> {
     if (!error) {
       // Links the code (plan, trial, coupon) and marks the waitlist entry as registered.
       await db.rpc("finish_invite_signup", { p_user: userId, p_tenant: tenantId });
-      await registerDomain(`${candidate}.${root}`);
+      // A failure is logged and repaired by the daily domain check (no certificate until registered).
+      const vercel = await registerDomain(`${candidate}.${root}`);
+      if (!vercel.ok) console.error("[signup] subdomain", vercel.message);
       after(() => sendWelcomeMail(tenantId).catch((e) => console.error("[welcome mail]", e instanceof Error ? e.message : e)));
       return;
     }
@@ -232,7 +234,9 @@ export async function welcomeAction(_: AuthState, form: FormData): Promise<AuthS
     const { data: tenantId, error } = await supabase.rpc("create_tenant", { p_name: shopName, p_slug: candidate, p_root: root, p_locale: locale });
     if (!error) {
       await db.rpc("finish_invite_signup", { p_user: user.id, p_tenant: tenantId });
-      await registerDomain(`${candidate}.${root}`);
+      // A failure is logged and repaired by the daily domain check (no certificate until registered).
+      const vercel = await registerDomain(`${candidate}.${root}`);
+      if (!vercel.ok) console.error("[signup] subdomain", vercel.message);
       after(() => sendWelcomeMail(tenantId).catch((e) => console.error("[welcome mail]", e instanceof Error ? e.message : e)));
       // Open the new shop (an account with shops already would otherwise land in the previous one).
       (await cookies()).set(TENANT_COOKIE, tenantId, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production" });

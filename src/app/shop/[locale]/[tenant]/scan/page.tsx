@@ -7,6 +7,8 @@ import { getShopProfile } from "@/lib/shop/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lightLogo } from "@/lib/vouchers/data";
 import { scanActor } from "@/lib/vouchers/scan-session";
+import { shopUsesPartnerCodes } from "@/lib/vouchers/scanners";
+import { fmt } from "@/lib/i18n/fmt";
 import { RedeemApp, type RecentRedemption } from "./redeem-app";
 import { RedeemLogin } from "./redeem-login";
 import { SignOutButton } from "./sign-out-button";
@@ -43,14 +45,13 @@ async function Redeem({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[
 
   let recent: RecentRedemption[] = [];
   if (actor) {
-    // Service role: this person's own redemptions in this shop only.
-    const { data } = await createAdminClient()
+    // Service role: this person's own redemptions in this shop only (a partner code: the code's).
+    const base = createAdminClient()
       .from("redemptions")
       .select("id, amount_cents, created_at, undone_at, vouchers(code, title, orders(currency))")
-      .eq("tenant_id", shop.id)
-      .eq("user_id", actor.userId)
-      .order("created_at", { ascending: false })
-      .limit(10);
+      .eq("tenant_id", shop.id);
+    const mine = actor.userId ? base.eq("user_id", actor.userId) : base.is("user_id", null).eq("partner_id", actor.partnerId ?? "").eq("source", "pwa");
+    const { data } = await mine.order("created_at", { ascending: false }).limit(10);
     recent = (data ?? []).map((r) => ({
       id: r.id,
       at: r.created_at,
@@ -84,9 +85,9 @@ async function Redeem({ params, searchParams }: Pick<PageProps<"/shop/[locale]/[
         </header>
 
         {!actor ? (
-          <RedeemLogin shopName={shop.name} texts={{ redeem: getDictionary(shop.locale).redeem }} />
+          <RedeemLogin shopName={shop.name} texts={{ redeem: getDictionary(shop.locale).redeem }} withCode={await shopUsesPartnerCodes(shop.id)} />
         ) : (
-          <RedeemApp texts={scanTexts(getDictionary(shop.locale))} locale={shop.locale} email={actor.email} initial={initial} recent={recent} />
+          <RedeemApp texts={scanTexts(getDictionary(shop.locale))} locale={shop.locale} who={actor.kind === "code" ? fmt(t.redeem.codeSignedIn, { partner: actor.label }) : fmt(t.redeem.signedInAs, { email: actor.label })} initial={initial} recent={recent} />
         )}
       </div>
     </div>

@@ -12,7 +12,7 @@ import { DeletePartner, LocationList } from "./locations";
 import { Scanners } from "./scanners";
 import { shopBase } from "@/lib/mail/deliver";
 import { getShopProfile } from "@/lib/shop/queries";
-import { listScanners } from "@/lib/vouchers/scanners";
+import { listScanners, partnerCode } from "@/lib/vouchers/scanners";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export function generateStaticParams() {
@@ -42,7 +42,7 @@ async function Partner({ params }: { params: PageProps<"/p/[locale]/dashboard/pa
   // Bank details are not readable through the client roles (column grant); owners and admins get them here.
   const isAdmin = tenant.role === "owner" || tenant.role === "admin";
   const billing = isAdmin ? ((await createAdminClient().from("partners").select("billing").eq("id", partner.id).eq("tenant_id", tenant.id).maybeSingle()).data?.billing ?? {}) : {};
-  const [scanners, shop] = await Promise.all([listScanners(tenant.id, partner.id), getShopProfile(tenant.id)]);
+  const [scanners, code, shop] = await Promise.all([listScanners(tenant.id, partner.id), partnerCode(tenant.id, partner.id), getShopProfile(tenant.id)]);
   const scanUrl = `${shop ? shopBase(shop) : ""}/scan`;
   return (
     <>
@@ -63,7 +63,7 @@ async function Partner({ params }: { params: PageProps<"/p/[locale]/dashboard/pa
           </Card>
         ) : null}
         <Card title={t.scanners.title} className="lg:col-span-2">
-          <Scanners partnerId={partner.id} partnerName={partner.name} scanUrl={scanUrl} scanners={scanners} canManage={tenant.role === "owner" || tenant.role === "admin"} />
+          <Scanners partnerId={partner.id} partnerName={partner.name} scanUrl={scanUrl} scanners={scanners} code={code} canManage={tenant.role === "owner" || tenant.role === "admin"} />
         </Card>
       </div>
     </>
