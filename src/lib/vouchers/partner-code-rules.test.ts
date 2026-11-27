@@ -2,20 +2,20 @@ import { describe, expect, it } from "vitest";
 import { generatePartnerCode, normalizePartnerCode, validPartnerCode } from "./partner-code-rules";
 
 describe("partner code", () => {
-  it("ignores spaces, dashes and case", () => {
-    expect(normalizePartnerCode(" ab12-cd 34 ")).toBe("AB12CD34");
+  it("ignores spaces and dashes", () => {
+    expect(normalizePartnerCode(" 12-34 56 ")).toBe("123456");
   });
-  it("accepts 8 to 32 letters or digits", () => {
-    expect(validPartnerCode("1234567")).toBe(false);
+  it("accepts 4 to 8 digits only", () => {
+    expect(validPartnerCode("123")).toBe(false);
+    expect(validPartnerCode("1234")).toBe(true);
     expect(validPartnerCode("12345678")).toBe(true);
-    expect(validPartnerCode("A".repeat(32))).toBe(true);
-    expect(validPartnerCode("A".repeat(33))).toBe(false);
-    expect(validPartnerCode("ÄBCDEFGH")).toBe(false);
+    expect(validPartnerCode("123456789")).toBe(false);
+    expect(validPartnerCode("12AB")).toBe(false);
   });
-  it("generates valid eight-digit codes", () => {
+  it("generates valid six-digit codes", () => {
     for (let i = 0; i < 50; i++) {
       const c = generatePartnerCode();
-      expect(c).toMatch(/^\d{8}$/);
+      expect(c).toMatch(/^\d{6}$/);
       expect(validPartnerCode(c)).toBe(true);
     }
   });

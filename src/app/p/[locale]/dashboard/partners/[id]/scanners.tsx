@@ -96,8 +96,8 @@ function CodePanel({ partnerId, scanUrl, code, scannerCount, canManage, onCancel
             save(value);
           }}
         >
-          <input value={value} onChange={(e) => setValue(e.target.value)} placeholder={s.codePlaceholder} className={`${inputClass} font-mono uppercase placeholder:font-sans placeholder:normal-case`} maxLength={40} autoComplete="off" data-testid="partner-code-input" />
-          <button type="submit" disabled={pending || !value.trim()} className={buttonClass.primary} data-testid="partner-code-save">
+          <input value={value} onChange={(e) => setValue(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder={s.codePlaceholder} className={`${inputClass} font-mono placeholder:font-sans`} inputMode="numeric" pattern="[0-9]*" maxLength={8} autoComplete="off" data-testid="partner-code-input" />
+          <button type="submit" disabled={pending || value.length < 4} className={buttonClass.primary} data-testid="partner-code-save">
             {pending ? "…" : s.codeSave}
           </button>
           <button type="button" disabled={pending} onClick={() => save("")} className={buttonClass.secondary} data-testid="partner-code-generate">

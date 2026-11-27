@@ -88,9 +88,10 @@ function PartnerCodeForm({ texts }: { texts: Pick<Dictionary, "redeem"> }) {
         <span className="font-semibold">{t.partnerCode}</span>
         <input
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 40))}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
           autoComplete="off"
-          autoCapitalize="characters"
+          inputMode="numeric"
+          pattern="[0-9]*"
           autoCorrect="off"
           spellCheck={false}
           autoFocus
@@ -109,7 +110,7 @@ function PartnerCodeForm({ texts }: { texts: Pick<Dictionary, "redeem"> }) {
       ) : null}
       <button
         type="submit"
-        disabled={pending || code.replace(/[\s-]/g, "").length < 8}
+        disabled={pending || code.length < 4}
         className="shop-btn w-full"
         data-testid="partner-code-submit"
       >

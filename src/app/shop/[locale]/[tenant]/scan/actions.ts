@@ -47,12 +47,12 @@ export async function codeLogin(email: string, code: string): Promise<{ ok: true
   return verifyRedeemCode(shop.id, email, code);
 }
 
-/** A partner's code: few guesses per network, and per shop in all (codes are short). */
+/** A partner's code (4–8 digits): few guesses per network, and per shop in all per day. */
 export async function partnerCodeLogin(code: string): Promise<{ ok: true } | { ok: false; error: LoginError }> {
   const shop = await hostShop();
   if (!shop || typeof code !== "string" || code.length > 64) return { ok: false, error: "failed" };
-  if (!(await rateLimit("scan-pcode", `${shop.id}|${networkOf(await clientIp())}`, 10, 900))) return { ok: false, error: "tooMany" };
-  if (!(await rateLimit("scan-pcode-shop", shop.id, 60, 3600))) return { ok: false, error: "tooMany" };
+  if (!(await rateLimit("scan-pcode", `${shop.id}|${networkOf(await clientIp())}`, 5, 900))) return { ok: false, error: "tooMany" };
+  if (!(await rateLimit("scan-pcode-shop", shop.id, 60, 86_400))) return { ok: false, error: "tooMany" };
   return verifyPartnerCode(shop.id, code);
 }
 

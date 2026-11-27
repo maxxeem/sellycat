@@ -61,9 +61,9 @@ describe.skipIf(!rlsEnabled)("partner code", () => {
     for (const c of [a.client, anon()]) {
       expect((await c.from("partner_scan_codes").select("partner_id")).error).not.toBeNull();
       for (const [fn, args] of [
-        ["partner_code_set", { p_tenant: a.tenantId, p_partner: mine, p_code: "12345678" }],
+        ["partner_code_set", { p_tenant: a.tenantId, p_partner: mine, p_code: "123456" }],
         ["partner_code_clear", { p_tenant: a.tenantId, p_partner: mine }],
-        ["partner_code_match", { p_tenant: a.tenantId, p_code: "12345678" }],
+        ["partner_code_match", { p_tenant: a.tenantId, p_code: "123456" }],
         ["scan_find_partner", { p_tenant: a.tenantId, p_partner: mine, p_code: "x", p_token: "x" }],
         ["scan_redeem_partner", { p_tenant: a.tenantId, p_partner: mine, p_voucher: v.mine.id }],
         ["partner_uses_code", { p_partner: mine }],
@@ -74,17 +74,17 @@ describe.skipIf(!rlsEnabled)("partner code", () => {
 
   it("sets a code as a hash, unique in the shop, and removes the partner's scanners", async () => {
     expect((await db.rpc("redeem_user_id", { p_tenant: a.tenantId, p_email: `s-${run}@example.com` })).data).toBe(scanner);
-    expect(await set(mine, "1234567")).toBe("invalid");
-    expect(await set(mine, "abcdefgh")).toBe("invalid");
-    expect(await set(mine, "MEIN2026CODE")).toBe("ok");
-    expect(await set(other, "MEIN2026CODE")).toBe("taken");
-    expect(await set(mine, "MEIN2026CODE", b)).toBe("not_found");
+    expect(await set(mine, "123")).toBe("invalid");
+    expect(await set(mine, "12AB")).toBe("invalid");
+    expect(await set(mine, "482913")).toBe("ok");
+    expect(await set(other, "482913")).toBe("taken");
+    expect(await set(mine, "482913", b)).toBe("not_found");
     const { data: row } = await db.from("partner_scan_codes").select("code_hash").eq("partner_id", mine).single();
-    expect(row!.code_hash).not.toContain("MEIN2026CODE");
+    expect(row!.code_hash).not.toContain("482913");
     expect((await db.from("tenant_members").select("user_id").eq("tenant_id", a.tenantId).eq("role", "partner")).data).toEqual([]);
-    expect(await match("MEIN2026CODE")).toBe(mine);
-    expect(await match("MEIN2026CODX")).toBeNull();
-    expect(await match("MEIN2026CODE", b)).toBeNull();
+    expect(await match("482913")).toBe(mine);
+    expect(await match("482914")).toBeNull();
+    expect(await match("482913", b)).toBeNull();
   });
 
   it("locks out scanners of a partner on a code", async () => {
@@ -113,14 +113,14 @@ describe.skipIf(!rlsEnabled)("partner code", () => {
   it("ends sessions when the code changes or is removed", async () => {
     const first = await session(mine);
     expect(await use(first)).toEqual([{ user_id: null, email: null, partner_id: mine, partner_name: "Mein Partner" }]);
-    expect(await set(mine, "NEUERCODE1")).toBe("ok");
+    expect(await set(mine, "7351")).toBe("ok");
     expect(await use(first)).toEqual([]);
-    expect(await match("MEIN2026CODE")).toBeNull();
+    expect(await match("482913")).toBeNull();
     const second = await session(mine);
     expect(await use(second)).toHaveLength(1);
     await db.rpc("partner_code_clear", { p_tenant: a.tenantId, p_partner: mine });
     expect(await use(second)).toEqual([]);
-    expect(await match("NEUERCODE1")).toBeNull();
+    expect(await match("7351")).toBeNull();
     expect(await find(v.mine.code)).toEqual({ error: "forbidden" });
     // A session without a code row never works.
     expect(await use(await session(other))).toEqual([]);
